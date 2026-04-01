@@ -7,130 +7,140 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --green: #2d5a27; --green-light: #3d7a34; --green-pale: #e8f5e3;
-    --gold: #c9a84c; --gold-light: #f0d080; --cream: #faf7f0;
-    --brown: #4a3728; --text: #1a1a1a; --muted: #7a7a7a;
-    --white: #ffffff; --shadow: 0 4px 24px rgba(0,0,0,0.12); --radius: 14px;
+    --green:#2d5a27;--green-light:#3d7a34;--green-pale:#e8f5e3;
+    --gold:#c9a84c;--gold-light:#f0d080;--cream:#faf7f0;
+    --brown:#4a3728;--text:#1a1a1a;--muted:#7a7a7a;
+    --shadow:0 4px 24px rgba(0,0,0,0.12);--radius:14px;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; overflow-x: hidden; }
-  body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 10%, rgba(45,90,39,0.08) 0%, transparent 60%), radial-gradient(ellipse at 80% 90%, rgba(201,168,76,0.08) 0%, transparent 60%); pointer-events: none; z-index: 0; }
-  .app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 0 0 80px; }
-  .header { background: var(--green); color: white; padding: 28px 24px 22px; text-align: center; position: relative; overflow: hidden; }
-  .header::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 24px; background: var(--cream); clip-path: ellipse(55% 100% at 50% 100%); }
-  .header-title { font-family: 'Bebas Neue', sans-serif; font-size: 42px; letter-spacing: 3px; color: var(--gold-light); line-height: 1; }
-  .header-sub { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-top: 4px; }
-  .header-actions { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); display:flex; gap:8px; }
-  .btn-icon { background: rgba(255,255,255,0.15); border: none; border-radius: 10px; color: white; padding: 8px 12px; cursor: pointer; font-size: 18px; transition: background 0.2s; }
-  .btn-icon:hover { background: rgba(255,255,255,0.25); }
-  .sync-dot { width:10px; height:10px; border-radius:50%; background:#666; display:inline-block; margin-right:4px; transition: background 0.3s; }
-  .sync-dot.live { background:#4caf50; box-shadow: 0 0 6px #4caf50; }
-  .sync-dot.error { background:#f44336; }
-  .page { display: none; padding: 24px; }
-  .page.active { display: block; animation: fadeIn 0.25s ease; }
-  .setup-card { background: white; border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 16px; }
-  .section-label { font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--green); margin-bottom: 16px; }
-  .player-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-  .player-num { width: 28px; height: 28px; border-radius: 50%; background: var(--green); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
-  input[type="text"], input[type="number"], select { flex: 1; padding: 11px 14px; border: 1.5px solid #e0e0e0; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--text); background: white; transition: border-color 0.2s; outline: none; width: 100%; }
-  input:focus, select:focus { border-color: var(--green); }
-  .amount-row { display: flex; align-items: center; gap: 12px; }
-  .dollar-prefix { font-size: 22px; font-weight: 600; color: var(--green); }
-  .amount-row input { max-width: 120px; }
-  .btn { display: block; width: 100%; padding: 15px; border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; }
-  .btn-primary { background: var(--green); color: white; letter-spacing: 0.5px; }
-  .btn-primary:hover { background: var(--green-light); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(45,90,39,0.3); }
-  .btn-secondary { background: var(--green-pale); color: var(--green); }
-  .btn-gold { background: var(--gold); color: white; }
-  .btn-danger { background: #ffebee; color: #c62828; }
-  .hole-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-  .hole-indicator { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--green); letter-spacing: 2px; line-height: 1; }
-  .hole-indicator span { font-size: 14px; color: var(--muted); font-family: 'DM Sans', sans-serif; font-weight: 400; letter-spacing: 0; display: block; text-align: center; }
-  .nav-btn { background: white; border: 1.5px solid #e0e0e0; border-radius: 10px; padding: 10px 18px; font-size: 18px; cursor: pointer; transition: all 0.2s; color: var(--green); }
-  .nav-btn:hover { background: var(--green-pale); border-color: var(--green); }
-  .nav-btn:disabled { opacity: 0.3; cursor: default; }
-  .team-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
-  .player-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip { padding: 8px 16px; border-radius: 20px; border: 1.5px solid #e0e0e0; background: white; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; color: var(--text); user-select: none; }
-  .chip.wolf { background: var(--green); color: white; border-color: var(--green); }
-  .chip.team { background: var(--green-pale); color: var(--green); border-color: var(--green); }
-  .chip.ghost { background: #f3e5f5; color: #7b1fa2; border-color: #9c27b0; }
-  .chip.greenie-winner { background: var(--gold); border-color: var(--gold); color: white; font-weight: 700; }
-  .chip.wolf-wins { background: #fff3e0; color: #e65100; border-color: #e65100; }
-  .par3-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin-top:10px; }
-  .par3-btn { aspect-ratio:1; border-radius:10px; border:2px solid #ddd; background:white; font-weight:700; font-size:14px; cursor:pointer; color:var(--muted); transition:all 0.15s; }
-  .par3-btn.selected { background:var(--green); border-color:var(--green); color:white; }
-  .greenie-section { background:linear-gradient(135deg,#fffde7,#fff8e1); border:2px solid var(--gold); border-radius:var(--radius); padding:14px; margin-bottom:16px; }
-  .greenie-label { font-size:13px; font-weight:700; color:#8b6914; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
-  .ghost-badge { display:inline-flex;align-items:center;gap:6px;background:#f3e5f5;border:1.5px solid #9c27b0;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;color:#6a1b9a;margin-bottom:8px; }
-  .wolf-select-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; background: #f5f5f5; border-radius: 10px; padding: 12px 14px; }
-  .wolf-icon { font-size: 22px; }
-  .wolf-select-label { font-size: 13px; color: var(--muted); font-weight: 500; }
-  .wolf-name { font-weight: 600; color: var(--green); font-size: 15px; }
-  .money-row { display: flex; align-items: center; gap: 12px; background: #fffbf0; border: 1.5px solid var(--gold); border-radius: 10px; padding: 14px; margin-bottom: 16px; }
-  .money-icon { font-size: 22px; }
-  .money-label { font-size: 13px; color: var(--muted); font-weight: 500; flex: 1; }
-  .money-input-wrap { display: flex; align-items: center; gap: 4px; }
-  .money-input-wrap span { font-weight: 600; color: var(--gold); font-size: 18px; }
-  .money-input-wrap input { max-width: 90px; border-color: var(--gold); }
-  .winner-row { display: flex; gap: 10px; margin-bottom: 16px; }
-  .winner-btn { flex: 1; padding: 11px; border-radius: 10px; border: 1.5px solid #e0e0e0; background: white; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--muted); }
-  .winner-btn.wolf-wins { background: var(--green); color: white; border-color: var(--green); }
-  .winner-btn.team-wins { background: #1565c0; color: white; border-color: #1565c0; }
-  .winner-btn.push { background: #607d8b; color: white; border-color: #607d8b; }
-  .hole-dots { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-bottom: 20px; }
-  .hole-dot { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #ddd; background: white; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.2s; }
-  .hole-dot.current { border-color: var(--green); color: var(--green); box-shadow: 0 0 0 3px rgba(45,90,39,0.15); }
-  .hole-dot.wolf-won { background: var(--green); border-color: var(--green); color: white; }
-  .hole-dot.team-won { background: #1565c0; border-color: #1565c0; color: white; }
-  .hole-dot.pushed { background: #607d8b; border-color: #607d8b; color: white; }
-  .score-table { background: white; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); margin-bottom: 20px; }
-  .score-header { background: var(--green); color: white; display: grid; padding: 12px 16px; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
-  .score-row { display: grid; padding: 14px 16px; border-bottom: 1px solid #f0f0f0; align-items: center; transition: background 0.15s; }
-  .score-row:last-child { border-bottom: none; }
-  .score-row:hover { background: var(--green-pale); }
-  .player-rank { font-size: 12px; color: var(--muted); font-weight: 500; }
-  .player-name-cell { font-weight: 600; font-size: 15px; }
-  .amount-cell { font-family: 'Bebas Neue', sans-serif; font-size: 20px; }
-  .amount-pos { color: var(--green); }
-  .amount-neg { color: #c62828; }
-  .amount-zero { color: var(--muted); }
-  .hole-history { background: white; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px; }
-  .history-header { background: var(--brown); color: white; padding: 12px 16px; font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; }
-  .history-row { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 12px; }
-  .history-row:last-child { border-bottom: none; }
-  .h-num { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--green); width: 28px; flex-shrink: 0; }
-  .h-details { flex: 1; }
-  .h-wolf { font-size: 12px; color: var(--muted); }
-  .h-teams { font-size: 13px; font-weight: 500; margin-top: 2px; }
-  .h-result { font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 20px; }
-  .h-result.wolf-wins { background: #e8f5e3; color: var(--green); }
-  .h-result.team-wins { background: #e3f2fd; color: #1565c0; }
-  .h-result.push { background: #eceff1; color: #607d8b; }
-  .h-money { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--gold); margin-left: 8px; }
-  .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: white; border-top: 1px solid #eee; display: flex; z-index: 100; box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
-  .nav-tab { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 8px; border: none; background: none; cursor: pointer; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s; }
-  .nav-tab .tab-icon { font-size: 22px; margin-bottom: 2px; }
-  .nav-tab.active { color: var(--green); }
-  .mt-12 { margin-top: 12px; }
-  .divider { height: 1px; background: #f0f0f0; margin: 16px 0; }
-  .text-center { text-align: center; }
-  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
-  .empty-icon { font-size: 48px; margin-bottom: 12px; }
-  .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--green); color: white; padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 600; opacity: 0; transition: all 0.3s ease; z-index: 200; pointer-events: none; white-space: nowrap; }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  /* Round code UI */
-  .round-code-box { background: linear-gradient(135deg, var(--green), var(--green-light)); border-radius: 16px; padding: 20px; text-align: center; color: white; margin-bottom: 16px; }
-  .round-code-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.8; margin-bottom: 8px; }
-  .round-code-value { font-family: 'Bebas Neue', sans-serif; font-size: 52px; letter-spacing: 8px; color: var(--gold-light); line-height: 1; }
-  .round-code-share { font-size: 12px; opacity: 0.7; margin-top: 8px; }
-  .join-box { background: white; border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 16px; }
-  .viewer-banner { background: #e3f2fd; border: 1.5px solid #1565c0; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #1565c0; font-weight: 600; margin-bottom: 16px; text-align: center; }
-  .readonly-overlay { pointer-events: none; opacity: 0.6; }
-  .live-pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4caf50; box-shadow: 0 0 0 0 rgba(76,175,80,0.4); animation: pulse 2s infinite; margin-right: 6px; }
-  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(76,175,80,0.4); } 70% { box-shadow: 0 0 0 8px rgba(76,175,80,0); } 100% { box-shadow: 0 0 0 0 rgba(76,175,80,0); } }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 10%,rgba(45,90,39,.08) 0%,transparent 60%),radial-gradient(ellipse at 80% 90%,rgba(201,168,76,.08) 0%,transparent 60%);pointer-events:none;z-index:0;}
+  .app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 0 80px;}
+  .header{background:var(--green);color:white;padding:22px 24px 18px;text-align:center;position:relative;overflow:hidden;}
+  .header::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:24px;background:var(--cream);clip-path:ellipse(55% 100% at 50% 100%);}
+  .header-title{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:3px;color:var(--gold-light);line-height:1;}
+  .header-sub{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-top:3px;}
+  .header-actions{position:absolute;right:14px;top:50%;transform:translateY(-50%);display:flex;gap:6px;align-items:center;}
+  .btn-icon{background:rgba(255,255,255,.15);border:none;border-radius:10px;color:white;padding:7px 11px;cursor:pointer;font-size:17px;}
+  .sync-dot{width:9px;height:9px;border-radius:50%;background:#666;display:inline-block;transition:background .3s;}
+  .sync-dot.live{background:#4caf50;box-shadow:0 0 6px #4caf50;}
+  .sync-dot.error{background:#f44336;}
+  .page{display:none;padding:20px;}
+  .page.active{display:block;animation:fadeIn .22s ease;}
+  .card{background:white;border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin-bottom:14px;}
+  .section-label{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--green);margin-bottom:14px;}
+  .player-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .player-num{width:26px;height:26px;border-radius:50%;background:var(--green);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;}
+  input[type="text"],input[type="number"],select{flex:1;padding:10px 13px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);background:white;transition:border-color .2s;outline:none;width:100%;}
+  input:focus,select:focus{border-color:var(--green);}
+  .btn{display:block;width:100%;padding:14px;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;text-align:center;}
+  .btn-primary{background:var(--green);color:white;}
+  .btn-primary:hover{background:var(--green-light);}
+  .btn-secondary{background:var(--green-pale);color:var(--green);}
+  .btn-gold{background:var(--gold);color:white;}
+  .btn-danger{background:#ffebee;color:#c62828;}
+  .hole-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .hole-indicator{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--green);letter-spacing:2px;line-height:1;}
+  .hole-indicator span{font-size:13px;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400;display:block;text-align:center;}
+  .nav-btn{background:white;border:1.5px solid #e0e0e0;border-radius:10px;padding:9px 16px;font-size:17px;cursor:pointer;color:var(--green);}
+  .nav-btn:disabled{opacity:.3;cursor:default;}
+  .chip{padding:7px 14px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;color:var(--text);user-select:none;display:inline-block;}
+  .chip.active,.chip.team{background:var(--green-pale);color:var(--green);border-color:var(--green);}
+  .chip.wolf-wins{background:#fff3e0;color:#e65100;border-color:#e65100;}
+  .chip.greenie-winner{background:var(--gold);border-color:var(--gold);color:white;font-weight:700;}
+  .chip.ghost{background:#f3e5f5;color:#7b1fa2;border-color:#9c27b0;}
+  .chip.selected-player{background:var(--green);color:white;border-color:var(--green);}
+  .player-chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .team-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+  .winner-row{display:flex;gap:8px;margin-bottom:14px;}
+  .winner-btn{flex:1;padding:10px;border-radius:10px;border:1.5px solid #e0e0e0;background:white;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);}
+  .winner-btn.wolf-wins{background:var(--green);color:white;border-color:var(--green);}
+  .winner-btn.team-wins{background:#1565c0;color:white;border-color:#1565c0;}
+  .winner-btn.push{background:#607d8b;color:white;border-color:#607d8b;}
+  .money-row{display:flex;align-items:center;gap:10px;background:#fffbf0;border:1.5px solid var(--gold);border-radius:10px;padding:12px;margin-bottom:14px;}
+  .money-input-wrap{display:flex;align-items:center;gap:4px;}
+  .money-input-wrap span{font-weight:600;color:var(--gold);font-size:16px;}
+  .money-input-wrap input{max-width:80px;border-color:var(--gold);}
+  .hole-dots{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-bottom:16px;}
+  .hole-dot{width:20px;height:20px;border-radius:50%;border:1.5px solid #ddd;background:white;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:var(--muted);cursor:pointer;}
+  .hole-dot.current{border-color:var(--green);color:var(--green);box-shadow:0 0 0 3px rgba(45,90,39,.15);}
+  .hole-dot.wolf-won{background:var(--green);border-color:var(--green);color:white;}
+  .hole-dot.team-won{background:#1565c0;border-color:#1565c0;color:white;}
+  .hole-dot.pushed{background:#607d8b;border-color:#607d8b;color:white;}
+  .hole-dot.scored{border-color:var(--gold);}
+  .score-table{background:white;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:16px;}
+  .score-header{background:var(--green);color:white;display:grid;padding:10px 14px;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;}
+  .score-row{display:grid;padding:12px 14px;border-bottom:1px solid #f0f0f0;align-items:center;}
+  .score-row:last-child{border-bottom:none;}
+  .amount-cell{font-family:'Bebas Neue',sans-serif;font-size:19px;}
+  .amount-pos{color:var(--green);}
+  .amount-neg{color:#c62828;}
+  .amount-zero{color:var(--muted);}
+  .hole-history{background:white;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px;}
+  .history-header{background:var(--brown);color:white;padding:10px 14px;font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;}
+  .history-row{padding:10px 14px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:10px;}
+  .history-row:last-child{border-bottom:none;}
+  .h-num{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--green);width:26px;flex-shrink:0;}
+  .h-details{flex:1;}
+  .h-wolf{font-size:11px;color:var(--muted);}
+  .h-teams{font-size:12px;font-weight:500;margin-top:2px;}
+  .h-result{font-weight:700;font-size:12px;padding:3px 8px;border-radius:20px;}
+  .h-result.wolf-wins{background:#e8f5e3;color:var(--green);}
+  .h-result.team-wins{background:#e3f2fd;color:#1565c0;}
+  .h-result.push{background:#eceff1;color:#607d8b;}
+  .h-money{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);margin-left:6px;}
+  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:white;border-top:1px solid #eee;display:flex;z-index:100;box-shadow:0 -4px 20px rgba(0,0,0,.08);}
+  .nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px;border:none;background:none;cursor:pointer;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;letter-spacing:.5px;}
+  .nav-tab .tab-icon{font-size:20px;margin-bottom:2px;}
+  .nav-tab.active{color:var(--green);}
+  .divider{height:1px;background:#f0f0f0;margin:14px 0;}
+  .empty-state{text-align:center;padding:32px 20px;color:var(--muted);}
+  .empty-icon{font-size:40px;margin-bottom:10px;}
+  .toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green);color:white;padding:11px 22px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;transition:all .3s ease;z-index:200;pointer-events:none;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  /* Survey */
+  .survey-step{display:none;}.survey-step.active{display:block;}
+  .survey-progress{height:4px;background:#e0e0e0;border-radius:2px;margin-bottom:20px;}
+  .survey-progress-bar{height:100%;background:var(--green);border-radius:2px;transition:width .3s;}
+  .rule-option{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1.5px solid #e0e0e0;border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all .15s;}
+  .rule-option.selected{border-color:var(--green);background:var(--green-pale);}
+  .rule-option-label{font-weight:600;font-size:14px;}
+  .rule-option-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .rule-check{width:22px;height:22px;border-radius:50%;border:2px solid #ddd;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
+  .rule-option.selected .rule-check{background:var(--green);border-color:var(--green);color:white;}
+  /* Course search */
+  .course-result{padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all .15s;}
+  .course-result:hover,.course-result.selected{border-color:var(--green);background:var(--green-pale);}
+  .par-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px;}
+  .par-cell{display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .par-cell-label{font-size:10px;color:var(--muted);font-weight:600;}
+  .par-cell input{width:100%;padding:6px 4px;text-align:center;font-size:14px;font-weight:700;}
+  /* Round code */
+  .round-code-box{background:linear-gradient(135deg,var(--green),var(--green-light));border-radius:14px;padding:18px;text-align:center;color:white;margin-bottom:14px;}
+  .round-code-value{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:8px;color:var(--gold-light);line-height:1;}
+  .live-pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4caf50;box-shadow:0 0 0 0 rgba(76,175,80,.4);animation:pulse 2s infinite;margin-right:5px;}
+  /* Scorecard tab */
+  .sc-grid{display:grid;grid-template-columns:40px repeat(var(--cols,4),1fr);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);}
+  .sc-head{background:var(--green);color:white;padding:8px 4px;font-size:10px;font-weight:700;text-align:center;letter-spacing:.5px;}
+  .sc-cell{background:white;padding:8px 4px;text-align:center;border-bottom:1px solid #f5f5f5;border-right:1px solid #f5f5f5;font-size:13px;}
+  .sc-cell.hole-num{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--green);background:#f9faf9;}
+  .sc-cell.par-cell-d{color:var(--muted);font-size:11px;background:#f9faf9;}
+  .sc-cell.score-input-cell{padding:3px;}
+  .sc-cell.score-input-cell input{width:100%;border:none;text-align:center;font-size:14px;font-weight:700;padding:6px 2px;background:transparent;outline:none;}
+  .sc-cell.rel-pos{color:var(--green);font-weight:700;}
+  .sc-cell.rel-neg{color:#c62828;font-weight:700;}
+  .sc-cell.rel-zero{color:var(--muted);}
+  .sc-cell.totrow{background:var(--green-pale);font-weight:700;font-size:13px;}
+  .identity-chip{padding:10px 16px;border-radius:12px;border:2px solid #e0e0e0;background:white;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center;}
+  .identity-chip.selected{border-color:var(--green);background:var(--green);color:white;}
+  .greenie-section{background:linear-gradient(135deg,#fffde7,#fff8e1);border:2px solid var(--gold);border-radius:var(--radius);padding:12px;margin-bottom:14px;}
+  .par3-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:8px;}
+  .par3-btn{aspect-ratio:1;border-radius:8px;border:2px solid #ddd;background:white;font-weight:700;font-size:13px;cursor:pointer;color:var(--muted);}
+  .par3-btn.selected{background:var(--green);border-color:var(--green);color:white;}
+  .wolf-select-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;background:#f5f5f5;border-radius:10px;padding:11px 13px;}
+  .pressure-banner{background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:12px;padding:12px 14px;margin-bottom:12px;color:white;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(76,175,80,.4);}70%{box-shadow:0 0 0 8px rgba(76,175,80,0);}100%{box-shadow:0 0 0 0 rgba(76,175,80,0);}}
 </style>
 </head>
 <body>
@@ -139,1003 +149,1134 @@
     <div class="header-title">🐺 WOLF</div>
     <div class="header-sub">Golf Money Tracker</div>
     <div class="header-actions">
-      <span id="sync-indicator" title="Sync status" style="display:flex;align-items:center;font-size:11px;color:rgba(255,255,255,0.7);gap:4px;"><span class="sync-dot" id="sync-dot"></span><span id="sync-text"></span></span>
-      <button class="btn-icon" onclick="showPage('setup')" title="Settings">⚙️</button>
+      <span style="display:flex;align-items:center;font-size:10px;color:rgba(255,255,255,.7);gap:3px;"><span class="sync-dot" id="sync-dot"></span><span id="sync-text"></span></span>
     </div>
   </div>
 
-  <!-- LOBBY PAGE -->
+  <!-- LOBBY -->
   <div id="page-lobby" class="page active">
-    <div class="setup-card" style="text-align:center;">
-      <div style="font-size:48px;margin-bottom:12px;">🐺</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green);letter-spacing:2px;margin-bottom:8px;">WOLF GOLF TRACKER</div>
-      <div style="font-size:14px;color:var(--muted);margin-bottom:24px;">Live multiplayer scoring</div>
-      <button class="btn btn-primary" onclick="showPage('setup')" style="margin-bottom:12px;">🏌️ Start New Round</button>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">— or —</div>
-      <div style="font-size:14px;font-weight:600;margin-bottom:8px;">Join a round in progress</div>
+    <div class="card" style="text-align:center;padding:32px 24px;">
+      <div style="font-size:52px;margin-bottom:10px;">🐺</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">WOLF GOLF TRACKER</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:22px;">Live multiplayer · money · scores</div>
+      <button class="btn btn-primary" onclick="showPage('survey')" style="margin-bottom:10px;">🏌️ Start New Round</button>
+      <div style="font-size:12px;color:var(--muted);margin:12px 0;">— or join a round in progress —</div>
       <div style="display:flex;gap:8px;">
-        <input type="text" id="join-code-input" placeholder="Enter 6-digit code" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-size:18px;font-weight:700;text-align:center;">
-        <button onclick="joinRound()" style="padding:12px 18px;border-radius:10px;border:none;background:var(--gold);color:white;font-weight:700;font-size:16px;cursor:pointer;white-space:nowrap;">Join →</button>
+        <input type="text" id="join-code-input" placeholder="Enter 6-digit code" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-size:17px;font-weight:700;text-align:center;">
+        <button onclick="joinRound()" style="padding:11px 16px;border-radius:10px;border:none;background:var(--gold);color:white;font-weight:700;font-size:15px;cursor:pointer;white-space:nowrap;">Join →</button>
       </div>
     </div>
   </div>
 
-  <!-- SETUP PAGE -->
-  <div id="page-setup" class="page">
-    <div id="round-code-display" style="display:none;"></div>
+  <!-- SURVEY -->
+  <div id="page-survey" class="page">
+    <div class="card">
+      <div class="survey-progress"><div class="survey-progress-bar" id="survey-bar" style="width:0%"></div></div>
+      <div id="survey-steps"></div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="btn btn-secondary" id="survey-back" onclick="surveyBack()" style="display:none;">← Back</button>
+        <button class="btn btn-primary" id="survey-next" onclick="surveyNext()">Next →</button>
+      </div>
+    </div>
+  </div>
 
-    <div class="setup-card">
+  <!-- SETUP (players + wager, after survey) -->
+  <div id="page-setup" class="page">
+    <div id="round-code-display"></div>
+    <div class="card">
       <div class="section-label">👥 Players (2–6)</div>
       <div id="player-inputs">
-        <div class="player-row"><div class="player-num">1</div><input type="text" class="player-name" placeholder="Player 1 name" value=""></div>
-        <div class="player-row"><div class="player-num">2</div><input type="text" class="player-name" placeholder="Player 2 name" value=""></div>
-        <div class="player-row"><div class="player-num">3</div><input type="text" class="player-name" placeholder="Player 3 name" value=""></div>
-        <div class="player-row"><div class="player-num">4</div><input type="text" class="player-name" placeholder="Player 4 name" value=""></div>
+        <div class="player-row"><div class="player-num">1</div><input type="text" class="player-name" placeholder="Player 1"></div>
+        <div class="player-row"><div class="player-num">2</div><input type="text" class="player-name" placeholder="Player 2"></div>
+        <div class="player-row"><div class="player-num">3</div><input type="text" class="player-name" placeholder="Player 3"></div>
+        <div class="player-row"><div class="player-num">4</div><input type="text" class="player-name" placeholder="Player 4"></div>
       </div>
-      <button class="btn btn-secondary mt-12" onclick="addPlayer()">+ Add Player</button>
+      <button class="btn btn-secondary" onclick="addPlayer()" style="margin-top:10px;">+ Add Player</button>
     </div>
-
-    <div class="setup-card">
+    <div class="card">
       <div class="section-label">💰 Wager Per Hole</div>
-      <div class="amount-row">
-        <div class="dollar-prefix">$</div>
-        <input type="number" id="wager-input" placeholder="5" min="1" step="1" style="max-width:120px;">
-        <span style="color:var(--muted);font-size:14px;">per hole</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;font-weight:600;color:var(--green);">$</span>
+        <input type="number" id="wager-input" placeholder="5" min="1" step="1" style="max-width:110px;">
+        <span style="color:var(--muted);font-size:13px;">per hole</span>
       </div>
     </div>
-
-    <div class="setup-card">
-      <div class="section-label">🏌️ Wolf Rotation</div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Wolf rotates each hole in player order. Holes 16–18 order by standings.</p>
-      <div id="wolf-order" style="display:flex;flex-direction:column;gap:8px;"></div>
-    </div>
-
-    <div class="setup-card" id="ghost-card" style="display:none;">
+    <!-- Ghost card -->
+    <div class="card" id="ghost-card" style="display:none;">
       <div class="section-label">👻 Ghost Player</div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">With only 3 players, enable a ghost as the 4th slot.</p>
-      <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
-        <input type="checkbox" id="ghost-check" style="width:20px;height:20px;accent-color:var(--green);">
-        <span style="font-weight:600;font-size:15px;" id="ghost-label">Ghost Player: Off</span>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">3 players only — ghost fills 4th slot.</p>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <input type="checkbox" id="ghost-check" style="width:18px;height:18px;accent-color:var(--green);">
+        <span style="font-weight:600;font-size:14px;" id="ghost-label">Ghost: Off</span>
       </label>
-      <div id="ghost-name-wrap" style="display:none;margin-top:12px;">
-        <input type="text" id="ghost-name-input" placeholder="Ghost name (e.g. Billy Bogey)" style="width:100%;">
+      <div id="ghost-name-wrap" style="display:none;margin-top:10px;">
+        <input type="text" id="ghost-name-input" placeholder="Ghost name">
       </div>
     </div>
-
-    <div class="setup-card" id="greenies-card">
-      <div class="section-label">🏆 Greenies</div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Closest to the pin on par 3s. Tracked separately from wolf game.</p>
-      <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
-        <input type="checkbox" id="greenies-check" onchange="toggleGreeniesCheck()" style="width:20px;height:20px;accent-color:var(--green);">
-        <span style="font-weight:600;font-size:15px;" id="greenies-label">Greenies: Off</span>
-      </label>
-      <div id="greenies-holes-wrap" style="display:none;margin-top:16px;">
-        <div class="amount-row" style="margin-bottom:16px;">
-          <div class="dollar-prefix">$</div>
-          <input type="number" id="greenie-wager-input" placeholder="2" min="1" step="1" style="max-width:120px;" oninput="updateGreenieNote()">
-          <span style="color:var(--muted);font-size:14px;">per greenie</span>
-        </div>
-        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;">Which holes are Par 3s?</div>
-        <div class="par3-grid" id="par3-grid"></div>
-      </div>
+    <!-- Who are you -->
+    <div class="card" id="identity-card">
+      <div class="section-label">🙋 Who Are You?</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Select yourself so your score is linked to your name.</p>
+      <div id="identity-chips" class="player-chips" style="gap:10px;"></div>
     </div>
-
     <button class="btn btn-primary" onclick="startRound()">Start Round →</button>
   </div>
 
-  <!-- SCORECARD PAGE -->
+  <!-- SCORECARD (wolf game) -->
   <div id="page-scorecard" class="page">
-    <div id="viewer-banner" style="display:none;" class="viewer-banner">👁️ Viewing live — <span id="viewer-code-display"></span></div>
+    <div id="viewer-banner" style="display:none;background:#e3f2fd;border:1.5px solid #1565c0;border-radius:10px;padding:9px 13px;font-size:12px;color:#1565c0;font-weight:600;margin-bottom:12px;text-align:center;">
+      👁️ Viewing live as <span id="viewer-name-display">Viewer</span>
+    </div>
     <div class="hole-dots" id="hole-dots"></div>
-
-    <div class="setup-card" id="scorecard-inner">
+    <div class="card" id="scorecard-inner">
       <div class="hole-nav">
         <button class="nav-btn" id="prev-btn" onclick="prevHole()">←</button>
-        <div class="text-center">
+        <div style="text-align:center;">
           <div class="hole-indicator">HOLE <span id="hole-num-display">1</span></div>
         </div>
         <button class="nav-btn" id="next-btn" onclick="nextHole()">→</button>
       </div>
-
-      <div id="pressure-banner" style="display:none;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:12px;padding:12px 16px;margin-bottom:14px;color:white;">
-        <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:#f0d080;margin-bottom:6px;">⚡ PRESSURE HOLE — ORDER BY STANDINGS</div>
-        <div id="pressure-order" style="font-size:13px;font-weight:600;line-height:1.8;"></div>
-        <div style="margin-top:8px;font-size:11px;color:#aaa;">🐺 Wolf sets the $/hole for this hole</div>
+      <div id="pressure-banner-el" style="display:none;" class="pressure-banner">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:#f0d080;margin-bottom:5px;">⚡ PRESSURE HOLE — ORDER BY STANDINGS</div>
+        <div id="pressure-order" style="font-size:12px;font-weight:600;line-height:1.8;"></div>
+        <div style="margin-top:6px;font-size:10px;color:#aaa;">🐺 Wolf sets the $/hole</div>
       </div>
-
       <div class="wolf-select-row">
-        <div class="wolf-icon">🐺</div>
-        <div>
-          <div class="wolf-select-label">WOLF THIS HOLE</div>
-          <div class="wolf-name" id="wolf-display">—</div>
+        <span style="font-size:20px;">🐺</span>
+        <div><div style="font-size:11px;color:var(--muted);font-weight:500;">WOLF THIS HOLE</div><div style="font-weight:700;color:var(--green);font-size:14px;" id="wolf-display">—</div></div>
+      </div>
+      <!-- Wolf mode -->
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;color:var(--muted);font-weight:500;margin-bottom:7px;">Wolf Mode</div>
+        <div style="display:flex;gap:6px;">
+          <button id="btn-big-wolf" onclick="setWolfMode('big')" style="flex:1;padding:9px 4px;border-radius:10px;border:2px solid #ddd;background:white;font-size:11px;font-weight:700;cursor:pointer;color:var(--muted);">🐺 Big Wolf<br><span style="font-weight:400;font-size:9px;">Solo·×2</span></button>
+          <button id="btn-lil-wolf" onclick="setWolfMode('lil')" style="flex:1;padding:9px 4px;border-radius:10px;border:2px solid #ddd;background:white;font-size:11px;font-weight:700;cursor:pointer;color:var(--muted);">😅 Lil Wolf<br><span style="font-weight:400;font-size:9px;">Solo·flat</span></button>
+          <button id="btn-no-wolf-mode" onclick="setWolfMode('none')" style="flex:1;padding:9px 4px;border-radius:10px;border:2px solid var(--green);background:var(--green-pale);font-size:11px;font-weight:700;cursor:pointer;color:var(--green);">🤝 Partner<br><span style="font-weight:400;font-size:9px;">Pick team</span></button>
         </div>
       </div>
-
-      <div style="margin-bottom:16px;">
-        <div style="font-size:13px;color:var(--muted);font-weight:500;margin-bottom:8px;">Wolf Mode</div>
-        <div style="display:flex;gap:8px;">
-          <button id="btn-big-wolf" onclick="setWolfMode('big')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid #ddd;background:white;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s;color:var(--muted);">🐺 Big Wolf<br><span style="font-weight:400;font-size:10px;">Solo · ×2</span></button>
-          <button id="btn-lil-wolf" onclick="setWolfMode('lil')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid #ddd;background:white;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s;color:var(--muted);">😅 Lil Wolf<br><span style="font-weight:400;font-size:10px;">Solo · flat $</span></button>
-          <button id="btn-no-wolf-mode" onclick="setWolfMode('none')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid var(--green);background:var(--green-pale);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s;color:var(--green);">🤝 Partner<br><span style="font-weight:400;font-size:10px;">Pick teammate</span></button>
+      <!-- Double / re-double (shown only if rules allow) -->
+      <div id="double-section" style="display:none;">
+        <div style="display:flex;gap:10px;margin-bottom:10px;align-items:center;">
+          <span style="font-size:12px;color:var(--muted);font-weight:500;min-width:72px;">Double?</span>
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;">
+            <input type="checkbox" id="double-check" onchange="toggleDouble()" style="width:17px;height:17px;accent-color:#9c27b0;">
+            <span style="font-size:12px;font-weight:600;color:#6a1b9a;" id="double-label">Off</span>
+          </label>
+          <span style="font-size:10px;color:var(--muted);">Non-wolf ×2</span>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;">
+          <span style="font-size:12px;color:var(--muted);font-weight:500;min-width:72px;">Re-Double?</span>
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;">
+            <input type="checkbox" id="redouble-check" onchange="toggleReDouble()" style="width:17px;height:17px;accent-color:var(--green);" disabled>
+            <span style="font-size:12px;font-weight:600;color:var(--green);" id="redouble-label">Off</span>
+          </label>
+          <span style="font-size:10px;color:var(--muted);">Wolf ×2</span>
         </div>
       </div>
-
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-        <span style="font-size:13px;color:var(--muted);font-weight:500;">Double?</span>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-          <input type="checkbox" id="double-check" onchange="toggleDouble()" style="width:18px;height:18px;accent-color:#9c27b0;">
-          <span style="font-size:13px;font-weight:600;color:#6a1b9a;" id="double-label">Off</span>
-        </label>
-        <span style="font-size:11px;color:var(--muted);">Non-wolf team doubles ×2</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <span style="font-size:13px;color:var(--muted);font-weight:500;">Re-Double?</span>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-          <input type="checkbox" id="redouble-check" onchange="toggleReDouble()" style="width:18px;height:18px;accent-color:var(--green);" disabled>
-          <span style="font-size:13px;font-weight:600;color:var(--green);" id="redouble-label">Off</span>
-        </label>
-        <span style="font-size:11px;color:var(--muted);">Wolf team re-doubles ×2</span>
-      </div>
-
       <div id="team-section">
-        <div class="team-label">Wolf's Team (select partners)</div>
+        <div class="team-label">Wolf's Team</div>
         <div class="player-chips" id="partner-chips"></div>
       </div>
-
       <div class="divider"></div>
-      <div class="team-label" style="margin-bottom:8px;">Result</div>
+      <div class="team-label" style="margin-bottom:6px;">Result</div>
       <div class="winner-row">
         <button class="winner-btn" id="btn-wolf-wins" onclick="setWinner('wolf')">🐺 Wolf Wins</button>
         <button class="winner-btn" id="btn-team-wins" onclick="setWinner('team')">🤝 Team Wins</button>
         <button class="winner-btn" id="btn-push" onclick="setWinner('push')">↔ Push</button>
       </div>
-
       <div class="money-row">
-        <div class="money-icon">💵</div>
-        <div class="money-label">Base amount per player</div>
-        <div class="money-input-wrap">
-          <span>$</span>
-          <input type="number" id="hole-money" placeholder="5" min="0" step="1" oninput="updatePayoutNote()">
-        </div>
+        <span style="font-size:20px;">💵</span>
+        <span style="font-size:12px;color:var(--muted);font-weight:500;flex:1;">Base $/player</span>
+        <div class="money-input-wrap"><span>$</span><input type="number" id="hole-money" placeholder="5" min="0" step="1" oninput="updatePayoutNote()"></div>
       </div>
-
-      <div id="big-wolf-payout-note" style="display:none;background:#fff3e0;border:1.5px solid #e65100;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:12px;color:#bf360c;font-weight:600;line-height:1.5;">
-        🐺 Big Wolf goes solo — auto ×2 — wins or loses $<span id="lw-2x">0</span><br>
-        <span style="font-weight:500;color:#e65100;">Each opponent wins/loses $<span id="lw-1x">0</span></span>
+      <!-- Payout notes -->
+      <div id="big-wolf-note" style="display:none;background:#fff3e0;border:1.5px solid #e65100;border-radius:9px;padding:9px 12px;margin-bottom:8px;font-size:11px;color:#bf360c;font-weight:600;line-height:1.5;">🐺 Big Wolf solo — ×2 — wins/loses $<span id="lw-2x">0</span><br><span style="font-weight:500;">Each opp: $<span id="lw-1x">0</span></span></div>
+      <div id="lil-wolf-note" style="display:none;background:#fce4ec;border:1.5px solid #e91e63;border-radius:9px;padding:9px 12px;margin-bottom:8px;font-size:11px;color:#880e4f;font-weight:600;line-height:1.5;">😅 Lil Wolf solo — flat — wins/loses $<span id="lw-lil-2x">0</span><br><span style="font-weight:500;">Each opp: $<span id="lw-lil-1x">0</span></span></div>
+      <div id="double-note" style="display:none;background:#f3e5f5;border:1.5px solid #9c27b0;border-radius:9px;padding:9px 12px;margin-bottom:8px;font-size:11px;color:#6a1b9a;font-weight:600;">🔴 Doubled → $<span id="d-amt">0</span>/person</div>
+      <div id="redouble-note" style="display:none;background:#e8f5e3;border:1.5px solid var(--green);border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:var(--green);font-weight:600;">🟢 Re-Doubled → $<span id="rd-amt">0</span>/person</div>
+      <div id="ghost-note" style="display:none;background:#f3e5f5;border:1.5px solid #9c27b0;border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:#6a1b9a;font-weight:600;">👻 Ghost net split among 3 real players</div>
+      <!-- Birdie / Eagle (shown only if rules allow) -->
+      <div id="birdie-section" style="display:none;">
+        <div class="divider"></div>
+        <div class="team-label" style="margin-bottom:6px;">🐦 Birdie — doubles the hole</div>
+        <div class="player-chips" id="birdie-chips" style="margin-bottom:12px;"></div>
+        <div id="birdie-note" style="display:none;background:#e8f5e3;border:1.5px solid var(--green);border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:var(--green);font-weight:600;">🐦 Birdie! → $<span id="birdie-amt">0</span></div>
+        <div class="team-label" style="margin-bottom:6px;">🦅 Eagle — triples the hole</div>
+        <div class="player-chips" id="eagle-chips" style="margin-bottom:12px;"></div>
+        <div id="eagle-note" style="display:none;background:#fff3e0;border:1.5px solid #e65100;border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:#bf360c;font-weight:600;">🦅 Eagle! → $<span id="eagle-amt">0</span></div>
       </div>
-      <div id="lil-wolf-payout-note" style="display:none;background:#fce4ec;border:1.5px solid #e91e63;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:12px;color:#880e4f;font-weight:600;line-height:1.5;">
-        😅 Lil Wolf goes solo — flat $ — wins or loses $<span id="lw-lil-2x">0</span><br>
-        <span style="font-weight:500;color:#e91e63;">Each opponent wins/loses $<span id="lw-lil-1x">0</span></span>
-      </div>
-      <div id="double-payout-note" style="display:none;background:#f3e5f5;border:1.5px solid #9c27b0;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:12px;color:#6a1b9a;font-weight:600;">
-        🔴 Doubled! Hole is now worth $<span id="d-amt">0</span>/person
-      </div>
-      <div id="redouble-payout-note" style="display:none;background:#e8f5e3;border:1.5px solid var(--green);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--green);font-weight:600;">
-        🟢 Re-Doubled! Hole is now worth $<span id="rd-amt">0</span>/person
-      </div>
-      <div id="ghost-payout-note" style="display:none;background:#f3e5f5;border:1.5px solid #9c27b0;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#6a1b9a;font-weight:600;">
-        👻 Ghost's net is split equally among the 3 real players
-      </div>
-
-      <div class="divider"></div>
-      <div class="team-label" style="margin-bottom:8px;">🐦 Birdie — doubles the hole</div>
-      <div class="player-chips" id="birdie-chips" style="margin-bottom:16px;"></div>
-      <div id="birdie-active-note" style="display:none;background:#e8f5e3;border:1.5px solid var(--green);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--green);font-weight:600;">
-        🐦 Birdie! Hole amount doubled → $<span id="birdie-doubled-amt">0</span>
-      </div>
-
-      <div class="team-label" style="margin-bottom:8px;">🦅 Eagle — triples the hole</div>
-      <div class="player-chips" id="eagle-chips" style="margin-bottom:16px;"></div>
-      <div id="eagle-active-note" style="display:none;background:#fff3e0;border:1.5px solid #e65100;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#bf360c;font-weight:600;">
-        🦅 Eagle! Hole amount tripled → $<span id="eagle-tripled-amt">0</span>
-      </div>
-
+      <!-- Greenie -->
       <div id="greenie-section" style="display:none;">
         <div class="divider"></div>
         <div class="greenie-section">
-          <div class="greenie-label">🏆 Par 3 — Who's closest to the pin?</div>
+          <div style="font-size:12px;font-weight:700;color:#8b6914;margin-bottom:8px;">🏆 Par 3 — Closest to pin?</div>
           <div class="player-chips" id="greenie-chips"></div>
-          <div id="greenie-note" style="display:none;margin-top:10px;font-size:12px;color:#8b6914;font-weight:600;">
-            🏆 <span id="greenie-winner-name"></span> wins the greenie — collects $<span id="greenie-amt"></span> from each player
-          </div>
+          <div id="greenie-note" style="display:none;margin-top:8px;font-size:11px;color:#8b6914;font-weight:600;">🏆 <span id="greenie-winner-name"></span> — collects $<span id="greenie-amt-note"></span></div>
         </div>
       </div>
-
-      <button class="btn btn-primary" onclick="saveHole()">Save Hole ✓</button>
+      <button class="btn btn-primary" id="save-hole-btn" onclick="saveHole()">Save Hole ✓</button>
     </div>
   </div>
 
-  <!-- SCOREBOARD PAGE -->
+  <!-- SCORECARD TAB (stroke scores) -->
+  <div id="page-scores" class="page">
+    <div id="my-score-entry" style="display:none;">
+      <div class="card">
+        <div class="section-label">✏️ Enter Your Score</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Playing as: <strong id="my-name-display">—</strong> &nbsp;·&nbsp; <span id="my-course-display" style="color:var(--green);font-weight:600;"></span></div>
+        <div class="hole-nav" style="margin-bottom:10px;">
+          <button class="nav-btn" id="sc-prev-btn" onclick="scPrevHole()">←</button>
+          <div style="text-align:center;">
+            <div class="hole-indicator">HOLE <span id="sc-hole-num">1</span></div>
+            <div style="font-size:11px;color:var(--muted);">Par <span id="sc-par-display">—</span></div>
+          </div>
+          <button class="nav-btn" id="sc-next-btn" onclick="scNextHole()">→</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:14px;">
+          <button onclick="adjustScore(-1)" style="width:44px;height:44px;border-radius:50%;border:2px solid var(--green);background:white;font-size:22px;font-weight:700;cursor:pointer;color:var(--green);">−</button>
+          <div style="text-align:center;">
+            <input type="number" id="my-score-input" min="1" max="20" style="width:70px;text-align:center;font-size:28px;font-weight:700;border:2px solid var(--green);border-radius:10px;padding:8px 4px;" oninput="saveMyScore()">
+            <div id="score-vs-par" style="font-size:13px;font-weight:600;margin-top:4px;color:var(--muted);">—</div>
+          </div>
+          <button onclick="adjustScore(1)" style="width:44px;height:44px;border-radius:50%;border:2px solid var(--green);background:white;font-size:22px;font-weight:700;cursor:pointer;color:var(--green);">+</button>
+        </div>
+        <button class="btn btn-secondary" onclick="scNextHole()" style="font-size:13px;padding:10px;">Next Hole →</button>
+      </div>
+    </div>
+    <!-- Full scorecard grid -->
+    <div class="card" style="padding:14px;overflow-x:auto;">
+      <div class="section-label">📋 Full Scorecard</div>
+      <div id="full-scorecard-grid"></div>
+    </div>
+  </div>
+
+  <!-- SCOREBOARD -->
   <div id="page-scoreboard" class="page">
-    <div id="scoreboard-round-code" style="display:none;margin-bottom:12px;"></div>
-    <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);padding:0 4px 6px;">🐺 WOLF GAME</div>
-    <div class="score-table" id="scoreboard-table">
-      <div class="empty-state"><div class="empty-icon">📊</div><p>No holes played yet.</p></div>
+    <div id="scoreboard-code-display" style="display:none;margin-bottom:10px;"></div>
+    <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);padding:0 4px 5px;">🐺 WOLF GAME</div>
+    <div class="score-table" id="scoreboard-table"><div class="empty-state"><div class="empty-icon">📊</div><p>No holes yet.</p></div></div>
+    <div id="greenie-board-wrap" style="display:none;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:#8b6914;padding:12px 4px 5px;">🏆 GREENIES</div>
+      <div class="score-table" id="greenie-board-table"></div>
     </div>
-    <div id="greenie-scoreboard-wrap" style="display:none;">
-      <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:#8b6914;padding:16px 4px 6px;">🏆 GREENIES</div>
-      <div class="score-table" id="greenie-scoreboard-table"></div>
-    </div>
-    <div class="hole-history" id="hole-history">
-      <div class="history-header">Hole Log</div>
-      <div class="empty-state"><p style="padding:20px;font-size:13px;">Holes will appear here after saving.</p></div>
-    </div>
-    <button class="btn btn-danger" onclick="resetRound()" style="margin-bottom:8px;">🔄 New Round</button>
+    <div class="hole-history" id="hole-history"><div class="history-header">Hole Log</div><div class="empty-state"><p style="padding:16px;font-size:12px;">No holes saved yet.</p></div></div>
+    <button class="btn btn-danger" onclick="resetRound()">🔄 New Round</button>
   </div>
 </div>
 
 <!-- Bottom Nav -->
 <div class="bottom-nav">
   <button class="nav-tab active" id="nav-lobby" onclick="showPage('lobby')"><span class="tab-icon">🏠</span>Home</button>
-  <button class="nav-tab" id="nav-setup" onclick="showPage('setup')"><span class="tab-icon">⚙️</span>Setup</button>
-  <button class="nav-tab" id="nav-scorecard" onclick="showPage('scorecard')"><span class="tab-icon">🏌️</span>Scorecard</button>
-  <button class="nav-tab" id="nav-scoreboard" onclick="showPage('scoreboard')"><span class="tab-icon">🏆</span>Scores</button>
+  <button class="nav-tab" id="nav-scorecard" onclick="showPage('scorecard')"><span class="tab-icon">🏌️</span>Wolf</button>
+  <button class="nav-tab" id="nav-scores" onclick="showPage('scores')"><span class="tab-icon">📋</span>Scores</button>
+  <button class="nav-tab" id="nav-scoreboard" onclick="showPage('scoreboard')"><span class="tab-icon">🏆</span>Money</button>
 </div>
 <div class="toast" id="toast"></div>
 
-<!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCeU8tT60AsT47IGx9efacNf7cBzVyubWk",
-  authDomain: "big-bad-wolf-8de0a.firebaseapp.com",
-  projectId: "big-bad-wolf-8de0a",
-  storageBucket: "big-bad-wolf-8de0a.firebasestorage.app",
-  messagingSenderId: "696707211809",
-  appId: "1:696707211809:web:cff2d5e60bb72386a13960"
-};
-
-const fbApp = initializeApp(firebaseConfig);
+const fbApp = initializeApp({
+  apiKey:"AIzaSyCeU8tT60AsT47IGx9efacNf7cBzVyubWk",
+  authDomain:"big-bad-wolf-8de0a.firebaseapp.com",
+  projectId:"big-bad-wolf-8de0a",
+  storageBucket:"big-bad-wolf-8de0a.firebasestorage.app",
+  messagingSenderId:"696707211809",
+  appId:"1:696707211809:web:cff2d5e60bb72386a13960"
+});
 const db = getFirestore(fbApp);
 
 // ── State ──
 let state = {
-  players: [], wager: 5, wolfOrder: [], currentHole: 1, holes: {},
-  ghostEnabled: false, ghostName: 'Ghost',
-  greeniesEnabled: false, par3Holes: [], greenieWager: 2,
-  roundCode: null
+  players:[], wager:5, wolfOrder:[], currentHole:1, holes:{},
+  ghostEnabled:false, ghostName:'Ghost',
+  greeniesEnabled:false, par3Holes:[], greenieWager:2,
+  roundCode:null,
+  // rule flags (from survey)
+  rules:{ reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true },
+  // course data
+  courseName:'', coursePar:Array(18).fill(4), // par per hole 1-18
+  // stroke scores: { playerName: { 1: strokes, 2: strokes, ... } }
+  strokes:{},
+  myName: null // which player this device is
 };
-let isScorer = false;   // true = created the round; false = viewer
-let unsubscribe = null; // Firestore listener
+let isScorer = false;
+let unsubscribe = null;
 let saveTimeout = null;
+let scCurrentHole = 1;
 
-// ── Sync status ──
-function setSyncStatus(status) {
-  const dot = document.getElementById('sync-dot');
-  const txt = document.getElementById('sync-text');
-  if (status === 'live') { dot.className = 'sync-dot live'; txt.textContent = 'LIVE'; }
-  else if (status === 'saving') { dot.className = 'sync-dot'; txt.textContent = 'Saving…'; }
-  else if (status === 'error') { dot.className = 'sync-dot error'; txt.textContent = 'Offline'; }
-  else { dot.className = 'sync-dot'; txt.textContent = ''; }
+// ── Survey definition ──
+const surveySteps = [
+  {
+    id:'course', title:'⛳ Which course are you playing?',
+    render: renderCourseStep, validate: () => true
+  },
+  {
+    id:'reshuffle', title:'🔀 Reshuffle order on holes 16–18?',
+    sub:'Order based on who\'s losing the most money.',
+    options:[{v:true,label:'Yes — reshuffle',sub:'Most behind = wolf'},{v:false,label:'No — keep original order',sub:'Wolf rotation stays fixed'}],
+    key:'reshuffleOn16'
+  },
+  {
+    id:'birdies', title:'🐦 Do birdies & eagles affect the hole?',
+    options:[{v:true,label:'Yes',sub:'Birdie ×2, Eagle ×3'},{v:false,label:'No',sub:'Stroke bonuses not used'}],
+    key:'birdiesEagles'
+  },
+  {
+    id:'doubles', title:'🔴 Allow doubles & re-doubles?',
+    options:[{v:true,label:'Yes',sub:'Non-wolf can double, wolf can re-double'},{v:false,label:'No',sub:'No doubling'}],
+    key:'doubles'
+  },
+  {
+    id:'greenies', title:'🏆 Play greenies on par 3s?',
+    options:[{v:true,label:'Yes',sub:'Closest to pin wins'},{v:false,label:'No',sub:'Skip greenies'}],
+    key:'greenies'
+  },
+  {
+    id:'wolfmodes', title:'🐺 Which wolf modes are allowed?',
+    multi: true,
+    options:[{v:'bigWolf',label:'Big Wolf',sub:'Solo · auto ×2'},{v:'lilWolf',label:'Lil Wolf',sub:'Solo · flat bet'}],
+    key:'wolfModes'
+  }
+];
+let surveyStep = 0;
+let surveyAnswers = { reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true };
+let courseParTemp = Array(18).fill(4);
+let courseNameTemp = '';
+
+// ── Survey rendering ──
+function renderSurvey() {
+  const steps = document.getElementById('survey-steps');
+  const step = surveySteps[surveyStep];
+  const pct = Math.round((surveyStep / surveySteps.length) * 100);
+  document.getElementById('survey-bar').style.width = pct + '%';
+  document.getElementById('survey-back').style.display = surveyStep > 0 ? 'block' : 'none';
+
+  if (step.id === 'course') { steps.innerHTML = ''; renderCourseStep(steps); return; }
+
+  let html = `<div style="font-size:16px;font-weight:700;margin-bottom:6px;">${step.title}</div>`;
+  if (step.sub) html += `<div style="font-size:12px;color:var(--muted);margin-bottom:14px;">${step.sub}</div>`;
+
+  if (step.multi) {
+    step.options.forEach(opt => {
+      const sel = surveyAnswers[opt.v + 'Allowed'] !== false;
+      html += `<div class="rule-option ${sel?'selected':''}" onclick="toggleMultiSurvey('${opt.v}',this)">
+        <div><div class="rule-option-label">${opt.label}</div><div class="rule-option-sub">${opt.sub}</div></div>
+        <div class="rule-check">${sel?'✓':''}</div></div>`;
+    });
+  } else {
+    step.options.forEach(opt => {
+      const sel = surveyAnswers[step.key] === opt.v;
+      html += `<div class="rule-option ${sel?'selected':''}" onclick="setSurveyAnswer('${step.key}',${JSON.stringify(opt.v)},this)">
+        <div><div class="rule-option-label">${opt.label}</div><div class="rule-option-sub">${opt.sub}</div></div>
+        <div class="rule-check">${sel?'✓':''}</div></div>`;
+    });
+  }
+  steps.innerHTML = html;
+
+  // If greenies selected yes, show greenie wager + par3 picker
+  if (step.id === 'greenies' && surveyAnswers.greenies) renderGreeniesConfig(steps);
 }
 
-// ── Firebase save (debounced 400ms) ──
+function renderCourseStep(container) {
+  container.innerHTML = `
+    <div style="font-size:16px;font-weight:700;margin-bottom:6px;">⛳ Which course are you playing?</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">We'll auto-fill the par for each hole.</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <input type="text" id="course-search-input" placeholder="e.g. Pebble Beach Golf Links" style="flex:1;">
+      <button onclick="lookupCourse()" style="padding:10px 14px;border-radius:10px;border:none;background:var(--green);color:white;font-weight:600;font-size:13px;cursor:pointer;">Look up</button>
+    </div>
+    <div id="course-lookup-result"></div>
+    <div id="course-par-editor" style="display:none;">
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;" id="course-par-title">Par per hole</div>
+      <div class="par-grid" id="par-grid-inputs"></div>
+    </div>`;
+  if (courseNameTemp) renderParEditor();
+}
+
+function renderGreeniesConfig(container) {
+  const div = document.createElement('div');
+  div.style.marginTop = '14px';
+  div.innerHTML = `
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;">$ per greenie</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <span style="font-size:18px;font-weight:600;color:var(--green);">$</span>
+      <input type="number" id="greenie-wager-survey" value="${surveyAnswers.greenieWager||2}" min="1" step="1" style="max-width:100px;" oninput="surveyAnswers.greenieWager=parseFloat(this.value)||2;">
+    </div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:6px;">Which holes are Par 3s?</div>
+    <div class="par3-grid" id="survey-par3-grid"></div>`;
+  container.appendChild(div);
+  const grid = div.querySelector('#survey-par3-grid');
+  for (let i=1;i<=18;i++) {
+    const b = document.createElement('button');
+    b.className = 'par3-btn' + (courseParTemp[i-1]===3?' selected':'');
+    b.textContent = i;
+    b.onclick = () => { b.classList.toggle('selected'); if(!surveyAnswers.par3Holes) surveyAnswers.par3Holes=[]; const idx=surveyAnswers.par3Holes.indexOf(i); if(idx>-1) surveyAnswers.par3Holes.splice(idx,1); else surveyAnswers.par3Holes.push(i); };
+    grid.appendChild(b);
+  }
+  // Pre-fill par3 holes from courseParTemp
+  if (!surveyAnswers.par3Holes) surveyAnswers.par3Holes = courseParTemp.map((p,i)=>p===3?i+1:-1).filter(x=>x>0);
+}
+
+window.setSurveyAnswer = function(key, val, el) {
+  surveyAnswers[key] = val;
+  el.closest('.card') ? null : null;
+  document.querySelectorAll(`[onclick*="${key}"]`).forEach(e => {
+    e.classList.remove('selected'); e.querySelector('.rule-check').textContent='';
+  });
+  el.classList.add('selected'); el.querySelector('.rule-check').textContent='✓';
+  // Show greenie config if yes selected
+  if (key==='greenies') {
+    const steps = document.getElementById('survey-steps');
+    const existing = steps.querySelector('#greenie-wager-survey');
+    if (val && !existing) renderGreeniesConfig(steps);
+    if (!val) { const d=steps.querySelector('#survey-par3-grid'); if(d) d.closest('div').remove(); }
+  }
+};
+
+window.toggleMultiSurvey = function(key, el) {
+  const k = key + 'Allowed';
+  surveyAnswers[k] = !surveyAnswers[k];
+  el.classList.toggle('selected', surveyAnswers[k]);
+  el.querySelector('.rule-check').textContent = surveyAnswers[k] ? '✓' : '';
+};
+
+window.surveyNext = function() {
+  surveyStep++;
+  if (surveyStep >= surveySteps.length) { finishSurvey(); return; }
+  renderSurvey();
+};
+window.surveyBack = function() {
+  if (surveyStep > 0) { surveyStep--; renderSurvey(); }
+};
+
+function finishSurvey() {
+  state.rules = {
+    reshuffleOn16: surveyAnswers.reshuffleOn16,
+    birdiesEagles: surveyAnswers.birdiesEagles,
+    doubles: surveyAnswers.doubles,
+    greenies: surveyAnswers.greenies,
+    bigWolfAllowed: surveyAnswers.bigWolfAllowed !== false,
+    lilWolfAllowed: surveyAnswers.lilWolfAllowed !== false,
+  };
+  state.courseName = courseNameTemp;
+  state.coursePar = [...courseParTemp];
+  state.greeniesEnabled = surveyAnswers.greenies;
+  state.greenieWager = surveyAnswers.greenieWager || 2;
+  state.par3Holes = surveyAnswers.par3Holes || courseParTemp.map((p,i)=>p===3?i+1:-1).filter(x=>x>0);
+  showPage('setup');
+}
+
+// ── Course lookup via Anthropic API ──
+window.lookupCourse = async function() {
+  const name = document.getElementById('course-search-input').value.trim();
+  if (!name) { showToast('Enter a course name'); return; }
+  const result = document.getElementById('course-lookup-result');
+  result.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:13px;">🔍 Looking up course…</div>';
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:600,
+        system:`You are a golf course database. When given a course name, return ONLY a JSON object with no other text, no markdown, no backticks.
+Format: {"found":true,"name":"Full Official Course Name","pars":[4,4,3,4,5,3,4,4,5,4,3,4,5,4,3,4,4,5]}
+The pars array must have exactly 18 integers (each 3, 4, or 5).
+If you don't know the exact hole-by-hole par, return: {"found":false}`,
+        messages:[{role:'user',content:`Course: ${name}`}]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content?.[0]?.text || '{"found":false}';
+    let parsed;
+    try { parsed = JSON.parse(text.trim()); } catch(e) { parsed = {found:false}; }
+
+    if (parsed.found && parsed.pars && parsed.pars.length === 18) {
+      courseNameTemp = parsed.name;
+      courseParTemp = parsed.pars;
+      result.innerHTML = `<div style="padding:10px 14px;background:var(--green-pale);border:1.5px solid var(--green);border-radius:10px;font-size:13px;font-weight:600;color:var(--green);margin-bottom:10px;">✅ Found: ${parsed.name}</div>`;
+      renderParEditor();
+    } else {
+      courseNameTemp = name;
+      courseParTemp = Array(18).fill(4);
+      result.innerHTML = `<div style="padding:10px 14px;background:#fff8e1;border:1.5px solid var(--gold);border-radius:10px;font-size:12px;color:#8b6914;font-weight:600;margin-bottom:10px;">⚠️ Course not found in database — please enter par manually below.</div>`;
+      renderParEditor();
+    }
+  } catch(e) {
+    courseNameTemp = name;
+    courseParTemp = Array(18).fill(4);
+    result.innerHTML = `<div style="padding:10px;background:#ffebee;border:1.5px solid #c62828;border-radius:10px;font-size:12px;color:#c62828;margin-bottom:10px;">Connection error — enter par manually below.</div>`;
+    renderParEditor();
+  }
+};
+
+function renderParEditor() {
+  const editor = document.getElementById('course-par-editor');
+  const title = document.getElementById('course-par-title');
+  editor.style.display = 'block';
+  title.textContent = courseNameTemp ? `${courseNameTemp} — Par per hole` : 'Par per hole (edit if needed)';
+  const grid = document.getElementById('par-grid-inputs');
+  grid.innerHTML = '';
+  for (let i=0;i<18;i++) {
+    const cell = document.createElement('div');
+    cell.className = 'par-cell';
+    cell.innerHTML = `<div class="par-cell-label">H${i+1}</div><input type="number" min="3" max="6" value="${courseParTemp[i]}" style="width:100%;text-align:center;font-size:13px;font-weight:700;padding:5px 2px;border:1.5px solid #e0e0e0;border-radius:7px;" oninput="courseParTemp[${i}]=parseInt(this.value)||4;">`;
+    grid.appendChild(cell);
+  }
+}
+
+// ── Firebase ──
+function setSyncStatus(s) {
+  const dot=document.getElementById('sync-dot'), txt=document.getElementById('sync-text');
+  if(s==='live'){dot.className='sync-dot live';txt.textContent='LIVE';}
+  else if(s==='saving'){dot.className='sync-dot';txt.textContent='Saving…';}
+  else if(s==='error'){dot.className='sync-dot error';txt.textContent='Offline';}
+  else{dot.className='sync-dot';txt.textContent='';}
+}
+
 async function saveToFirebase() {
   if (!state.roundCode || !isScorer) return;
   setSyncStatus('saving');
   try {
-    const payload = { ...state, updatedAt: serverTimestamp() };
-    delete payload.currentHole; // viewers track their own current hole
-    await setDoc(doc(db, 'rounds', state.roundCode), payload);
+    await setDoc(doc(db,'rounds',state.roundCode), {...state, updatedAt:serverTimestamp()});
     setSyncStatus('live');
-  } catch (e) {
-    setSyncStatus('error');
-    console.error('Firebase save error:', e);
-  }
+  } catch(e) { setSyncStatus('error'); }
 }
 
 function saveState() {
-  // Local save
-  try { localStorage.setItem('wolf-state-v3', JSON.stringify(state)); } catch(e) {}
-  // Debounce Firebase save
+  try { localStorage.setItem('wolf-v4',JSON.stringify(state)); } catch(e) {}
   clearTimeout(saveTimeout);
   saveTimeout = setTimeout(saveToFirebase, 400);
 }
 
-// ── Subscribe to live updates ──
 function subscribeToRound(code) {
   if (unsubscribe) unsubscribe();
   setSyncStatus('live');
-  unsubscribe = onSnapshot(doc(db, 'rounds', code), (snap) => {
+  unsubscribe = onSnapshot(doc(db,'rounds',code), snap => {
     if (!snap.exists()) return;
     const data = snap.data();
     const prevHole = state.currentHole;
-    state = { ...state, ...data, currentHole: prevHole }; // keep viewer's hole position
-    try { localStorage.setItem('wolf-state-v3', JSON.stringify(state)); } catch(e) {}
-    // Re-render current page
-    const activePage = document.querySelector('.page.active');
-    if (activePage && activePage.id === 'page-scorecard') renderScorecard();
-    if (activePage && activePage.id === 'page-scoreboard') renderScoreboard();
-    if (activePage && activePage.id === 'page-setup') renderSetupFromState();
+    const prevMyName = state.myName;
+    state = {...state, ...data, currentHole:prevHole, myName:prevMyName};
+    try { localStorage.setItem('wolf-v4',JSON.stringify(state)); } catch(e) {}
+    const active = document.querySelector('.page.active');
+    if (active) {
+      if (active.id==='page-scorecard') renderScorecard();
+      if (active.id==='page-scoreboard') renderScoreboard();
+      if (active.id==='page-scores') renderFullScorecard();
+    }
     setSyncStatus('live');
-  }, (err) => { setSyncStatus('error'); console.error(err); });
+  }, err => setSyncStatus('error'));
 }
 
-// ── Round code ──
 function generateCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return Array.from({length: 6}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join('');
 }
 
 function showRoundCode(code) {
-  const el = document.getElementById('round-code-display');
-  el.style.display = 'block';
-  el.innerHTML = `
+  document.getElementById('round-code-display').innerHTML = `
     <div class="round-code-box">
-      <div class="round-code-label"><span class="live-pulse"></span>Round Live</div>
+      <div style="font-size:10px;letter-spacing:2px;opacity:.8;margin-bottom:6px;"><span class="live-pulse"></span>ROUND LIVE</div>
       <div class="round-code-value">${code}</div>
-      <div class="round-code-share">Share this code so others can follow along live</div>
-      <button onclick="copyCode('${code}')" style="margin-top:10px;padding:8px 20px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.4);background:transparent;color:white;font-weight:600;font-size:13px;cursor:pointer;">📋 Copy Code</button>
+      <div style="font-size:11px;opacity:.7;margin-top:6px;">Share this code so others can join live</div>
+      <button onclick="copyCode('${code}')" style="margin-top:8px;padding:7px 18px;border-radius:20px;border:1.5px solid rgba(255,255,255,.4);background:transparent;color:white;font-weight:600;font-size:12px;cursor:pointer;">📋 Copy Code</button>
     </div>`;
-
-  const sb = document.getElementById('scoreboard-round-code');
-  sb.style.display = 'block';
-  sb.innerHTML = `<div style="background:var(--green-pale);border:1.5px solid var(--green);border-radius:10px;padding:10px 16px;text-align:center;font-size:13px;font-weight:600;color:var(--green);"><span class="live-pulse"></span>Round Code: <strong style="letter-spacing:3px;">${code}</strong></div>`;
+  const sb = document.getElementById('scoreboard-code-display');
+  sb.style.display='block';
+  sb.innerHTML=`<div style="background:var(--green-pale);border:1.5px solid var(--green);border-radius:9px;padding:9px 14px;text-align:center;font-size:12px;font-weight:600;color:var(--green);"><span class="live-pulse"></span>Code: <strong style="letter-spacing:3px;">${code}</strong></div>`;
 }
 
-window.copyCode = function(code) {
-  navigator.clipboard.writeText(code).then(() => showToast('Code copied! ' + code));
-};
+window.copyCode = code => navigator.clipboard.writeText(code).then(()=>showToast('Copied: '+code));
 
 // ── Join round ──
 window.joinRound = async function() {
   const code = document.getElementById('join-code-input').value.trim().toUpperCase();
-  if (code.length !== 6) { showToast('Enter a 6-digit code'); return; }
+  if (code.length!==6) { showToast('Enter a 6-digit code'); return; }
   showToast('Connecting…');
   try {
-    const snap = await getDoc(doc(db, 'rounds', code));
+    const snap = await getDoc(doc(db,'rounds',code));
     if (!snap.exists()) { showToast('Round not found'); return; }
     const data = snap.data();
-    state = { ...state, ...data, currentHole: 1, roundCode: code };
+    state = {...state,...data,currentHole:1,roundCode:code};
     isScorer = false;
     subscribeToRound(code);
-    document.getElementById('viewer-banner').style.display = 'block';
-    document.getElementById('viewer-code-display').textContent = code;
-    // Lock scorecard edits for viewers
-    document.getElementById('scorecard-inner').classList.add('readonly-overlay');
-    document.querySelectorAll('#page-scorecard button, #page-scorecard input').forEach(el => el.disabled = true);
-    showPage('scorecard');
-    showToast('Joined round ' + code + ' 🎉');
-  } catch(e) {
-    showToast('Connection failed');
-    console.error(e);
+    // Ask who they are
+    showIdentityPicker(code);
+  } catch(e) { showToast('Connection failed'); }
+};
+
+function showIdentityPicker(code) {
+  const modal = document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML=`<div style="background:white;border-radius:16px;padding:24px;width:100%;max-width:340px;">
+    <div style="font-size:16px;font-weight:700;margin-bottom:6px;">👋 Who are you?</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">Select your name to track your score.</div>
+    <div id="modal-identity-chips" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"></div>
+    <button onclick="confirmIdentity(null,'${code}',this.closest('[style]'))" style="width:100%;padding:11px;border-radius:10px;border:1.5px solid #e0e0e0;background:white;font-weight:600;font-size:13px;cursor:pointer;color:var(--muted);">👁️ Just watching</button>
+  </div>`;
+  document.body.appendChild(modal);
+  const chips = modal.querySelector('#modal-identity-chips');
+  state.players.forEach(p => {
+    const btn = document.createElement('button');
+    btn.style.cssText='width:100%;padding:12px;border-radius:10px;border:1.5px solid #e0e0e0;background:white;font-weight:600;font-size:14px;cursor:pointer;';
+    btn.textContent = p;
+    btn.onclick = () => confirmIdentity(p, code, modal);
+    chips.appendChild(btn);
+  });
+}
+
+window.confirmIdentity = function(name, code, modal) {
+  state.myName = name;
+  modal.remove();
+  if (name) {
+    document.getElementById('viewer-banner').style.display='block';
+    document.getElementById('viewer-name-display').textContent = name + ' — ' + code;
+    document.getElementById('my-name-display').textContent = name;
+    document.getElementById('my-course-display').textContent = state.courseName || '';
+    document.getElementById('my-score-entry').style.display='block';
+    showToast('Joined as ' + name + ' 🎉');
+  } else {
+    document.getElementById('viewer-banner').style.display='block';
+    document.getElementById('viewer-name-display').textContent='Viewer — '+code;
+    showToast('Joined as viewer 👁️');
   }
+  showPage('scorecard');
 };
 
 // ── Toast ──
 window.showToast = function(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2400);
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
 };
 
 // ── Pages ──
 window.showPage = function(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  const navEl = document.getElementById('nav-' + name);
-  if (navEl) navEl.classList.add('active');
-  if (name === 'scorecard') renderScorecard();
-  if (name === 'scoreboard') renderScoreboard();
-  if (name === 'setup') { renderWolfOrder(); updateGhostCard(); }
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  const nav=document.getElementById('nav-'+name);if(nav)nav.classList.add('active');
+  if(name==='scorecard') renderScorecard();
+  if(name==='scoreboard') renderScoreboard();
+  if(name==='scores'){ renderFullScorecard(); renderMyScoreEntry(); }
+  if(name==='survey'){ surveyStep=0; renderSurvey(); }
+  if(name==='setup'){ renderWolfOrder(); updateGhostCard(); renderIdentityChips(); }
 };
 
 // ── Setup ──
 window.addPlayer = function() {
-  const inputs = document.querySelectorAll('.player-name');
-  if (inputs.length >= 6) { showToast('Max 6 players'); return; }
-  const wrap = document.getElementById('player-inputs');
-  const n = inputs.length + 1;
-  const row = document.createElement('div');
-  row.className = 'player-row';
-  row.innerHTML = `<div class="player-num">${n}</div><input type="text" class="player-name" placeholder="Player ${n} name">`;
+  const inputs=document.querySelectorAll('.player-name');
+  if(inputs.length>=6){showToast('Max 6 players');return;}
+  const wrap=document.getElementById('player-inputs'),n=inputs.length+1;
+  const row=document.createElement('div');row.className='player-row';
+  row.innerHTML=`<div class="player-num">${n}</div><input type="text" class="player-name" placeholder="Player ${n}">`;
   wrap.appendChild(row);
-  row.querySelector('input').addEventListener('input', () => { renderWolfOrder(); updateGhostCard(); });
-  renderWolfOrder(); updateGhostCard();
+  row.querySelector('input').addEventListener('input',()=>{renderWolfOrder();updateGhostCard();renderIdentityChips();});
+  renderWolfOrder();updateGhostCard();renderIdentityChips();
 };
 
-function getPlayerNames() {
-  return Array.from(document.querySelectorAll('.player-name')).map(i => i.value.trim()).filter(n => n.length > 0);
+function getPlayerNames(){ return Array.from(document.querySelectorAll('.player-name')).map(i=>i.value.trim()).filter(n=>n.length>0); }
+
+function updateGhostCard(){
+  const names=getPlayerNames(),card=document.getElementById('ghost-card');
+  card.style.display=names.length===3?'block':'none';
+  if(names.length!==3){document.getElementById('ghost-check').checked=false;document.getElementById('ghost-name-wrap').style.display='none';document.getElementById('ghost-label').textContent='Ghost: Off';}
+}
+function toggleGhostCheck(){const on=document.getElementById('ghost-check').checked;document.getElementById('ghost-label').textContent=on?'Ghost: ON 👻':'Ghost: Off';document.getElementById('ghost-name-wrap').style.display=on?'block':'none';}
+
+function renderIdentityChips(){
+  const names=getPlayerNames();
+  const container=document.getElementById('identity-chips');container.innerHTML='';
+  names.forEach(p=>{
+    const chip=document.createElement('div');chip.className='identity-chip'+(state.myName===p?' selected':'');
+    chip.textContent=p;chip.onclick=()=>{state.myName=p;document.querySelectorAll('.identity-chip').forEach(c=>c.classList.remove('selected'));chip.classList.add('selected');};
+    container.appendChild(chip);
+  });
+  document.getElementById('identity-card').style.display=names.length?'block':'none';
 }
 
-function updateGhostCard() {
-  const names = getPlayerNames();
-  const card = document.getElementById('ghost-card');
-  card.style.display = names.length === 3 ? 'block' : 'none';
-  if (names.length !== 3) {
-    document.getElementById('ghost-check').checked = false;
-    document.getElementById('ghost-name-wrap').style.display = 'none';
-    document.getElementById('ghost-label').textContent = 'Ghost Player: Off';
-  }
-}
-
-function toggleGhostCheck() {
-  const on = document.getElementById('ghost-check').checked;
-  document.getElementById('ghost-label').textContent = on ? 'Ghost Player: ON 👻' : 'Ghost Player: Off';
-  document.getElementById('ghost-name-wrap').style.display = on ? 'block' : 'none';
-}
-
-window.toggleGreeniesCheck = function() {
-  const on = document.getElementById('greenies-check').checked;
-  document.getElementById('greenies-label').textContent = on ? 'Greenies: ON 🏆' : 'Greenies: Off';
-  document.getElementById('greenies-holes-wrap').style.display = on ? 'block' : 'none';
-  if (on) renderPar3Grid();
-};
-
-function renderPar3Grid() {
-  const grid = document.getElementById('par3-grid');
-  grid.innerHTML = '';
-  for (let i = 1; i <= 18; i++) {
-    const btn = document.createElement('button');
-    btn.className = 'par3-btn' + (state.par3Holes.includes(i) ? ' selected' : '');
-    btn.textContent = i;
-    btn.onclick = () => togglePar3(i, btn);
-    grid.appendChild(btn);
-  }
-}
-
-function togglePar3(hole, btn) {
-  const idx = state.par3Holes.indexOf(hole);
-  if (idx > -1) { state.par3Holes.splice(idx, 1); btn.classList.remove('selected'); }
-  else { state.par3Holes.push(hole); btn.classList.add('selected'); }
-}
-
-function renderWolfOrder() {
-  const names = getPlayerNames();
-  const container = document.getElementById('wolf-order');
-  container.innerHTML = '';
-  names.forEach((name, i) => {
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f5f5f5;border-radius:10px;';
-    row.innerHTML = `<span style="font-size:18px;">🐺</span><span style="font-weight:600;font-size:14px;color:var(--muted);">Hole ${i+1}, ${i+1+names.length}...</span><span style="color:var(--green);font-weight:700;margin-left:auto;">${name}</span>`;
+function renderWolfOrder(){
+  const names=getPlayerNames(),container=document.getElementById('wolf-order');container.innerHTML='';
+  names.forEach((name,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:10px;padding:9px 12px;background:#f5f5f5;border-radius:9px;';
+    row.innerHTML=`<span>🐺</span><span style="font-weight:600;font-size:13px;color:var(--muted);">Hole ${i+1}, ${i+1+names.length}…</span><span style="color:var(--green);font-weight:700;margin-left:auto;">${name}</span>`;
     container.appendChild(row);
   });
 }
 
-function renderSetupFromState() {
-  // Re-populate setup UI from loaded state (for scorers returning to setup)
-  renderWolfOrder(); updateGhostCard();
-  if (state.greeniesEnabled) {
-    document.getElementById('greenies-check').checked = true;
-    document.getElementById('greenies-label').textContent = 'Greenies: ON 🏆';
-    document.getElementById('greenies-holes-wrap').style.display = 'block';
-    document.getElementById('greenie-wager-input').value = state.greenieWager || 2;
-    renderPar3Grid();
-  }
-}
-
 window.startRound = async function() {
-  const players = getPlayerNames();
-  if (players.length < 2) { showToast('Enter at least 2 player names'); return; }
-  const code = generateCode();
-  state.players = players;
-  state.wager = parseFloat(document.getElementById('wager-input').value) || 5;
-  state.wolfOrder = [...players];
-  state.currentHole = 1;
-  state.holes = {};
-  state.ghostEnabled = document.getElementById('ghost-check').checked && players.length === 3;
-  state.ghostName = document.getElementById('ghost-name-input').value.trim() || 'Ghost';
-  state.greeniesEnabled = document.getElementById('greenies-check').checked;
-  state.greenieWager = parseFloat(document.getElementById('greenie-wager-input').value) || 2;
-  state.roundCode = code;
-  isScorer = true;
+  const players=getPlayerNames();
+  if(players.length<2){showToast('Enter at least 2 players');return;}
+  const code=generateCode();
+  state.players=players;
+  state.wager=parseFloat(document.getElementById('wager-input').value)||5;
+  state.wolfOrder=[...players];
+  state.currentHole=1;state.holes={};
+  state.ghostEnabled=document.getElementById('ghost-check').checked&&players.length===3;
+  state.ghostName=document.getElementById('ghost-name-input').value.trim()||'Ghost';
+  state.strokes={};
+  state.roundCode=code;
+  isScorer=true;
   showRoundCode(code);
   subscribeToRound(code);
   saveState();
+  document.getElementById('my-name-display').textContent=state.myName||'—';
+  document.getElementById('my-course-display').textContent=state.courseName||'';
+  if(state.myName) document.getElementById('my-score-entry').style.display='block';
   showPage('scorecard');
-  showToast('Round started! Code: ' + code);
+  showToast('Round started! Code: '+code);
 };
 
-// ── Scorecard ──
-function getAllRotationPlayers() { return state.players; }
+// ── Wolf game ──
+function getAllRotationPlayers(){return state.players;}
+function isGhost(n){return state.ghostEnabled&&n===state.ghostName;}
 
-function getWolfForHole(hole) {
-  if (hole >= 16 && state.players.length > 0) return getPressureOrder(hole)[0];
-  const all = getAllRotationPlayers();
-  if (!all.length) return '—';
-  return all[(hole - 1) % all.length];
+function getWolfForHole(hole){
+  if(state.rules.reshuffleOn16 && hole>=16 && state.players.length>0) return getPressureOrder(hole)[0];
+  const all=getAllRotationPlayers();if(!all.length)return'—';
+  return all[(hole-1)%all.length];
 }
 
-function getPressureOrder(hole) {
-  const totals = computeWolfTotals();
-  const players = [...state.players];
-  const seed = hole * 7919;
-  const rnd = (i) => ((seed * (i + 1) * 2654435761) >>> 0) / 4294967296;
-  players.sort((a, b) => {
-    const diff = (totals[a] || 0) - (totals[b] || 0);
-    if (diff !== 0) return diff;
-    return rnd(state.players.indexOf(a)) - rnd(state.players.indexOf(b));
-  });
+function getPressureOrder(hole){
+  const totals=computeWolfTotals(),players=[...state.players];
+  const seed=hole*7919,rnd=i=>((seed*(i+1)*2654435761)>>>0)/4294967296;
+  players.sort((a,b)=>{const d=(totals[a]||0)-(totals[b]||0);return d!==0?d:rnd(state.players.indexOf(a))-rnd(state.players.indexOf(b));});
   return players;
 }
 
-function isGhost(name) { return state.ghostEnabled && name === state.ghostName; }
-
-window.toggleDouble = function() {
-  const hole = state.currentHole;
-  if (!state.holes[hole]) state.holes[hole] = {};
-  const on = document.getElementById('double-check').checked;
-  state.holes[hole].doubled = on;
-  document.getElementById('double-label').textContent = on ? 'ON 🔴' : 'Off';
-  const rdCheck = document.getElementById('redouble-check');
-  rdCheck.disabled = !on;
-  if (!on) { rdCheck.checked = false; state.holes[hole].reDoubled = false; document.getElementById('redouble-label').textContent = 'Off'; }
-  updatePayoutNote(); saveState();
+window.toggleDouble=function(){
+  const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
+  const on=document.getElementById('double-check').checked;
+  state.holes[hole].doubled=on;document.getElementById('double-label').textContent=on?'ON 🔴':'Off';
+  const rd=document.getElementById('redouble-check');rd.disabled=!on;
+  if(!on){rd.checked=false;state.holes[hole].reDoubled=false;document.getElementById('redouble-label').textContent='Off';}
+  updatePayoutNote();saveState();
+};
+window.toggleReDouble=function(){
+  const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
+  const on=document.getElementById('redouble-check').checked;
+  state.holes[hole].reDoubled=on;document.getElementById('redouble-label').textContent=on?'ON 🟢':'Off';
+  updatePayoutNote();saveState();
 };
 
-window.toggleReDouble = function() {
-  const hole = state.currentHole;
-  if (!state.holes[hole]) state.holes[hole] = {};
-  const on = document.getElementById('redouble-check').checked;
-  state.holes[hole].reDoubled = on;
-  document.getElementById('redouble-label').textContent = on ? 'ON 🟢' : 'Off';
-  updatePayoutNote(); saveState();
-};
-
-window.updatePayoutNote = function() {
-  const hData = state.holes[state.currentHole] || {};
-  const bigWolf = hData.bigWolf || false, lilWolf = hData.lilWolf || false;
-  const doubled = hData.doubled || false, reDoubled = hData.reDoubled || false;
-  const hasBirdie = (hData.birdies || []).length > 0, hasEagle = (hData.eagles || []).length > 0;
-  const baseMoney = parseFloat(document.getElementById('hole-money').value) || state.wager;
-  let e = baseMoney;
-  if (bigWolf) e *= 2;
-  if (doubled) e *= 2;
-  if (reDoubled) e *= 2;
-  if (hasEagle) e *= 3; else if (hasBirdie) e *= 2;
-
-  const bwn = document.getElementById('big-wolf-payout-note');
-  const lwn = document.getElementById('lil-wolf-payout-note');
-  const dn  = document.getElementById('double-payout-note');
-  const rdn = document.getElementById('redouble-payout-note');
-  const gn  = document.getElementById('ghost-payout-note');
-  const bn  = document.getElementById('birdie-active-note');
-  const en  = document.getElementById('eagle-active-note');
-  const numOpps = state.players.length - 1 + (state.ghostEnabled ? 1 : 0);
-
-  if (bigWolf) { bwn.style.display='block'; document.getElementById('lw-2x').textContent=(e*numOpps).toFixed(0); document.getElementById('lw-1x').textContent=e.toFixed(0); lwn.style.display='none'; }
-  else if (lilWolf) { lwn.style.display='block'; document.getElementById('lw-lil-2x').textContent=(e*numOpps).toFixed(0); document.getElementById('lw-lil-1x').textContent=e.toFixed(0); bwn.style.display='none'; }
-  else { bwn.style.display='none'; lwn.style.display='none'; }
-
-  dn.style.display = doubled ? 'block' : 'none';
-  if (doubled) document.getElementById('d-amt').textContent = e.toFixed(0);
-  rdn.style.display = reDoubled ? 'block' : 'none';
-  if (reDoubled) document.getElementById('rd-amt').textContent = e.toFixed(0);
-  gn.style.display = state.ghostEnabled ? 'block' : 'none';
-
-  if (hasEagle) { en.style.display='block'; document.getElementById('eagle-tripled-amt').textContent=e.toFixed(0); bn.style.display='none'; }
-  else if (hasBirdie) { bn.style.display='block'; document.getElementById('birdie-doubled-amt').textContent=e.toFixed(0); en.style.display='none'; }
-  else { bn.style.display='none'; en.style.display='none'; }
-
-  // Also update greenie note
-  updateGreenieNote();
-};
-
-window.updateGreenieNote = function() {
-  const hole = state.currentHole;
-  const hData = state.holes[hole] || {};
-  const winner = hData.greenie || null;
-  const note = document.getElementById('greenie-note');
-  if (winner) {
-    note.style.display = 'block';
-    document.getElementById('greenie-winner-name').textContent = winner;
-    document.getElementById('greenie-amt').textContent = (state.greenieWager || 2).toFixed(0);
-  } else { note.style.display = 'none'; }
-};
-
-window.setWolfMode = function(mode) {
-  const hole = state.currentHole;
-  if (!state.holes[hole]) state.holes[hole] = {};
-  state.holes[hole].wolfMode = mode;
-  state.holes[hole].loneWolf = (mode === 'big' || mode === 'lil');
-  state.holes[hole].bigWolf  = (mode === 'big');
-  state.holes[hole].lilWolf  = (mode === 'lil');
-  document.getElementById('team-section').style.display = (mode === 'none') ? 'block' : 'none';
-  ['btn-big-wolf','btn-lil-wolf','btn-no-wolf-mode'].forEach(id => {
-    const b = document.getElementById(id);
-    b.style.border = '2px solid #ddd'; b.style.background = 'white'; b.style.color = 'var(--muted)';
-  });
-  const activeId = mode === 'big' ? 'btn-big-wolf' : mode === 'lil' ? 'btn-lil-wolf' : 'btn-no-wolf-mode';
-  const ab = document.getElementById(activeId);
-  ab.style.border = '2px solid var(--green)'; ab.style.background = 'var(--green-pale)'; ab.style.color = 'var(--green)';
-  updatePayoutNote(); saveState();
-};
-
-window.setWinner = function(w) {
-  const hole = state.currentHole;
-  if (!state.holes[hole]) state.holes[hole] = {};
-  state.holes[hole].winner = w;
-  document.getElementById('btn-wolf-wins').className = 'winner-btn' + (w === 'wolf' ? ' wolf-wins' : '');
-  document.getElementById('btn-team-wins').className = 'winner-btn' + (w === 'team' ? ' team-wins' : '');
-  document.getElementById('btn-push').className = 'winner-btn' + (w === 'push' ? ' push' : '');
-  saveState();
-};
-
-window.togglePartner = function(name, chip) {
-  const hole = state.currentHole;
-  if (!state.holes[hole]) state.holes[hole] = {};
-  if (!state.holes[hole].partners) state.holes[hole].partners = [];
-  const idx = state.holes[hole].partners.indexOf(name);
-  if (idx > -1) { state.holes[hole].partners.splice(idx, 1); chip.classList.remove('team'); }
-  else { state.holes[hole].partners.push(name); chip.classList.add('team'); }
-  saveState();
-};
-
-window.toggleBirdie = function(name, chip) {
-  const hole = state.currentHole;
-  if (!state.holes[hole]) state.holes[hole] = {};
-  if (!state.holes[hole].birdies) state.holes[hole].birdies = [];
-  const idx = state.holes[hole].birdies.indexOf(name);
-  if (idx > -1) { state.holes[hole].birdies.splice(idx, 1); chip.classList.remove('team'); }
-  else { state.holes[hole].birdies.push(name); chip.classList.add('team'); }
-  updatePayoutNote(); saveState();
-};
-
-window.toggleEagle = function(name, chip) {
-  const hole = state.currentHole;
-  if (!state.holes[hole]) state.holes[hole] = {};
-  if (!state.holes[hole].eagles) state.holes[hole].eagles = [];
-  const idx = state.holes[hole].eagles.indexOf(name);
-  if (idx > -1) { state.holes[hole].eagles.splice(idx, 1); chip.classList.remove('wolf-wins'); }
-  else {
-    state.holes[hole].eagles.push(name); chip.classList.add('wolf-wins');
-    if (state.holes[hole].birdies) {
-      const bi = state.holes[hole].birdies.indexOf(name);
-      if (bi > -1) { state.holes[hole].birdies.splice(bi, 1); const pi = state.players.indexOf(name); const bc = document.querySelectorAll('#birdie-chips .chip'); if (bc[pi]) bc[pi].classList.remove('team'); }
-    }
+window.updatePayoutNote=function(){
+  const hData=state.holes[state.currentHole]||{};
+  const bigWolf=hData.bigWolf||false,lilWolf=hData.lilWolf||false;
+  const doubled=hData.doubled||false,reDoubled=hData.reDoubled||false;
+  const hasBirdie=(hData.birdies||[]).length>0,hasEagle=(hData.eagles||[]).length>0;
+  const base=parseFloat(document.getElementById('hole-money').value)||state.wager;
+  let e=base;
+  if(bigWolf)e*=2;if(doubled)e*=2;if(reDoubled)e*=2;
+  if(hasEagle)e*=3;else if(hasBirdie)e*=2;
+  const numOpps=state.players.length-1+(state.ghostEnabled?1:0);
+  const bwn=document.getElementById('big-wolf-note'),lwn=document.getElementById('lil-wolf-note');
+  const dn=document.getElementById('double-note'),rdn=document.getElementById('redouble-note');
+  const gn=document.getElementById('ghost-note'),bn=document.getElementById('birdie-note'),en=document.getElementById('eagle-note');
+  if(bigWolf){bwn.style.display='block';document.getElementById('lw-2x').textContent=(e*numOpps).toFixed(0);document.getElementById('lw-1x').textContent=e.toFixed(0);lwn.style.display='none';}
+  else if(lilWolf){lwn.style.display='block';document.getElementById('lw-lil-2x').textContent=(e*numOpps).toFixed(0);document.getElementById('lw-lil-1x').textContent=e.toFixed(0);bwn.style.display='none';}
+  else{bwn.style.display='none';lwn.style.display='none';}
+  dn.style.display=doubled?'block':'none';if(doubled)document.getElementById('d-amt').textContent=e.toFixed(0);
+  rdn.style.display=reDoubled?'block':'none';if(reDoubled)document.getElementById('rd-amt').textContent=e.toFixed(0);
+  gn.style.display=state.ghostEnabled?'block':'none';
+  if(state.rules.birdiesEagles){
+    if(hasEagle){en.style.display='block';document.getElementById('eagle-amt').textContent=e.toFixed(0);bn.style.display='none';}
+    else if(hasBirdie){bn.style.display='block';document.getElementById('birdie-amt').textContent=e.toFixed(0);en.style.display='none';}
+    else{bn.style.display='none';en.style.display='none';}
   }
-  updatePayoutNote(); saveState();
 };
 
-window.selectGreenie = function(name) {
-  const hole = state.currentHole;
-  if (!state.holes[hole]) state.holes[hole] = {};
-  state.holes[hole].greenie = name;
-  document.querySelectorAll('#greenie-chips .chip').forEach((c, i) => {
+window.setWolfMode=function(mode){
+  const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
+  state.holes[hole].wolfMode=mode;
+  state.holes[hole].loneWolf=(mode==='big'||mode==='lil');
+  state.holes[hole].bigWolf=(mode==='big');state.holes[hole].lilWolf=(mode==='lil');
+  document.getElementById('team-section').style.display=mode==='none'?'block':'none';
+  ['btn-big-wolf','btn-lil-wolf','btn-no-wolf-mode'].forEach(id=>{const b=document.getElementById(id);b.style.border='2px solid #ddd';b.style.background='white';b.style.color='var(--muted)';});
+  const ab=document.getElementById(mode==='big'?'btn-big-wolf':mode==='lil'?'btn-lil-wolf':'btn-no-wolf-mode');
+  ab.style.border='2px solid var(--green)';ab.style.background='var(--green-pale)';ab.style.color='var(--green)';
+  updatePayoutNote();saveState();
+};
+
+window.setWinner=function(w){
+  const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
+  state.holes[hole].winner=w;
+  document.getElementById('btn-wolf-wins').className='winner-btn'+(w==='wolf'?' wolf-wins':'');
+  document.getElementById('btn-team-wins').className='winner-btn'+(w==='team'?' team-wins':'');
+  document.getElementById('btn-push').className='winner-btn'+(w==='push'?' push':'');
+  saveState();
+};
+
+window.togglePartner=function(name,chip){
+  const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
+  if(!state.holes[hole].partners)state.holes[hole].partners=[];
+  const idx=state.holes[hole].partners.indexOf(name);
+  if(idx>-1){state.holes[hole].partners.splice(idx,1);chip.classList.remove('team');}
+  else{state.holes[hole].partners.push(name);chip.classList.add('team');}
+  saveState();
+};
+
+window.toggleBirdie=function(name,chip){
+  const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
+  if(!state.holes[hole].birdies)state.holes[hole].birdies=[];
+  const idx=state.holes[hole].birdies.indexOf(name);
+  if(idx>-1){state.holes[hole].birdies.splice(idx,1);chip.classList.remove('team');}
+  else{state.holes[hole].birdies.push(name);chip.classList.add('team');}
+  updatePayoutNote();saveState();
+};
+
+window.toggleEagle=function(name,chip){
+  const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
+  if(!state.holes[hole].eagles)state.holes[hole].eagles=[];
+  const idx=state.holes[hole].eagles.indexOf(name);
+  if(idx>-1){state.holes[hole].eagles.splice(idx,1);chip.classList.remove('wolf-wins');}
+  else{
+    state.holes[hole].eagles.push(name);chip.classList.add('wolf-wins');
+    if(state.holes[hole].birdies){const bi=state.holes[hole].birdies.indexOf(name);if(bi>-1){state.holes[hole].birdies.splice(bi,1);const pi=state.players.indexOf(name);const bc=document.querySelectorAll('#birdie-chips .chip');if(bc[pi])bc[pi].classList.remove('team');}}
+  }
+  updatePayoutNote();saveState();
+};
+
+window.selectGreenie=function(name){
+  const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
+  state.holes[hole].greenie=name;
+  document.querySelectorAll('#greenie-chips .chip').forEach((c,i)=>{
     c.classList.remove('greenie-winner');
-    if (name === null && i === document.querySelectorAll('#greenie-chips .chip').length - 1) c.classList.add('greenie-winner');
-    else if (name !== null && state.players[i] === name) c.classList.add('greenie-winner');
+    if(name===null&&i===document.querySelectorAll('#greenie-chips .chip').length-1)c.classList.add('greenie-winner');
+    else if(name!==null&&state.players[i]===name)c.classList.add('greenie-winner');
   });
-  updateGreenieNote(); saveState();
+  updateGreenieNote();saveState();
 };
 
-function renderDots() {
-  const container = document.getElementById('hole-dots');
-  container.innerHTML = '';
-  for (let i = 1; i <= 18; i++) {
-    const d = document.createElement('div');
-    const h = state.holes[i] || {};
-    d.className = 'hole-dot' + (i === state.currentHole ? ' current' : '') + (h.winner === 'wolf' ? ' wolf-won' : h.winner === 'team' ? ' team-won' : h.winner === 'push' ? ' pushed' : '');
-    d.textContent = i;
-    d.onclick = () => { state.currentHole = i; renderScorecard(); };
+function updateGreenieNote(){
+  const hData=state.holes[state.currentHole]||{},winner=hData.greenie||null;
+  const note=document.getElementById('greenie-note');
+  if(winner){note.style.display='block';document.getElementById('greenie-winner-name').textContent=winner;document.getElementById('greenie-amt-note').textContent=(state.greenieWager||2).toFixed(0);}
+  else note.style.display='none';
+}
+
+function renderDots(){
+  const container=document.getElementById('hole-dots');container.innerHTML='';
+  for(let i=1;i<=18;i++){
+    const d=document.createElement('div'),h=state.holes[i]||{};
+    const hasMyScore=state.myName&&state.strokes[state.myName]&&state.strokes[state.myName][i];
+    d.className='hole-dot'+(i===state.currentHole?' current':'')+(h.winner==='wolf'?' wolf-won':h.winner==='team'?' team-won':h.winner==='push'?' pushed':hasMyScore?' scored':'');
+    d.textContent=i;d.onclick=()=>{state.currentHole=i;renderScorecard();};
     container.appendChild(d);
   }
 }
 
-function renderScorecard() {
-  if (!state.players.length) { showToast('Set up players first'); showPage('setup'); return; }
-  const hole = state.currentHole;
-  const hData = state.holes[hole] || {};
-  const wolfName = getWolfForHole(hole);
-  const wolfIsGhost = isGhost(wolfName);
+function renderScorecard(){
+  if(!state.players.length){return;}
+  const hole=state.currentHole,hData=state.holes[hole]||{};
+  const wolfName=getWolfForHole(hole);
 
-  document.getElementById('hole-num-display').innerHTML = `${hole}<span>of 18</span>`;
-  document.getElementById('wolf-display').textContent = wolfIsGhost ? `${wolfName} 👻` : wolfName;
-  document.getElementById('prev-btn').disabled = hole <= 1;
-  document.getElementById('next-btn').disabled = hole >= 18;
+  document.getElementById('hole-num-display').innerHTML=`${hole}<span>of 18</span>`;
+  document.getElementById('wolf-display').textContent=wolfName;
+  document.getElementById('prev-btn').disabled=hole<=1;
+  document.getElementById('next-btn').disabled=hole>=18;
 
   // Pressure banner
-  const pb = document.getElementById('pressure-banner');
-  if (hole >= 16 && state.players.length > 0) {
-    pb.style.display = 'block';
-    const order = getPressureOrder(hole);
-    const totals = computeWolfTotals();
-    document.getElementById('pressure-order').innerHTML = order.map((p, i) => {
-      const net = totals[p] || 0;
-      const sign = net >= 0 ? '+' : '';
-      const label = i === 0 ? ' 🐺 <strong>WOLF</strong>' : ` — ${i+1}${i===1?'nd':i===2?'rd':'th'}`;
-      return `<span>${p}${label} <span style="color:#f0d080;">(${sign}$${Math.abs(net).toFixed(2)})</span></span>`;
+  const pb=document.getElementById('pressure-banner-el');
+  if(state.rules.reshuffleOn16&&hole>=16&&state.players.length>0){
+    pb.style.display='block';
+    const order=getPressureOrder(hole),totals=computeWolfTotals();
+    document.getElementById('pressure-order').innerHTML=order.map((p,i)=>{
+      const net=totals[p]||0,sign=net>=0?'+':'';
+      return`<span>${p}${i===0?' 🐺 <strong>WOLF</strong>':` — ${i+1}${i===1?'nd':i===2?'rd':'th'}`} <span style="color:#f0d080;">(${sign}$${Math.abs(net).toFixed(2)})</span></span>`;
     }).join('<br>');
-  } else { pb.style.display = 'none'; }
+  }else pb.style.display='none';
 
-  // Wolf mode buttons
-  const wolfMode = hData.wolfMode || 'none';
-  document.getElementById('team-section').style.display = wolfMode === 'none' ? 'block' : 'none';
-  ['btn-big-wolf','btn-lil-wolf','btn-no-wolf-mode'].forEach(id => {
-    const b = document.getElementById(id);
-    b.style.border = '2px solid #ddd'; b.style.background = 'white'; b.style.color = 'var(--muted)';
-  });
-  const activeId = wolfMode === 'big' ? 'btn-big-wolf' : wolfMode === 'lil' ? 'btn-lil-wolf' : 'btn-no-wolf-mode';
-  const ab = document.getElementById(activeId);
-  ab.style.border = '2px solid var(--green)'; ab.style.background = 'var(--green-pale)'; ab.style.color = 'var(--green)';
+  // Wolf mode buttons (show/hide Big Wolf and Lil Wolf based on rules)
+  document.getElementById('btn-big-wolf').style.display=state.rules.bigWolfAllowed?'block':'none';
+  document.getElementById('btn-lil-wolf').style.display=state.rules.lilWolfAllowed?'block':'none';
+  const wolfMode=hData.wolfMode||'none';
+  document.getElementById('team-section').style.display=wolfMode==='none'?'block':'none';
+  ['btn-big-wolf','btn-lil-wolf','btn-no-wolf-mode'].forEach(id=>{const b=document.getElementById(id);b.style.border='2px solid #ddd';b.style.background='white';b.style.color='var(--muted)';});
+  const activeId=wolfMode==='big'?'btn-big-wolf':wolfMode==='lil'?'btn-lil-wolf':'btn-no-wolf-mode';
+  const ab=document.getElementById(activeId);if(ab){ab.style.border='2px solid var(--green)';ab.style.background='var(--green-pale)';ab.style.color='var(--green)';}
 
-  // Double / re-double
-  const dbl = hData.doubled || false, rdb = hData.reDoubled || false;
-  document.getElementById('double-check').checked = dbl;
-  document.getElementById('double-label').textContent = dbl ? 'ON 🔴' : 'Off';
-  document.getElementById('redouble-check').checked = rdb;
-  document.getElementById('redouble-check').disabled = !dbl;
-  document.getElementById('redouble-label').textContent = rdb ? 'ON 🟢' : 'Off';
+  // Double section
+  document.getElementById('double-section').style.display=state.rules.doubles?'block':'none';
+  const dbl=hData.doubled||false,rdb=hData.reDoubled||false;
+  document.getElementById('double-check').checked=dbl;document.getElementById('double-label').textContent=dbl?'ON 🔴':'Off';
+  document.getElementById('redouble-check').checked=rdb;document.getElementById('redouble-check').disabled=!dbl;document.getElementById('redouble-label').textContent=rdb?'ON 🟢':'Off';
 
   // Partner chips
-  const allPlayers = getAllRotationPlayers();
-  const chipsContainer = document.getElementById('partner-chips');
-  chipsContainer.innerHTML = '';
-  if (wolfIsGhost) {
-    const note = document.createElement('div'); note.className = 'ghost-badge';
-    note.innerHTML = '👻 Ghost is the Wolf — all real players are opponents'; chipsContainer.appendChild(note);
-  } else {
-    allPlayers.forEach(p => {
-      if (p === wolfName) return;
-      const chip = document.createElement('div');
-      chip.className = 'chip' + (isGhost(p) ? ' ghost' : '');
-      chip.innerHTML = isGhost(p) ? `👻 ${p}` : p;
-      const isPartner = hData.partners && hData.partners.includes(p);
-      if (isPartner) chip.classList.add('team');
-      chip.onclick = () => togglePartner(p, chip);
-      chipsContainer.appendChild(chip);
-    });
-    if (state.ghostEnabled && !wolfIsGhost) {
-      const gChip = document.createElement('div'); gChip.className = 'chip ghost';
-      gChip.innerHTML = `👻 ${state.ghostName}`;
-      const gPartner = hData.partners && hData.partners.includes(state.ghostName);
-      if (gPartner) gChip.classList.add('team');
-      gChip.onclick = () => togglePartner(state.ghostName, gChip);
-      chipsContainer.appendChild(gChip);
-    }
+  const allPlayers=getAllRotationPlayers(),chipsContainer=document.getElementById('partner-chips');chipsContainer.innerHTML='';
+  allPlayers.forEach(p=>{
+    if(p===wolfName)return;
+    const chip=document.createElement('div');chip.className='chip'+(isGhost(p)?' ghost':'');chip.innerHTML=isGhost(p)?`👻 ${p}`:p;
+    if(hData.partners&&hData.partners.includes(p))chip.classList.add('team');
+    chip.onclick=()=>togglePartner(p,chip);chipsContainer.appendChild(chip);
+  });
+  if(state.ghostEnabled&&!isGhost(wolfName)){
+    const gc=document.createElement('div');gc.className='chip ghost';gc.innerHTML=`👻 ${state.ghostName}`;
+    if(hData.partners&&hData.partners.includes(state.ghostName))gc.classList.add('team');
+    gc.onclick=()=>togglePartner(state.ghostName,gc);chipsContainer.appendChild(gc);
   }
 
-  // Winner buttons
-  const w = hData.winner;
-  document.getElementById('btn-wolf-wins').className = 'winner-btn' + (w === 'wolf' ? ' wolf-wins' : '');
-  document.getElementById('btn-team-wins').className = 'winner-btn' + (w === 'team' ? ' team-wins' : '');
-  document.getElementById('btn-push').className = 'winner-btn' + (w === 'push' ? ' push' : '');
+  // Winner
+  const w=hData.winner;
+  document.getElementById('btn-wolf-wins').className='winner-btn'+(w==='wolf'?' wolf-wins':'');
+  document.getElementById('btn-team-wins').className='winner-btn'+(w==='team'?' team-wins':'');
+  document.getElementById('btn-push').className='winner-btn'+(w==='push'?' push':'');
 
-  // Hole money
-  const moneyInput = document.getElementById('hole-money');
-  moneyInput.value = hData.money || state.wager || '';
-  moneyInput.placeholder = state.wager || 5;
+  document.getElementById('hole-money').value=hData.money||state.wager||'';
+  document.getElementById('hole-money').placeholder=state.wager||5;
 
-  // Birdie chips
-  const bc = document.getElementById('birdie-chips'); bc.innerHTML = '';
-  const curBirdies = hData.birdies || [];
-  state.players.forEach(p => {
-    const chip = document.createElement('div'); chip.className = 'chip';
-    chip.textContent = '🐦 ' + p;
-    if (curBirdies.includes(p)) chip.classList.add('team');
-    chip.onclick = () => toggleBirdie(p, chip); bc.appendChild(chip);
-  });
-
-  // Eagle chips
-  const ec = document.getElementById('eagle-chips'); ec.innerHTML = '';
-  const curEagles = hData.eagles || [];
-  state.players.forEach(p => {
-    const chip = document.createElement('div'); chip.className = 'chip';
-    chip.textContent = '🦅 ' + p;
-    if (curEagles.includes(p)) chip.classList.add('wolf-wins');
-    chip.onclick = () => toggleEagle(p, chip); ec.appendChild(chip);
-  });
+  // Birdie/eagle section
+  document.getElementById('birdie-section').style.display=state.rules.birdiesEagles?'block':'none';
+  if(state.rules.birdiesEagles){
+    const bc=document.getElementById('birdie-chips');bc.innerHTML='';
+    (state.players).forEach(p=>{const chip=document.createElement('div');chip.className='chip';chip.textContent='🐦 '+p;if((hData.birdies||[]).includes(p))chip.classList.add('team');chip.onclick=()=>toggleBirdie(p,chip);bc.appendChild(chip);});
+    const ec=document.getElementById('eagle-chips');ec.innerHTML='';
+    (state.players).forEach(p=>{const chip=document.createElement('div');chip.className='chip';chip.textContent='🦅 '+p;if((hData.eagles||[]).includes(p))chip.classList.add('wolf-wins');chip.onclick=()=>toggleEagle(p,chip);ec.appendChild(chip);});
+  }
 
   // Greenie section
-  const greenieSection = document.getElementById('greenie-section');
-  const isPar3 = state.greeniesEnabled && state.par3Holes.includes(hole);
-  greenieSection.style.display = isPar3 ? 'block' : 'none';
-  if (isPar3) {
-    const gc = document.getElementById('greenie-chips'); gc.innerHTML = '';
-    const curGreenie = hData.greenie || null;
-    state.players.forEach(p => {
-      const chip = document.createElement('div');
-      chip.className = 'chip' + (curGreenie === p ? ' greenie-winner' : '');
-      chip.textContent = '🏆 ' + p;
-      chip.onclick = () => selectGreenie(p); gc.appendChild(chip);
-    });
-    const noneChip = document.createElement('div');
-    noneChip.className = 'chip' + (curGreenie === null && hData.hasOwnProperty('greenie') ? ' greenie-winner' : '');
-    noneChip.textContent = '❌ No Greenie';
-    noneChip.onclick = () => selectGreenie(null); gc.appendChild(noneChip);
+  const isPar3=state.greeniesEnabled&&state.par3Holes.includes(hole);
+  document.getElementById('greenie-section').style.display=isPar3?'block':'none';
+  if(isPar3){
+    const gc=document.getElementById('greenie-chips');gc.innerHTML='';
+    const curG=hData.greenie||null;
+    state.players.forEach(p=>{const chip=document.createElement('div');chip.className='chip'+(curG===p?' greenie-winner':'');chip.textContent='🏆 '+p;chip.onclick=()=>selectGreenie(p);gc.appendChild(chip);});
+    const nc=document.createElement('div');nc.className='chip'+(curG===null&&hData.hasOwnProperty('greenie')?' greenie-winner':'');nc.textContent='❌ No Greenie';nc.onclick=()=>selectGreenie(null);gc.appendChild(nc);
     updateGreenieNote();
   }
 
-  updatePayoutNote();
-  renderDots();
+  // Viewer lock
+  const canEdit=isScorer;
+  document.getElementById('save-hole-btn').style.display=canEdit?'block':'none';
+
+  updatePayoutNote();renderDots();
 }
 
-window.saveHole = function() {
-  if (!isScorer) { showToast('Only the scorer can save holes'); return; }
-  const hole = state.currentHole;
-  if (!state.holes[hole]) state.holes[hole] = {};
-  if (!state.holes[hole].winner) { showToast('Select a result first'); return; }
-  const money = parseFloat(document.getElementById('hole-money').value) || state.wager;
-  state.holes[hole].money = money;
-  state.holes[hole].wolf = getWolfForHole(hole);
-  state.holes[hole].doubled = document.getElementById('double-check').checked;
-  state.holes[hole].reDoubled = document.getElementById('redouble-check').checked;
-  if (!state.holes[hole].partners) state.holes[hole].partners = [];
-  if (!state.holes[hole].birdies) state.holes[hole].birdies = [];
-  if (!state.holes[hole].eagles) state.holes[hole].eagles = [];
-  saveState();
-  renderDots();
-  showToast(`Hole ${hole} saved! ✓`);
-  if (hole < 18) { setTimeout(() => { state.currentHole = hole + 1; renderScorecard(); }, 600); }
+window.saveHole=function(){
+  if(!isScorer){showToast('Only scorer can save holes');return;}
+  const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
+  if(!state.holes[hole].winner){showToast('Select a result first');return;}
+  state.holes[hole].money=parseFloat(document.getElementById('hole-money').value)||state.wager;
+  state.holes[hole].wolf=getWolfForHole(hole);
+  state.holes[hole].doubled=document.getElementById('double-check').checked;
+  state.holes[hole].reDoubled=document.getElementById('redouble-check').checked;
+  if(!state.holes[hole].partners)state.holes[hole].partners=[];
+  if(!state.holes[hole].birdies)state.holes[hole].birdies=[];
+  if(!state.holes[hole].eagles)state.holes[hole].eagles=[];
+  saveState();renderDots();showToast(`Hole ${hole} saved! ✓`);
+  if(hole<18)setTimeout(()=>{state.currentHole=hole+1;renderScorecard();},600);
 };
 
-window.prevHole = function() { if (state.currentHole > 1) { state.currentHole--; renderScorecard(); } };
-window.nextHole = function() { if (state.currentHole < 18) { state.currentHole++; renderScorecard(); } };
+window.prevHole=function(){if(state.currentHole>1){state.currentHole--;renderScorecard();}};
+window.nextHole=function(){if(state.currentHole<18){state.currentHole++;renderScorecard();}};
+
+// ── Stroke Scorecard ──
+window.scPrevHole=function(){if(scCurrentHole>1){scCurrentHole--;renderMyScoreEntry();}};
+window.scNextHole=function(){if(scCurrentHole<18){scCurrentHole++;renderMyScoreEntry();}};
+
+window.adjustScore=function(delta){
+  const input=document.getElementById('my-score-input');
+  input.value=Math.max(1,parseInt(input.value||state.coursePar[scCurrentHole-1]||4)+delta);
+  saveMyScore();
+};
+
+window.saveMyScore=function(){
+  if(!state.myName)return;
+  const val=parseInt(document.getElementById('my-score-input').value);
+  if(isNaN(val)||val<1)return;
+  if(!state.strokes)state.strokes={};
+  if(!state.strokes[state.myName])state.strokes[state.myName]={};
+  state.strokes[state.myName][scCurrentHole]=val;
+  const par=state.coursePar[scCurrentHole-1]||4,diff=val-par;
+  const vp=document.getElementById('score-vs-par');
+  vp.textContent=diff===0?'E':diff>0?'+'+diff:''+diff;
+  vp.style.color=diff<0?'var(--green)':diff>0?'#c62828':'var(--muted)';
+  saveState();renderFullScorecard();
+};
+
+function renderMyScoreEntry(){
+  if(!state.myName||!state.players.length)return;
+  document.getElementById('sc-hole-num').textContent=scCurrentHole;
+  const par=state.coursePar[scCurrentHole-1]||4;
+  document.getElementById('sc-par-display').textContent=par;
+  document.getElementById('sc-prev-btn').disabled=scCurrentHole<=1;
+  document.getElementById('sc-next-btn').disabled=scCurrentHole>=18;
+  const myStrokes=state.strokes&&state.strokes[state.myName]&&state.strokes[state.myName][scCurrentHole];
+  const input=document.getElementById('my-score-input');
+  input.value=myStrokes||'';
+  const vp=document.getElementById('score-vs-par');
+  if(myStrokes){const diff=myStrokes-par;vp.textContent=diff===0?'E':diff>0?'+'+diff:''+diff;vp.style.color=diff<0?'var(--green)':diff>0?'#c62828':'var(--muted)';}
+  else{vp.textContent='—';vp.style.color='var(--muted)';}
+}
+
+function renderFullScorecard(){
+  const grid=document.getElementById('full-scorecard-grid');
+  if(!state.players.length){grid.innerHTML='<div class="empty-state"><p>No round in progress.</p></div>';return;}
+  const players=state.players;
+  const cols=players.length+1; // hole+par + each player
+  let html=`<div style="display:grid;grid-template-columns:36px 28px ${players.map(()=>'1fr').join(' ')};border-radius:8px;overflow:hidden;font-size:11px;">`;
+  // Header
+  html+=`<div style="background:var(--green);color:white;padding:6px 4px;text-align:center;font-weight:700;">H</div>`;
+  html+=`<div style="background:var(--green);color:white;padding:6px 2px;text-align:center;font-weight:700;">Par</div>`;
+  players.forEach(p=>{
+    const isMe=p===state.myName;
+    html+=`<div style="background:${isMe?'var(--gold)':'var(--green)'};color:white;padding:6px 2px;text-align:center;font-weight:700;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.split(' ')[0]}</div>`;
+  });
+  // Rows
+  let totals={};players.forEach(p=>totals[p]=0);
+  for(let h=1;h<=18;h++){
+    const par=state.coursePar[h-1]||4;
+    html+=`<div style="background:${h%2===0?'#f9faf9':'white'};padding:7px 4px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--green);border-bottom:1px solid #f0f0f0;">${h}</div>`;
+    html+=`<div style="background:${h%2===0?'#f9faf9':'white'};padding:7px 2px;text-align:center;font-size:11px;color:var(--muted);border-bottom:1px solid #f0f0f0;">${par}</div>`;
+    players.forEach(p=>{
+      const strokes=state.strokes&&state.strokes[p]&&state.strokes[p][h];
+      let cellContent='—',cls='color:var(--muted);';
+      if(strokes){
+        const diff=strokes-par;totals[p]+=(diff);
+        const relStr=diff===0?'E':diff>0?'+'+diff:''+diff;
+        cls=diff<0?'color:var(--green);font-weight:700;':diff>0?'color:#c62828;font-weight:700;':'color:var(--muted);';
+        cellContent=`${strokes}<br><span style="font-size:9px;">${relStr}</span>`;
+      }
+      html+=`<div style="background:${h%2===0?'#f9faf9':'white'};padding:5px 2px;text-align:center;${cls}border-bottom:1px solid #f0f0f0;font-size:12px;">${cellContent}</div>`;
+    });
+  }
+  // Totals row
+  html+=`<div style="background:var(--green-pale);padding:8px 4px;text-align:center;font-weight:700;font-size:11px;color:var(--green);">TOT</div>`;
+  html+=`<div style="background:var(--green-pale);padding:8px 2px;text-align:center;font-size:11px;color:var(--muted);">${state.coursePar.reduce((a,b)=>a+b,0)}</div>`;
+  players.forEach(p=>{
+    const t=totals[p];const sign=t>0?'+':'';
+    const cls=t<0?'color:var(--green);':'color:#c62828;';
+    html+=`<div style="background:var(--green-pale);padding:8px 2px;text-align:center;font-weight:700;font-size:13px;${cls}">${t===0?'E':sign+t}</div>`;
+  });
+  html+='</div>';
+  grid.innerHTML=html;
+}
 
 // ── Payout math ──
-function computeWolfTotals() {
-  const players = state.players;
-  const ghost = state.ghostEnabled ? state.ghostName : null;
-  const allParticipants = ghost ? [...players, ghost] : [...players];
-  const totals = {}; players.forEach(p => totals[p] = 0);
-
-  Object.keys(state.holes).forEach(hNum => {
-    const h = state.holes[hNum];
-    if (!h.winner || h.winner === 'push') return;
-    const baseMoney = h.money || state.wager;
-    const bigWolf = h.bigWolf || false, lilWolf = h.lilWolf || false;
-    const isSolo = bigWolf || lilWolf || (h.loneWolf && !h.wolfMode);
-    const hasBirdie = (h.birdies || []).length > 0, hasEagle = (h.eagles || []).length > 0;
-    const doubled = h.doubled || false, reDoubled = h.reDoubled || false;
-    let e = baseMoney;
-    if (bigWolf) e *= 2;
-    if (doubled) e *= 2;
-    if (reDoubled) e *= 2;
-    if (hasEagle) e *= 3; else if (hasBirdie) e *= 2;
-
-    const wolfName = h.wolf, partners = h.partners || [], wolfWon = h.winner === 'wolf';
-    let wolfTeam, oppTeam;
-    if (isSolo) { wolfTeam = [wolfName]; oppTeam = allParticipants.filter(p => p !== wolfName); }
-    else { wolfTeam = [wolfName, ...partners]; oppTeam = allParticipants.filter(p => !wolfTeam.includes(p)); }
-    const realWolf = wolfTeam.filter(p => players.includes(p));
-    const realOpp  = oppTeam.filter(p => players.includes(p));
-
-    if (isSolo) {
-      if (wolfWon) { realWolf.forEach(p => { totals[p] += e * realOpp.length; }); realOpp.forEach(p => { totals[p] -= e; }); }
-      else         { realWolf.forEach(p => { totals[p] -= e * realOpp.length; }); realOpp.forEach(p => { totals[p] += e; }); }
-    } else {
-      const winners = wolfWon ? realWolf : realOpp, losers = wolfWon ? realOpp : realWolf;
-      const pot = losers.length * e, share = pot / winners.length;
-      winners.forEach(p => { totals[p] += share; });
-      losers.forEach(p  => { totals[p] -= e; });
+function computeWolfTotals(){
+  const players=state.players,ghost=state.ghostEnabled?state.ghostName:null;
+  const allP=ghost?[...players,ghost]:[...players];
+  const totals={};players.forEach(p=>totals[p]=0);
+  Object.keys(state.holes).forEach(hNum=>{
+    const h=state.holes[hNum];if(!h.winner||h.winner==='push')return;
+    const base=h.money||state.wager,bigWolf=h.bigWolf||false,lilWolf=h.lilWolf||false;
+    const isSolo=bigWolf||lilWolf||(h.loneWolf&&!h.wolfMode);
+    const hasBirdie=(h.birdies||[]).length>0,hasEagle=(h.eagles||[]).length>0;
+    const doubled=h.doubled||false,reDoubled=h.reDoubled||false;
+    let e=base;if(bigWolf)e*=2;if(doubled)e*=2;if(reDoubled)e*=2;
+    if(hasEagle)e*=3;else if(hasBirdie)e*=2;
+    const wolfName=h.wolf,partners=h.partners||[],wolfWon=h.winner==='wolf';
+    let wolfTeam,oppTeam;
+    if(isSolo){wolfTeam=[wolfName];oppTeam=allP.filter(p=>p!==wolfName);}
+    else{wolfTeam=[wolfName,...partners];oppTeam=allP.filter(p=>!wolfTeam.includes(p));}
+    const rw=wolfTeam.filter(p=>players.includes(p)),ro=oppTeam.filter(p=>players.includes(p));
+    if(isSolo){
+      if(wolfWon){rw.forEach(p=>{totals[p]+=e*ro.length;});ro.forEach(p=>{totals[p]-=e;});}
+      else{rw.forEach(p=>{totals[p]-=e*ro.length;});ro.forEach(p=>{totals[p]+=e;});}
+    }else{
+      const winners=wolfWon?rw:ro,losers=wolfWon?ro:rw;
+      const pot=losers.length*e,share=pot/winners.length;
+      winners.forEach(p=>{totals[p]+=share;});losers.forEach(p=>{totals[p]-=e;});
     }
   });
   return totals;
 }
 
-function computeGreenieTotals() {
-  const players = state.players;
-  const totals = {}; players.forEach(p => totals[p] = 0);
-  if (!state.greeniesEnabled) return totals;
-  Object.keys(state.holes).forEach(hNum => {
-    const h = state.holes[hNum];
-    if (!h.greenie || !state.par3Holes.includes(parseInt(hNum))) return;
-    const winner = h.greenie;
-    if (!players.includes(winner)) return;
-    const amt = state.greenieWager || 2;
-    players.forEach(p => { if (p === winner) totals[p] += amt * (players.length - 1); else totals[p] -= amt; });
+function computeGreenieTotals(){
+  const players=state.players,totals={};players.forEach(p=>totals[p]=0);
+  if(!state.greeniesEnabled)return totals;
+  Object.keys(state.holes).forEach(hNum=>{
+    const h=state.holes[hNum],holeNum=parseInt(hNum);
+    if(!h.greenie||!state.par3Holes.includes(holeNum))return;
+    const winner=h.greenie;if(!players.includes(winner))return;
+    const amt=state.greenieWager||2;
+    players.forEach(p=>{if(p===winner)totals[p]+=amt*(players.length-1);else totals[p]-=amt;});
   });
   return totals;
 }
 
 // ── Scoreboard ──
-function renderScoreboard() {
-  if (!state.players.length) return;
-  const wolfTotals = computeWolfTotals(), greenieTotals = computeGreenieTotals();
-  const wolfSorted = [...state.players].sort((a, b) => wolfTotals[b] - wolfTotals[a]);
-
-  const table = document.getElementById('scoreboard-table');
-  table.innerHTML = `<div class="score-header" style="grid-template-columns:30px 1fr 80px;"><span>#</span><span>Player</span><span style="text-align:right;">Net</span></div>`;
-  wolfSorted.forEach((p, i) => {
-    const net = wolfTotals[p], cls = net > 0 ? 'amount-pos' : net < 0 ? 'amount-neg' : 'amount-zero';
-    const sign = net > 0 ? '+' : '';
-    const row = document.createElement('div');
-    row.className = 'score-row'; row.style.gridTemplateColumns = '30px 1fr 80px';
-    row.innerHTML = `<span class="player-rank">${i+1}</span><span class="player-name-cell">${p}</span><span class="amount-cell ${cls}" style="text-align:right;">${sign}$${Math.abs(net).toFixed(2)}</span>`;
+function renderScoreboard(){
+  if(!state.players.length)return;
+  const wt=computeWolfTotals(),gt=computeGreenieTotals();
+  const ws=[...state.players].sort((a,b)=>wt[b]-wt[a]);
+  const table=document.getElementById('scoreboard-table');
+  table.innerHTML=`<div class="score-header" style="grid-template-columns:28px 1fr 76px;"><span>#</span><span>Player</span><span style="text-align:right;">Net</span></div>`;
+  ws.forEach((p,i)=>{
+    const net=wt[p],cls=net>0?'amount-pos':net<0?'amount-neg':'amount-zero',sign=net>0?'+':'';
+    const row=document.createElement('div');row.className='score-row';row.style.gridTemplateColumns='28px 1fr 76px';
+    row.innerHTML=`<span style="font-size:11px;color:var(--muted);">${i+1}</span><span style="font-weight:600;font-size:14px;">${p}</span><span class="amount-cell ${cls}" style="text-align:right;">${sign}$${Math.abs(net).toFixed(2)}</span>`;
     table.appendChild(row);
   });
-
-  const greenieWrap = document.getElementById('greenie-scoreboard-wrap');
-  if (state.greeniesEnabled) {
-    greenieWrap.style.display = 'block';
-    const greenieSorted = [...state.players].sort((a, b) => greenieTotals[b] - greenieTotals[a]);
-    const gt = document.getElementById('greenie-scoreboard-table');
-    gt.innerHTML = `<div class="score-header" style="grid-template-columns:30px 1fr 80px;"><span>#</span><span>Player</span><span style="text-align:right;">Net</span></div>`;
-    greenieSorted.forEach((p, i) => {
-      const net = greenieTotals[p], cls = net > 0 ? 'amount-pos' : net < 0 ? 'amount-neg' : 'amount-zero';
-      const sign = net > 0 ? '+' : '';
-      const row = document.createElement('div'); row.className = 'score-row'; row.style.gridTemplateColumns = '30px 1fr 80px';
-      row.innerHTML = `<span class="player-rank">${i+1}</span><span class="player-name-cell">${p}</span><span class="amount-cell ${cls}" style="text-align:right;">${sign}$${Math.abs(net).toFixed(2)}</span>`;
-      gt.appendChild(row);
+  const gw=document.getElementById('greenie-board-wrap');
+  if(state.greeniesEnabled){
+    gw.style.display='block';
+    const gs=[...state.players].sort((a,b)=>gt[b]-gt[a]);
+    const gt2=document.getElementById('greenie-board-table');
+    gt2.innerHTML=`<div class="score-header" style="grid-template-columns:28px 1fr 76px;"><span>#</span><span>Player</span><span style="text-align:right;">Net</span></div>`;
+    gs.forEach((p,i)=>{
+      const net=gt[p],cls=net>0?'amount-pos':net<0?'amount-neg':'amount-zero',sign=net>0?'+':'';
+      const row=document.createElement('div');row.className='score-row';row.style.gridTemplateColumns='28px 1fr 76px';
+      row.innerHTML=`<span style="font-size:11px;color:var(--muted);">${i+1}</span><span style="font-weight:600;font-size:14px;">${p}</span><span class="amount-cell ${cls}" style="text-align:right;">${sign}$${Math.abs(net).toFixed(2)}</span>`;
+      gt2.appendChild(row);
     });
-  } else { greenieWrap.style.display = 'none'; }
+  }else gw.style.display='none';
 
-  // Hole log
-  const hist = document.getElementById('hole-history');
-  const rows = Object.keys(state.holes).filter(h => state.holes[h].wolf).sort((a, b) => +a - +b);
-  if (!rows.length) { hist.innerHTML = '<div class="history-header">Hole Log</div><div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">No holes saved yet.</div>'; return; }
-  hist.innerHTML = '<div class="history-header">Hole Log</div>';
-  rows.forEach(hNum => {
-    const h = state.holes[hNum];
-    const isSoloH = h.bigWolf || h.lilWolf || h.loneWolf;
-    const wolfTeam = isSoloH ? [h.wolf] : [h.wolf, ...(h.partners || [])];
-    const others = getAllRotationPlayers().filter(p => !wolfTeam.includes(p));
-    const resClass = h.winner === 'wolf' ? 'wolf-wins' : h.winner === 'team' ? 'team-wins' : 'push';
-    const resLabel = h.winner === 'wolf' ? '🐺 Wolf' : h.winner === 'team' ? '🤝 Team' : '↔ Push';
-    const wolfDisplay = wolfTeam.map(n => isGhost(n) ? `👻${n}` : n).join(', ');
-    const oppDisplay = others.map(n => isGhost(n) ? `👻${n}` : n).join(', ');
-    const modeTag = h.bigWolf ? ' <span style="background:#fff3e0;color:#e65100;padding:2px 6px;border-radius:8px;font-size:10px;">🐺 BIG 2×</span>' : h.lilWolf ? ' <span style="background:#fce4ec;color:#880e4f;padding:2px 6px;border-radius:8px;font-size:10px;">😅 LIL</span>' : '';
-    const dblTag = h.doubled ? ' <span style="background:#f3e5f5;color:#6a1b9a;padding:2px 6px;border-radius:8px;font-size:10px;">🔴 2×</span>' : '';
-    const rdTag  = h.reDoubled ? ' <span style="background:#e8f5e3;color:var(--green);padding:2px 6px;border-radius:8px;font-size:10px;">🟢 4×</span>' : '';
-    const bTag = (h.birdies && h.birdies.length > 0) ? ' <span style="background:#e8f5e3;color:var(--green);padding:2px 6px;border-radius:8px;font-size:10px;">🐦 2×</span>' : '';
-    const eTag = (h.eagles && h.eagles.length > 0) ? ' <span style="background:#fff3e0;color:#e65100;padding:2px 6px;border-radius:8px;font-size:10px;">🦅 3×</span>' : '';
-    const gTag = h.greenie ? ` <span style="background:#fff8e1;color:#8b6914;padding:2px 6px;border-radius:8px;font-size:10px;">🏆 ${h.greenie}</span>` : '';
-    const row = document.createElement('div'); row.className = 'history-row';
-    row.innerHTML = `
-      <div class="h-num">${hNum}</div>
-      <div class="h-details">
-        <div class="h-wolf">Wolf: <strong>${h.wolf}</strong>${modeTag}${rdTag||dblTag}${h.eagles&&h.eagles.length>0?eTag:bTag}${gTag}</div>
-        <div class="h-teams">${wolfDisplay} vs ${oppDisplay||'all'}</div>
-      </div>
-      <div class="h-result ${resClass}">${resLabel}</div>
-      <div class="h-money">$${h.money||state.wager}</div>`;
+  const hist=document.getElementById('hole-history');
+  const rows=Object.keys(state.holes).filter(h=>state.holes[h].wolf).sort((a,b)=>+a-+b);
+  if(!rows.length){hist.innerHTML='<div class="history-header">Hole Log</div><div style="padding:16px;text-align:center;color:var(--muted);font-size:12px;">No holes saved yet.</div>';return;}
+  hist.innerHTML='<div class="history-header">Hole Log</div>';
+  rows.forEach(hNum=>{
+    const h=state.holes[hNum],isSoloH=h.bigWolf||h.lilWolf||h.loneWolf;
+    const wolfTeam=isSoloH?[h.wolf]:[h.wolf,...(h.partners||[])];
+    const others=getAllRotationPlayers().filter(p=>!wolfTeam.includes(p));
+    const resClass=h.winner==='wolf'?'wolf-wins':h.winner==='team'?'team-wins':'push';
+    const resLabel=h.winner==='wolf'?'🐺 Wolf':h.winner==='team'?'🤝 Team':'↔ Push';
+    const mTag=h.bigWolf?' <span style="background:#fff3e0;color:#e65100;padding:1px 5px;border-radius:6px;font-size:9px;">BIG ×2</span>':h.lilWolf?' <span style="background:#fce4ec;color:#880e4f;padding:1px 5px;border-radius:6px;font-size:9px;">LIL</span>':'';
+    const dTag=h.doubled?' <span style="background:#f3e5f5;color:#6a1b9a;padding:1px 5px;border-radius:6px;font-size:9px;">🔴×2</span>':'';
+    const rdTag=h.reDoubled?' <span style="background:#e8f5e3;color:var(--green);padding:1px 5px;border-radius:6px;font-size:9px;">🟢×4</span>':'';
+    const bTag=(h.birdies&&h.birdies.length>0)?' <span style="background:#e8f5e3;color:var(--green);padding:1px 5px;border-radius:6px;font-size:9px;">🐦×2</span>':'';
+    const eTag=(h.eagles&&h.eagles.length>0)?' <span style="background:#fff3e0;color:#e65100;padding:1px 5px;border-radius:6px;font-size:9px;">🦅×3</span>':'';
+    const row=document.createElement('div');row.className='history-row';
+    row.innerHTML=`<div class="h-num">${hNum}</div><div class="h-details"><div class="h-wolf">🐺 ${h.wolf}${mTag}${rdTag||dTag}${h.eagles&&h.eagles.length>0?eTag:bTag}</div><div class="h-teams">${wolfTeam.join(', ')} vs ${others.join(', ')||'all'}</div></div><div class="h-result ${resClass}">${resLabel}</div><div class="h-money">$${h.money||state.wager}</div>`;
     hist.appendChild(row);
   });
 }
 
-window.resetRound = function() {
-  if (!isScorer) { showToast('Only the scorer can reset'); return; }
-  if (!confirm('Start a new round? This will clear all hole data.')) return;
-  state.holes = {}; state.currentHole = 1; state.roundCode = null;
-  isScorer = false;
-  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-  saveState(); showPage('lobby');
+window.resetRound=function(){
+  if(!isScorer){showToast('Only scorer can reset');return;}
+  if(!confirm('Start a new round?'))return;
+  state={...state,holes:{},currentHole:1,roundCode:null,strokes:{},myName:null};
+  isScorer=false;if(unsubscribe){unsubscribe();unsubscribe=null;}
+  try{localStorage.removeItem('wolf-v4');}catch(e){}
+  showPage('lobby');
 };
 
 // ── Init ──
-async function init() {
-  try {
-    const saved = localStorage.getItem('wolf-state-v3');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      state = { ...state, ...parsed };
-    }
-  } catch(e) {}
-
-  // If we have a saved round code, rejoin as scorer
-  if (state.roundCode && state.players.length) {
-    isScorer = true;
-    showRoundCode(state.roundCode);
-    subscribeToRound(state.roundCode);
-    // Restore setup UI
-    while (document.querySelectorAll('.player-name').length < state.players.length) {
-      const wrap = document.getElementById('player-inputs');
-      const n = document.querySelectorAll('.player-name').length + 1;
-      const row = document.createElement('div'); row.className = 'player-row';
-      row.innerHTML = `<div class="player-num">${n}</div><input type="text" class="player-name" placeholder="Player ${n} name">`;
+async function init(){
+  try{const s=localStorage.getItem('wolf-v4');if(s){const p=JSON.parse(s);state={...state,...p};}}catch(e){}
+  if(state.roundCode&&state.players.length){
+    isScorer=true;showRoundCode(state.roundCode);subscribeToRound(state.roundCode);
+    // Restore player inputs
+    while(document.querySelectorAll('.player-name').length<state.players.length){
+      const wrap=document.getElementById('player-inputs'),n=document.querySelectorAll('.player-name').length+1;
+      const row=document.createElement('div');row.className='player-row';
+      row.innerHTML=`<div class="player-num">${n}</div><input type="text" class="player-name" placeholder="Player ${n}">`;
       wrap.appendChild(row);
     }
-    document.querySelectorAll('.player-name').forEach((inp, i) => { if (state.players[i]) inp.value = state.players[i]; });
-    if (document.getElementById('wager-input')) document.getElementById('wager-input').value = state.wager;
-    if (state.ghostEnabled) {
-      document.getElementById('ghost-check').checked = true;
-      document.getElementById('ghost-label').textContent = 'Ghost Player: ON 👻';
-      document.getElementById('ghost-name-wrap').style.display = 'block';
-      document.getElementById('ghost-name-input').value = state.ghostName || 'Ghost';
-    }
-    renderSetupFromState();
+    document.querySelectorAll('.player-name').forEach((inp,i)=>{if(state.players[i])inp.value=state.players[i];});
+    if(document.getElementById('wager-input'))document.getElementById('wager-input').value=state.wager;
+    if(state.myName){document.getElementById('my-name-display').textContent=state.myName;document.getElementById('my-course-display').textContent=state.courseName||'';document.getElementById('my-score-entry').style.display='block';}
     showPage('scorecard');
   }
 }
 
-document.getElementById('player-inputs').addEventListener('input', () => { renderWolfOrder(); updateGhostCard(); });
-document.getElementById('ghost-check').addEventListener('change', toggleGhostCheck);
-
+document.getElementById('player-inputs').addEventListener('input',()=>{renderWolfOrder();updateGhostCard();renderIdentityChips();});
+document.getElementById('ghost-check').addEventListener('change',toggleGhostCheck);
 init();
 </script>
 </body>
