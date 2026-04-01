@@ -469,7 +469,7 @@ let courseParTemp = Array(18).fill(4);
 let courseNameTemp = '';
 
 // ── Survey rendering ──
-function renderSurvey() {
+window.renderSurvey = function() {
   const steps = document.getElementById('survey-steps');
   const step = surveySteps[surveyStep];
   const pct = Math.round((surveyStep / surveySteps.length) * 100);
@@ -574,7 +574,7 @@ window.surveyBack = function() {
   if (surveyStep > 0) { surveyStep--; renderSurvey(); }
 };
 
-function finishSurvey() {
+window.finishSurvey = function() {
   state.rules = {
     reshuffleOn16: surveyAnswers.reshuffleOn16,
     birdiesEagles: surveyAnswers.birdiesEagles,
@@ -850,20 +850,20 @@ window.addPlayer = function() {
   renderWolfOrder();updateGhostCard();
 };
 
-function getPlayerNames(){ return Array.from(document.querySelectorAll('.player-name')).map(i=>i.value.trim()).filter(n=>n.length>0); }
+window.getPlayerNames = function(){ return Array.from(document.querySelectorAll('.player-name')).map(i=>i.value.trim()).filter(n=>n.length>0); }
 
-function updateGhostCard(){
+window.updateGhostCard = function(){
   const names=getPlayerNames(),card=document.getElementById('ghost-card');
   card.style.display=names.length===3?'block':'none';
   if(names.length!==3){document.getElementById('ghost-check').checked=false;document.getElementById('ghost-name-wrap').style.display='none';document.getElementById('ghost-label').textContent='Ghost: Off';}
 }
-function toggleGhostCheck(){const on=document.getElementById('ghost-check').checked;document.getElementById('ghost-label').textContent=on?'Ghost: ON 👻':'Ghost: Off';document.getElementById('ghost-name-wrap').style.display=on?'block':'none';}
+window.toggleGhostCheck = function(){const on=document.getElementById('ghost-check').checked;document.getElementById('ghost-label').textContent=on?'Ghost: ON 👻':'Ghost: Off';document.getElementById('ghost-name-wrap').style.display=on?'block':'none';}
 
 function renderIdentityChips(){
   // Identity is now handled via modal popup in startRound — this is a safe no-op
 }
 
-function renderWolfOrder(){
+window.renderWolfOrder = function(){
   const names=getPlayerNames(),container=document.getElementById('wolf-order');container.innerHTML='';
   names.forEach((name,i)=>{
     const row=document.createElement('div');
@@ -1237,7 +1237,7 @@ window.prevHole=function(){if(state.currentHole>1){state.currentHole--;renderSco
 window.nextHole=function(){if(state.currentHole<18){state.currentHole++;renderScorecard();}};
 
 // ── Stroke Scorecard ──
-function renderScoreTabIdentity() {
+window.renderScoreTabIdentity = function() {
   const prompt = document.getElementById('identity-prompt');
   const entry = document.getElementById('my-score-entry');
   if (state.myName) {
@@ -1456,41 +1456,36 @@ window.resetRound=function(){
 };
 
 window.clearAllState = function clearAllState(){
-  // Stop Firebase listener
-  if(unsubscribe){unsubscribe();unsubscribe=null;}
-  isScorer=false;
-  // Wipe state completely
-  state={
-    players:[], wager:5, wolfOrder:[], currentHole:1, holes:{},
-    ghostEnabled:false, ghostName:'Ghost',
-    greeniesEnabled:false, par3Holes:[], greenieWager:2,
-    roundCode:null,
-    rules:{ reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true },
-    courseName:'', coursePar:Array(18).fill(4),
-    strokes:{}, myName:null
-  };
-  // Wipe localStorage
-  try{localStorage.removeItem('wolf-v4');}catch(e){}
-  // Reset all player name inputs to blank
-  document.querySelectorAll('.player-name').forEach(inp => inp.value='');
-  // Remove extra player rows beyond default 4
-  const wrap = document.getElementById('player-inputs');
-  wrap.querySelectorAll('.player-row').forEach((row,i)=>{ if(i>=4) row.remove(); });
-  // Reset wager
-  document.getElementById('wager-input').value='';
-  // Reset score entry
-  document.getElementById('my-score-entry').style.display='none';
-  document.getElementById('my-name-display').textContent='—';
-  document.getElementById('my-course-display').textContent='';
-  // Clear round code display
-  document.getElementById('round-code-display').innerHTML='';
-  document.getElementById('scoreboard-code-display').style.display='none';
-  // Reset viewer banner
-  document.getElementById('viewer-banner').style.display='none';
-  // Re-render setup UI clean
-  renderWolfOrder();
-  updateGhostCard();
-  setSyncStatus('');
+  try {
+    if(unsubscribe){unsubscribe();unsubscribe=null;}
+    isScorer=false;
+    state={
+      players:[], wager:5, wolfOrder:[], currentHole:1, holes:{},
+      ghostEnabled:false, ghostName:'Ghost',
+      greeniesEnabled:false, par3Holes:[], greenieWager:2,
+      roundCode:null,
+      rules:{ reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true },
+      courseName:'', coursePar:Array(18).fill(4),
+      strokes:{}, myName:null
+    };
+    try{localStorage.removeItem('wolf-v4');}catch(e){}
+    document.querySelectorAll('.player-name').forEach(inp => inp.value='');
+    const wrap = document.getElementById('player-inputs');
+    if(wrap) wrap.querySelectorAll('.player-row').forEach((row,i)=>{ if(i>=4) row.remove(); });
+    const wagerEl = document.getElementById('wager-input'); if(wagerEl) wagerEl.value='';
+    const scoreEntry = document.getElementById('my-score-entry'); if(scoreEntry) scoreEntry.style.display='none';
+    const nameEl = document.getElementById('my-name-display'); if(nameEl) nameEl.textContent='—';
+    const courseEl = document.getElementById('my-course-display'); if(courseEl) courseEl.textContent='';
+    const codeEl = document.getElementById('round-code-display'); if(codeEl) codeEl.innerHTML='';
+    const sbCode = document.getElementById('scoreboard-code-display'); if(sbCode) sbCode.style.display='none';
+    const vBanner = document.getElementById('viewer-banner'); if(vBanner) vBanner.style.display='none';
+    if(typeof renderWolfOrder==='function') renderWolfOrder();
+    if(typeof updateGhostCard==='function') updateGhostCard();
+    setSyncStatus('');
+  } catch(err) {
+    console.error('clearAllState error:', err);
+    alert('Error clearing state: ' + err.message);
+  }
 };
 
 // ── Init ──
