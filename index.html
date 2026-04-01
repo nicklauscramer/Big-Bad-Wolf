@@ -879,7 +879,7 @@ function renderIdentityChips(){
   names.forEach(p => {
     const btn = document.createElement('button');
     const isSelected = state.myName === p;
-    btn.style.cssText = `width:100%;padding:12px 16px;border-radius:10px;border:2px solid ${isSelected?'var(--green)':'#e0e0e0'};background:${isSelected?'var(--green)':'white'};color:${isSelected?'white':'var(--text)'};font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;text-align:left;transition:all .15s;`;
+    btn.style.cssText = `width:100%;padding:12px 16px;border-radius:10px;border:2px solid ${isSelected?'var(--green)':'#e0e0e0'};background:${isSelected?'var(--green)':'white'};color:${isSelected?'white':'var(--text)'};font-family:sans-serif;font-size:15px;font-weight:600;cursor:pointer;text-align:left;transition:all .15s;`;
     btn.textContent = (isSelected ? '✓ ' : '') + p;
     btn.onclick = () => {
       state.myName = p;
@@ -1243,7 +1243,7 @@ function renderScoreTabIdentity() {
   chips.innerHTML = '';
   state.players.forEach(p => {
     const btn = document.createElement('button');
-    btn.style.cssText = 'width:100%;padding:12px 16px;border-radius:10px;border:2px solid #e0e0e0;background:white;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;text-align:left;';
+    btn.style.cssText = "width:100%;padding:12px 16px;border-radius:10px;border:2px solid #e0e0e0;background:white;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;text-align:left;";
     btn.textContent = p;
     btn.onclick = () => {
       state.myName = p;
