@@ -159,7 +159,7 @@
       <div style="font-size:52px;margin-bottom:10px;">🐺</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">WOLF GOLF TRACKER</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:22px;">Live multiplayer · money · scores</div>
-      <button class="btn btn-primary" onclick="showPage('survey')" style="margin-bottom:10px;">🏌️ Start New Round</button>
+      <button class="btn btn-primary" onclick="clearAllState();showPage('survey')" style="margin-bottom:10px;">🏌️ Start New Round</button>
       <div style="font-size:12px;color:var(--muted);margin:12px 0;">— or join a round in progress —</div>
       <div style="display:flex;gap:8px;">
         <input type="text" id="join-code-input" placeholder="Enter 6-digit code" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-size:17px;font-weight:700;text-align:center;">
@@ -212,13 +212,6 @@
       <div id="ghost-name-wrap" style="display:none;margin-top:10px;">
         <input type="text" id="ghost-name-input" placeholder="Ghost name">
       </div>
-    </div>
-    <!-- Who are you -->
-    <div class="card" id="identity-card">
-      <div class="section-label">🙋 Who Are You?</div>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Select yourself so your score is tracked.</p>
-      <div id="identity-chips" style="display:flex;flex-direction:column;gap:8px;"></div>
-      <div id="identity-selected" style="display:none;margin-top:10px;padding:10px 14px;background:var(--green-pale);border:1.5px solid var(--green);border-radius:10px;font-size:13px;font-weight:600;color:var(--green);"></div>
     </div>
     <button class="btn btn-primary" onclick="startRound()">Start Round →</button>
   </div>
@@ -842,7 +835,7 @@ window.showPage = function(name) {
   if(name==='scoreboard') renderScoreboard();
   if(name==='scores'){ renderFullScorecard(); renderMyScoreEntry(); renderScoreTabIdentity(); }
   if(name==='survey'){ surveyStep=0; renderSurvey(); }
-  if(name==='setup'){ renderWolfOrder(); updateGhostCard(); setTimeout(renderIdentityChips, 200); }
+  if(name==='setup'){ renderWolfOrder(); updateGhostCard(); }
 };
 
 // ── Setup ──
@@ -853,8 +846,8 @@ window.addPlayer = function() {
   const row=document.createElement('div');row.className='player-row';
   row.innerHTML=`<div class="player-num">${n}</div><input type="text" class="player-name" placeholder="Player ${n}">`;
   wrap.appendChild(row);
-  row.querySelector('input').addEventListener('input',()=>{renderWolfOrder();updateGhostCard();renderIdentityChips();});
-  renderWolfOrder();updateGhostCard();renderIdentityChips();
+  row.querySelector('input').addEventListener('input',()=>{renderWolfOrder();updateGhostCard();});
+  renderWolfOrder();updateGhostCard();
 };
 
 function getPlayerNames(){ return Array.from(document.querySelectorAll('.player-name')).map(i=>i.value.trim()).filter(n=>n.length>0); }
@@ -908,25 +901,58 @@ function renderWolfOrder(){
 window.startRound = async function() {
   const players=getPlayerNames();
   if(players.length<2){showToast('Enter at least 2 players');return;}
-  const code=generateCode();
-  state.players=players;
-  state.wager=parseFloat(document.getElementById('wager-input').value)||5;
-  state.wolfOrder=[...players];
-  state.currentHole=1;state.holes={};
-  state.ghostEnabled=document.getElementById('ghost-check').checked&&players.length===3;
-  state.ghostName=document.getElementById('ghost-name-input').value.trim()||'Ghost';
-  state.strokes={};
-  state.roundCode=code;
-  isScorer=true;
-  showRoundCode(code);
-  subscribeToRound(code);
-  saveState();
-  document.getElementById('my-name-display').textContent=state.myName||'—';
-  document.getElementById('my-course-display').textContent=state.courseName||'';
-  if(state.myName) document.getElementById('my-score-entry').style.display='block';
-  showPage('scorecard');
-  showToast('Round started! Code: '+code);
+  // Show identity picker modal before launching round
+  showIdentityPickerModal(players, (chosenName) => {
+    state.myName = chosenName;
+    const code=generateCode();
+    state.players=players;
+    state.wager=parseFloat(document.getElementById('wager-input').value)||5;
+    state.wolfOrder=[...players];
+    state.currentHole=1;state.holes={};
+    state.ghostEnabled=document.getElementById('ghost-check').checked&&players.length===3;
+    state.ghostName=document.getElementById('ghost-name-input').value.trim()||'Ghost';
+    state.strokes={};
+    state.roundCode=code;
+    isScorer=true;
+    showRoundCode(code);
+    subscribeToRound(code);
+    saveState();
+    if(state.myName){
+      document.getElementById('my-name-display').textContent=state.myName;
+      document.getElementById('my-course-display').textContent=state.courseName||'';
+      document.getElementById('my-score-entry').style.display='block';
+    }
+    showPage('scorecard');
+    showToast('Round started! Code: '+code);
+  });
 };
+
+function showIdentityPickerModal(players, callback) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;';
+  const inner = document.createElement('div');
+  inner.style.cssText = 'background:white;border-radius:18px;padding:26px;width:100%;max-width:360px;';
+  inner.innerHTML = `
+    <div style="font-size:18px;font-weight:700;margin-bottom:6px;">🙋 Who are you?</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:18px;">Select your name so your score is tracked each hole.</div>
+    <div id="modal-player-btns" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;"></div>
+    <button id="modal-skip-btn" style="width:100%;padding:12px;border-radius:10px;border:1.5px solid #e0e0e0;background:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;color:var(--muted);">Skip — just scoring wolf game</button>
+  `;
+  modal.appendChild(inner);
+  document.body.appendChild(modal);
+
+  const btnContainer = inner.querySelector('#modal-player-btns');
+  players.forEach(p => {
+    const btn = document.createElement('button');
+    btn.style.cssText = 'width:100%;padding:14px 16px;border-radius:12px;border:2px solid #e0e0e0;background:white;font-size:16px;font-weight:600;cursor:pointer;text-align:left;transition:all .15s;';
+    btn.textContent = p;
+    btn.onmouseover = () => { btn.style.borderColor='var(--green)'; btn.style.background='var(--green-pale)'; };
+    btn.onmouseout  = () => { btn.style.borderColor='#e0e0e0'; btn.style.background='white'; };
+    btn.onclick = () => { modal.remove(); callback(p); };
+    btnContainer.appendChild(btn);
+  });
+  inner.querySelector('#modal-skip-btn').onclick = () => { modal.remove(); callback(null); };
+}
 
 // ── Wolf game ──
 function getAllRotationPlayers(){return state.players;}
@@ -1437,9 +1463,16 @@ function renderScoreboard(){
 }
 
 window.resetRound=function(){
-  if(!isScorer){showToast('Only scorer can reset');return;}
-  if(!confirm('Start a new round?'))return;
-  // Clear full state
+  if(!confirm('Start a new round? This will clear all current data.'))return;
+  clearAllState();
+  showPage('lobby');
+};
+
+function clearAllState(){
+  // Stop Firebase listener
+  if(unsubscribe){unsubscribe();unsubscribe=null;}
+  isScorer=false;
+  // Wipe state completely
   state={
     players:[], wager:5, wolfOrder:[], currentHole:1, holes:{},
     ghostEnabled:false, ghostName:'Ghost',
@@ -1449,28 +1482,29 @@ window.resetRound=function(){
     courseName:'', coursePar:Array(18).fill(4),
     strokes:{}, myName:null
   };
-  isScorer=false;
-  if(unsubscribe){unsubscribe();unsubscribe=null;}
+  // Wipe localStorage
   try{localStorage.removeItem('wolf-v4');}catch(e){}
-  // Clear player name inputs back to blank
+  // Reset all player name inputs to blank
   document.querySelectorAll('.player-name').forEach(inp => inp.value='');
-  // Remove any extra player rows beyond the default 4
+  // Remove extra player rows beyond default 4
   const wrap = document.getElementById('player-inputs');
-  const rows = wrap.querySelectorAll('.player-row');
-  rows.forEach((row, i) => { if(i >= 4) row.remove(); });
-  // Reset wager input
-  document.getElementById('wager-input').value = '';
-  // Reset identity section
-  document.getElementById('identity-selected') && (document.getElementById('identity-selected').style.display='none');
+  wrap.querySelectorAll('.player-row').forEach((row,i)=>{ if(i>=4) row.remove(); });
+  // Reset wager
+  document.getElementById('wager-input').value='';
+  // Reset score entry
   document.getElementById('my-score-entry').style.display='none';
   document.getElementById('my-name-display').textContent='—';
+  document.getElementById('my-course-display').textContent='';
   // Clear round code display
   document.getElementById('round-code-display').innerHTML='';
+  document.getElementById('scoreboard-code-display').style.display='none';
+  // Reset viewer banner
+  document.getElementById('viewer-banner').style.display='none';
+  // Re-render setup UI clean
   renderWolfOrder();
   updateGhostCard();
-  renderIdentityChips();
-  showPage('lobby');
-};
+  setSyncStatus('');
+}
 
 // ── Init ──
 async function init(){
@@ -1494,7 +1528,7 @@ async function init(){
   }
 }
 
-document.getElementById('player-inputs').addEventListener('input',()=>{renderWolfOrder();updateGhostCard();renderIdentityChips();});
+document.getElementById('player-inputs').addEventListener('input',()=>{renderWolfOrder();updateGhostCard();});
 document.getElementById('ghost-check').addEventListener('change',toggleGhostCheck);
 init();
 </script>
