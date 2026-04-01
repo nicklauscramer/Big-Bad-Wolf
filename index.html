@@ -216,8 +216,9 @@
     <!-- Who are you -->
     <div class="card" id="identity-card">
       <div class="section-label">🙋 Who Are You?</div>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Select yourself so your score is linked to your name.</p>
-      <div id="identity-chips" class="player-chips" style="gap:10px;"></div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Select yourself so your score is tracked.</p>
+      <div id="identity-chips" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <div id="identity-selected" style="display:none;margin-top:10px;padding:10px 14px;background:var(--green-pale);border:1.5px solid var(--green);border-radius:10px;font-size:13px;font-weight:600;color:var(--green);"></div>
     </div>
     <button class="btn btn-primary" onclick="startRound()">Start Round →</button>
   </div>
@@ -298,11 +299,29 @@
       <!-- Birdie / Eagle (shown only if rules allow) -->
       <div id="birdie-section" style="display:none;">
         <div class="divider"></div>
-        <div class="team-label" style="margin-bottom:6px;">🐦 Birdie — doubles the hole</div>
-        <div class="player-chips" id="birdie-chips" style="margin-bottom:12px;"></div>
+        <!-- Birdie row -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;">
+            <input type="checkbox" id="birdie-check" onchange="toggleBirdieCheck()" style="width:18px;height:18px;accent-color:var(--green);">
+            <span style="font-size:14px;font-weight:600;">🐦 Birdie? <span style="font-size:11px;font-weight:400;color:var(--muted);">doubles the hole</span></span>
+          </label>
+        </div>
+        <div id="birdie-players" style="display:none;margin-bottom:12px;">
+          <div class="team-label" style="margin-bottom:6px;">Who birdied?</div>
+          <div class="player-chips" id="birdie-chips"></div>
+        </div>
         <div id="birdie-note" style="display:none;background:#e8f5e3;border:1.5px solid var(--green);border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:var(--green);font-weight:600;">🐦 Birdie! → $<span id="birdie-amt">0</span></div>
-        <div class="team-label" style="margin-bottom:6px;">🦅 Eagle — triples the hole</div>
-        <div class="player-chips" id="eagle-chips" style="margin-bottom:12px;"></div>
+        <!-- Eagle row -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;">
+            <input type="checkbox" id="eagle-check" onchange="toggleEagleCheck()" style="width:18px;height:18px;accent-color:#e65100;">
+            <span style="font-size:14px;font-weight:600;">🦅 Eagle? <span style="font-size:11px;font-weight:400;color:var(--muted);">triples the hole</span></span>
+          </label>
+        </div>
+        <div id="eagle-players" style="display:none;margin-bottom:12px;">
+          <div class="team-label" style="margin-bottom:6px;">Who eagled?</div>
+          <div class="player-chips" id="eagle-chips"></div>
+        </div>
         <div id="eagle-note" style="display:none;background:#fff3e0;border:1.5px solid #e65100;border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:#bf360c;font-weight:600;">🦅 Eagle! → $<span id="eagle-amt">0</span></div>
       </div>
       <!-- Greenie -->
@@ -320,10 +339,19 @@
 
   <!-- SCORECARD TAB (stroke scores) -->
   <div id="page-scores" class="page">
+    <div class="card" id="identity-prompt" style="display:none;">
+      <div class="section-label">🙋 Who Are You?</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Select your name to enter your score.</p>
+      <div id="score-tab-identity-chips" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
     <div id="my-score-entry" style="display:none;">
       <div class="card">
         <div class="section-label">✏️ Enter Your Score</div>
-        <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Playing as: <strong id="my-name-display">—</strong> &nbsp;·&nbsp; <span id="my-course-display" style="color:var(--green);font-weight:600;"></span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:13px;color:var(--muted);">Playing as: <strong id="my-name-display">—</strong></div>
+          <button onclick="showIdentityPrompt()" style="padding:5px 10px;border-radius:8px;border:1.5px solid #e0e0e0;background:white;font-size:11px;font-weight:600;cursor:pointer;color:var(--muted);">Change</button>
+        </div>
+        <div style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:12px;"><span id="my-course-display"></span></div>
         <div class="hole-nav" style="margin-bottom:10px;">
           <button class="nav-btn" id="sc-prev-btn" onclick="scPrevHole()">←</button>
           <div style="text-align:center;">
@@ -367,6 +395,7 @@
 <!-- Bottom Nav -->
 <div class="bottom-nav">
   <button class="nav-tab active" id="nav-lobby" onclick="showPage('lobby')"><span class="tab-icon">🏠</span>Home</button>
+  <button class="nav-tab" id="nav-setup" onclick="showPage('setup')"><span class="tab-icon">⚙️</span>Setup</button>
   <button class="nav-tab" id="nav-scorecard" onclick="showPage('scorecard')"><span class="tab-icon">🏌️</span>Wolf</button>
   <button class="nav-tab" id="nav-scores" onclick="showPage('scores')"><span class="tab-icon">📋</span>Scores</button>
   <button class="nav-tab" id="nav-scoreboard" onclick="showPage('scoreboard')"><span class="tab-icon">🏆</span>Money</button>
@@ -625,16 +654,22 @@ window.lookupCourse = async function() {
       body: JSON.stringify({
         model:'claude-sonnet-4-5',
         max_tokens:600,
-        system:`You are a golf course database. When given a course name, return ONLY a JSON object with no other text, no markdown, no backticks.
-Format: {"found":true,"name":"Full Official Course Name","pars":[4,4,3,4,5,3,4,4,5,4,3,4,5,4,3,4,4,5]}
-The pars array must have exactly 18 integers (each 3, 4, or 5).
-If you don't know the exact hole-by-hole par, return: {"found":false}`,
+        system:`You are a golf course database assistant. You know the hole-by-hole par for thousands of golf courses worldwide including famous courses like Pebble Beach, Augusta National, TPC Sawgrass, Spyglass Hill, Torrey Pines, St Andrews, etc. When given a course name, respond with ONLY a raw JSON object — no markdown, no backticks, no explanation, no extra text whatsoever. Just the JSON.
+Format when found: {"found":true,"name":"Full Official Course Name","pars":[4,4,3,4,5,3,4,4,5,4,3,4,5,4,3,4,4,5]}
+The pars array must have exactly 18 integers, each being 3, 4, or 5.
+Format when not found: {"found":false}
+Never add any text before or after the JSON object.`,
         messages:[{role:'user',content:`Course: ${name}`}]
       })
     });
     const data = await resp.json();
     console.log('Course lookup response:', JSON.stringify(data));
-    const text = data.content?.[0]?.text || '{"found":false}';
+    let rawText = data.content?.[0]?.text || '{"found":false}';
+    // Strip any markdown code blocks the model might add
+    rawText = rawText.replace(/```json/gi,'').replace(/```/g,'').trim();
+    // Extract just the JSON object if there's surrounding text
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    const text = jsonMatch ? jsonMatch[0] : rawText;
     let parsed;
     try { parsed = JSON.parse(text.trim()); } catch(e) { parsed = {found:false}; }
 
@@ -805,9 +840,9 @@ window.showPage = function(name) {
   const nav=document.getElementById('nav-'+name);if(nav)nav.classList.add('active');
   if(name==='scorecard') renderScorecard();
   if(name==='scoreboard') renderScoreboard();
-  if(name==='scores'){ renderFullScorecard(); renderMyScoreEntry(); }
+  if(name==='scores'){ renderFullScorecard(); renderMyScoreEntry(); renderScoreTabIdentity(); }
   if(name==='survey'){ surveyStep=0; renderSurvey(); }
-  if(name==='setup'){ renderWolfOrder(); updateGhostCard(); setTimeout(renderIdentityChips, 100); }
+  if(name==='setup'){ renderWolfOrder(); updateGhostCard(); setTimeout(renderIdentityChips, 200); }
 };
 
 // ── Setup ──
@@ -832,26 +867,31 @@ function updateGhostCard(){
 function toggleGhostCheck(){const on=document.getElementById('ghost-check').checked;document.getElementById('ghost-label').textContent=on?'Ghost: ON 👻':'Ghost: Off';document.getElementById('ghost-name-wrap').style.display=on?'block':'none';}
 
 function renderIdentityChips(){
-  // Use typed names if available, fall back to state.players (for page reload)
+  // Always build from state.players (most reliable source)
   const typed = getPlayerNames();
   const names = typed.length ? typed : (state.players || []);
-  const container=document.getElementById('identity-chips');container.innerHTML='';
-  const card=document.getElementById('identity-card');
-  if(!names.length){card.style.display='none';return;}
-  card.style.display='block';
-  names.forEach(p=>{
-    const chip=document.createElement('div');chip.className='identity-chip'+(state.myName===p?' selected':'');
-    chip.textContent=p;
-    chip.onclick=()=>{
-      state.myName=p;
-      document.querySelectorAll('.identity-chip').forEach(c=>c.classList.remove('selected'));
-      chip.classList.add('selected');
-      document.getElementById('my-name-display').textContent=p;
-      document.getElementById('my-course-display').textContent=state.courseName||'';
-      document.getElementById('my-score-entry').style.display='block';
-      showToast('Playing as ' + p);
+  const container = document.getElementById('identity-chips');
+  const card = document.getElementById('identity-card');
+  const selectedDiv = document.getElementById('identity-selected');
+  container.innerHTML = '';
+  if (!names.length) { card.style.display='none'; return; }
+  card.style.display = 'block';
+  names.forEach(p => {
+    const btn = document.createElement('button');
+    const isSelected = state.myName === p;
+    btn.style.cssText = `width:100%;padding:12px 16px;border-radius:10px;border:2px solid ${isSelected?'var(--green)':'#e0e0e0'};background:${isSelected?'var(--green)':'white'};color:${isSelected?'white':'var(--text)'};font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;text-align:left;transition:all .15s;`;
+    btn.textContent = (isSelected ? '✓ ' : '') + p;
+    btn.onclick = () => {
+      state.myName = p;
+      document.getElementById('my-name-display').textContent = p;
+      document.getElementById('my-course-display').textContent = state.courseName || '';
+      document.getElementById('my-score-entry').style.display = 'block';
+      selectedDiv.style.display = 'block';
+      selectedDiv.textContent = '✓ Playing as ' + p;
+      renderIdentityChips(); // re-render to update highlight
+      showToast('Playing as ' + p + ' ✓');
     };
-    container.appendChild(chip);
+    container.appendChild(btn);
   });
 }
 
@@ -904,6 +944,43 @@ function getPressureOrder(hole){
   players.sort((a,b)=>{const d=(totals[a]||0)-(totals[b]||0);return d!==0?d:rnd(state.players.indexOf(a))-rnd(state.players.indexOf(b));});
   return players;
 }
+
+window.toggleBirdieCheck = function() {
+  const on = document.getElementById('birdie-check').checked;
+  const hole = state.currentHole;
+  if (!state.holes[hole]) state.holes[hole] = {};
+  document.getElementById('birdie-players').style.display = on ? 'block' : 'none';
+  if (!on) {
+    // Clear birdies when unchecked
+    state.holes[hole].birdies = [];
+    document.querySelectorAll('#birdie-chips .chip').forEach(c => c.classList.remove('team'));
+  }
+  // Eagle and birdie are mutually exclusive at the checkbox level
+  if (on && document.getElementById('eagle-check').checked) {
+    document.getElementById('eagle-check').checked = false;
+    document.getElementById('eagle-players').style.display = 'none';
+    state.holes[hole].eagles = [];
+  }
+  updatePayoutNote(); saveState();
+};
+
+window.toggleEagleCheck = function() {
+  const on = document.getElementById('eagle-check').checked;
+  const hole = state.currentHole;
+  if (!state.holes[hole]) state.holes[hole] = {};
+  document.getElementById('eagle-players').style.display = on ? 'block' : 'none';
+  if (!on) {
+    state.holes[hole].eagles = [];
+    document.querySelectorAll('#eagle-chips .chip').forEach(c => c.classList.remove('wolf-wins'));
+  }
+  // Eagle and birdie are mutually exclusive at the checkbox level
+  if (on && document.getElementById('birdie-check').checked) {
+    document.getElementById('birdie-check').checked = false;
+    document.getElementById('birdie-players').style.display = 'none';
+    state.holes[hole].birdies = [];
+  }
+  updatePayoutNote(); saveState();
+};
 
 window.toggleDouble=function(){
   const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
@@ -1088,10 +1165,26 @@ function renderScorecard(){
   // Birdie/eagle section
   document.getElementById('birdie-section').style.display=state.rules.birdiesEagles?'block':'none';
   if(state.rules.birdiesEagles){
+    const hasBirdies = (hData.birdies||[]).length > 0;
+    const hasEagles  = (hData.eagles||[]).length > 0;
+    // Birdie checkbox + players
+    document.getElementById('birdie-check').checked = hasBirdies;
+    document.getElementById('birdie-players').style.display = hasBirdies ? 'block' : 'none';
     const bc=document.getElementById('birdie-chips');bc.innerHTML='';
-    (state.players).forEach(p=>{const chip=document.createElement('div');chip.className='chip';chip.textContent='🐦 '+p;if((hData.birdies||[]).includes(p))chip.classList.add('team');chip.onclick=()=>toggleBirdie(p,chip);bc.appendChild(chip);});
+    state.players.forEach(p=>{
+      const chip=document.createElement('div');chip.className='chip';chip.textContent=p;
+      if((hData.birdies||[]).includes(p))chip.classList.add('team');
+      chip.onclick=()=>toggleBirdie(p,chip);bc.appendChild(chip);
+    });
+    // Eagle checkbox + players
+    document.getElementById('eagle-check').checked = hasEagles;
+    document.getElementById('eagle-players').style.display = hasEagles ? 'block' : 'none';
     const ec=document.getElementById('eagle-chips');ec.innerHTML='';
-    (state.players).forEach(p=>{const chip=document.createElement('div');chip.className='chip';chip.textContent='🦅 '+p;if((hData.eagles||[]).includes(p))chip.classList.add('wolf-wins');chip.onclick=()=>toggleEagle(p,chip);ec.appendChild(chip);});
+    state.players.forEach(p=>{
+      const chip=document.createElement('div');chip.className='chip';chip.textContent=p;
+      if((hData.eagles||[]).includes(p))chip.classList.add('wolf-wins');
+      chip.onclick=()=>toggleEagle(p,chip);ec.appendChild(chip);
+    });
   }
 
   // Greenie section
@@ -1131,6 +1224,46 @@ window.prevHole=function(){if(state.currentHole>1){state.currentHole--;renderSco
 window.nextHole=function(){if(state.currentHole<18){state.currentHole++;renderScorecard();}};
 
 // ── Stroke Scorecard ──
+function renderScoreTabIdentity() {
+  const prompt = document.getElementById('identity-prompt');
+  const entry = document.getElementById('my-score-entry');
+  if (state.myName) {
+    prompt.style.display = 'none';
+    entry.style.display = 'block';
+    document.getElementById('my-name-display').textContent = state.myName;
+    document.getElementById('my-course-display').textContent = state.courseName || '';
+    renderMyScoreEntry();
+    return;
+  }
+  // No name set — show picker
+  if (!state.players.length) { prompt.style.display='none'; return; }
+  prompt.style.display = 'block';
+  entry.style.display = 'none';
+  const chips = document.getElementById('score-tab-identity-chips');
+  chips.innerHTML = '';
+  state.players.forEach(p => {
+    const btn = document.createElement('button');
+    btn.style.cssText = 'width:100%;padding:12px 16px;border-radius:10px;border:2px solid #e0e0e0;background:white;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;text-align:left;';
+    btn.textContent = p;
+    btn.onclick = () => {
+      state.myName = p;
+      document.getElementById('my-name-display').textContent = p;
+      document.getElementById('my-course-display').textContent = state.courseName || '';
+      prompt.style.display = 'none';
+      entry.style.display = 'block';
+      renderIdentityChips();
+      renderMyScoreEntry();
+      showToast('Playing as ' + p + ' ✓');
+    };
+    chips.appendChild(btn);
+  });
+}
+
+window.showIdentityPrompt = function() {
+  state.myName = null;
+  renderScoreTabIdentity();
+};
+
 window.scPrevHole=function(){if(scCurrentHole>1){scCurrentHole--;renderMyScoreEntry();}};
 window.scNextHole=function(){if(scCurrentHole<18){scCurrentHole++;renderMyScoreEntry();}};
 
@@ -1306,9 +1439,36 @@ function renderScoreboard(){
 window.resetRound=function(){
   if(!isScorer){showToast('Only scorer can reset');return;}
   if(!confirm('Start a new round?'))return;
-  state={...state,holes:{},currentHole:1,roundCode:null,strokes:{},myName:null};
-  isScorer=false;if(unsubscribe){unsubscribe();unsubscribe=null;}
+  // Clear full state
+  state={
+    players:[], wager:5, wolfOrder:[], currentHole:1, holes:{},
+    ghostEnabled:false, ghostName:'Ghost',
+    greeniesEnabled:false, par3Holes:[], greenieWager:2,
+    roundCode:null,
+    rules:{ reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true },
+    courseName:'', coursePar:Array(18).fill(4),
+    strokes:{}, myName:null
+  };
+  isScorer=false;
+  if(unsubscribe){unsubscribe();unsubscribe=null;}
   try{localStorage.removeItem('wolf-v4');}catch(e){}
+  // Clear player name inputs back to blank
+  document.querySelectorAll('.player-name').forEach(inp => inp.value='');
+  // Remove any extra player rows beyond the default 4
+  const wrap = document.getElementById('player-inputs');
+  const rows = wrap.querySelectorAll('.player-row');
+  rows.forEach((row, i) => { if(i >= 4) row.remove(); });
+  // Reset wager input
+  document.getElementById('wager-input').value = '';
+  // Reset identity section
+  document.getElementById('identity-selected') && (document.getElementById('identity-selected').style.display='none');
+  document.getElementById('my-score-entry').style.display='none';
+  document.getElementById('my-name-display').textContent='—';
+  // Clear round code display
+  document.getElementById('round-code-display').innerHTML='';
+  renderWolfOrder();
+  updateGhostCard();
+  renderIdentityChips();
   showPage('lobby');
 };
 
