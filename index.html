@@ -860,32 +860,7 @@ function updateGhostCard(){
 function toggleGhostCheck(){const on=document.getElementById('ghost-check').checked;document.getElementById('ghost-label').textContent=on?'Ghost: ON 👻':'Ghost: Off';document.getElementById('ghost-name-wrap').style.display=on?'block':'none';}
 
 function renderIdentityChips(){
-  // Always build from state.players (most reliable source)
-  const typed = getPlayerNames();
-  const names = typed.length ? typed : (state.players || []);
-  const container = document.getElementById('identity-chips');
-  const card = document.getElementById('identity-card');
-  const selectedDiv = document.getElementById('identity-selected');
-  container.innerHTML = '';
-  if (!names.length) { card.style.display='none'; return; }
-  card.style.display = 'block';
-  names.forEach(p => {
-    const btn = document.createElement('button');
-    const isSelected = state.myName === p;
-    btn.style.cssText = `width:100%;padding:12px 16px;border-radius:10px;border:2px solid ${isSelected?'var(--green)':'#e0e0e0'};background:${isSelected?'var(--green)':'white'};color:${isSelected?'white':'var(--text)'};font-family:sans-serif;font-size:15px;font-weight:600;cursor:pointer;text-align:left;transition:all .15s;`;
-    btn.textContent = (isSelected ? '✓ ' : '') + p;
-    btn.onclick = () => {
-      state.myName = p;
-      document.getElementById('my-name-display').textContent = p;
-      document.getElementById('my-course-display').textContent = state.courseName || '';
-      document.getElementById('my-score-entry').style.display = 'block';
-      selectedDiv.style.display = 'block';
-      selectedDiv.textContent = '✓ Playing as ' + p;
-      renderIdentityChips(); // re-render to update highlight
-      showToast('Playing as ' + p + ' ✓');
-    };
-    container.appendChild(btn);
-  });
+  // Identity is now handled via modal popup in startRound — this is a safe no-op
 }
 
 function renderWolfOrder(){
