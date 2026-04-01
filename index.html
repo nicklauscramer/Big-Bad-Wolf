@@ -932,26 +932,38 @@ function showIdentityPickerModal(players, callback) {
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;';
   const inner = document.createElement('div');
   inner.style.cssText = 'background:white;border-radius:18px;padding:26px;width:100%;max-width:360px;';
-  inner.innerHTML = `
-    <div style="font-size:18px;font-weight:700;margin-bottom:6px;">🙋 Who are you?</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:18px;">Select your name so your score is tracked each hole.</div>
-    <div id="modal-player-btns" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;"></div>
-    <button id="modal-skip-btn" style="width:100%;padding:12px;border-radius:10px;border:1.5px solid #e0e0e0;background:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;color:var(--muted);">Skip — just scoring wolf game</button>
-  `;
-  modal.appendChild(inner);
-  document.body.appendChild(modal);
 
-  const btnContainer = inner.querySelector('#modal-player-btns');
+  // Title
+  const title = document.createElement('div');
+  title.style.cssText = 'font-size:18px;font-weight:700;margin-bottom:6px;';
+  title.textContent = '🙋 Who are you?';
+  inner.appendChild(title);
+
+  const sub = document.createElement('div');
+  sub.style.cssText = 'font-size:13px;color:var(--muted);margin-bottom:18px;';
+  sub.textContent = 'Select your name so your score is tracked each hole.';
+  inner.appendChild(sub);
+
+  // Player buttons
   players.forEach(p => {
     const btn = document.createElement('button');
-    btn.style.cssText = 'width:100%;padding:14px 16px;border-radius:12px;border:2px solid #e0e0e0;background:white;font-size:16px;font-weight:600;cursor:pointer;text-align:left;transition:all .15s;';
+    btn.style.cssText = 'display:block;width:100%;padding:14px 16px;border-radius:12px;border:2px solid #e0e0e0;background:white;font-size:16px;font-weight:600;cursor:pointer;text-align:left;margin-bottom:10px;';
     btn.textContent = p;
     btn.onmouseover = () => { btn.style.borderColor='var(--green)'; btn.style.background='var(--green-pale)'; };
     btn.onmouseout  = () => { btn.style.borderColor='#e0e0e0'; btn.style.background='white'; };
     btn.onclick = () => { modal.remove(); callback(p); };
-    btnContainer.appendChild(btn);
+    inner.appendChild(btn);
   });
-  inner.querySelector('#modal-skip-btn').onclick = () => { modal.remove(); callback(null); };
+
+  // Skip button
+  const skipBtn = document.createElement('button');
+  skipBtn.style.cssText = 'display:block;width:100%;padding:12px;border-radius:10px;border:1.5px solid #e0e0e0;background:white;font-size:14px;font-weight:600;cursor:pointer;color:#7a7a7a;margin-top:4px;';
+  skipBtn.textContent = 'Skip — just scoring wolf game';
+  skipBtn.onclick = () => { modal.remove(); callback(null); };
+  inner.appendChild(skipBtn);
+
+  modal.appendChild(inner);
+  document.body.appendChild(modal);
 }
 
 // ── Wolf game ──
