@@ -1455,7 +1455,7 @@ window.resetRound=function(){
   showPage('lobby');
 };
 
-function clearAllState(){
+window.clearAllState = function clearAllState(){
   // Stop Firebase listener
   if(unsubscribe){unsubscribe();unsubscribe=null;}
   isScorer=false;
@@ -1491,7 +1491,7 @@ function clearAllState(){
   renderWolfOrder();
   updateGhostCard();
   setSyncStatus('');
-}
+};
 
 // ── Init ──
 async function init(){
