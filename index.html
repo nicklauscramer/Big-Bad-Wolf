@@ -714,7 +714,7 @@ async function checkGolfCourseAPI(query) {
     if (!sc) return { name: courseName, pars: null };
     const pars = parseScorecardPars(sc);
     return { name: course.club_name || courseName, pars };
-  } catch(e) { console.log('GolfCourseAPI error:', e); return null; }
+  } catch(e) { debugLog('GolfCourseAPI ERROR: ' + e.message); return null; }
 }
 
 window.lookupCourse = async function() {
@@ -733,13 +733,17 @@ window.lookupCourse = async function() {
   }
 
   const debugPanel = document.getElementById('course-debug-panel');
-  if (debugPanel) { debugPanel.textContent = ''; debugPanel.style.display = 'none'; }
+  if (debugPanel) { debugPanel.textContent = ''; debugPanel.style.display = 'block'; }
   result.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:13px;">🔍 Searching courses…</div>';
+  debugLog('--- New search: ' + name + ' ---');
 
   debugLog('Searching: ' + name);
   // ── Tier 2: Firebase custom courses ──
-  const firebaseMatch = await checkFirebaseCourses(name);
-  if (firebaseMatch) {
+  let firebaseMatch = null;
+  try { firebaseMatch = await checkFirebaseCourses(name); }
+  catch(e) { debugLog('Firebase check failed: ' + e.message); }
+  debugLog('Firebase result: ' + (firebaseMatch ? 'FOUND' : 'null'));
+  if (firebaseMatch && firebaseMatch.name) {
     courseNameTemp = firebaseMatch.name;
     courseParTemp = [...firebaseMatch.pars];
     result.innerHTML = `<div style="padding:10px 14px;background:var(--green-pale);border:1.5px solid var(--green);border-radius:10px;font-size:13px;font-weight:600;color:var(--green);margin-bottom:10px;">✅ ${firebaseMatch.name} <span style="font-weight:400;font-size:11px;">(saved course)</span></div>`;
@@ -750,7 +754,10 @@ window.lookupCourse = async function() {
   debugLog('Not in Firebase, trying GolfCourseAPI...');
   // ── Tier 3: GolfCourseAPI (30,000 courses) ──
   result.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:13px;">🔍 Checking course database…</div>';
-  const apiMatch = await checkGolfCourseAPI(name);
+  let apiMatch = null;
+  try { apiMatch = await checkGolfCourseAPI(name); }
+  catch(e) { debugLog('GolfCourseAPI call failed: ' + e.message); }
+  debugLog('API result: ' + (apiMatch ? (apiMatch.pars ? 'FOUND with pars' : 'found but no pars') : 'null'));
   if (apiMatch && apiMatch.pars) {
     debugLog('Found with pars!', { name: apiMatch.name, pars: apiMatch.pars });
     courseNameTemp = apiMatch.name;
