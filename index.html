@@ -507,9 +507,10 @@ function renderCourseStep(container) {
     <div style="font-size:16px;font-weight:700;margin-bottom:6px;">⛳ Which course are you playing?</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">We'll auto-fill the par for each hole.</div>
     <div style="display:flex;gap:8px;margin-bottom:12px;">
-      <input type="text" id="course-search-input" placeholder="e.g. Pebble Beach Golf Links" style="flex:1;">
+      <input type="text" id="course-search-input" placeholder="e.g. Pebble Beach" style="flex:1;">
       <button onclick="lookupCourse()" style="padding:10px 14px;border-radius:10px;border:none;background:var(--green);color:white;font-weight:600;font-size:13px;cursor:pointer;">Look up</button>
     </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">💡 Tip: Use short names like <strong>Pebble Beach</strong>, <strong>Augusta</strong>, or <strong>TPC Sawgrass</strong></div>
     <div id="course-lookup-result"></div>
     <div id="course-par-editor" style="display:none;">
       <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;" id="course-par-title">Par per hole</div>
@@ -643,27 +644,65 @@ async function checkFirebaseCourses(query) {
 }
 
 // ── Tier 3: GolfCourseAPI ──
+// Parse scorecard JSON string from GolfCourseAPI into pars array
+function parseScorecardPars(scorecard) {
+  try {
+    // scorecard is a JSON string like '[{"1":"4","2":"5",...,"Hole:":"Par:"},...]'
+    const rows = typeof scorecard === 'string' ? JSON.parse(scorecard) : scorecard;
+    // Find the Par row — identified by "Hole:" or "Hole" key containing "Par"
+    const parRow = rows.find(r => {
+      const vals = Object.values(r);
+      return vals.some(v => typeof v === 'string' && v.toLowerCase().includes('par'));
+    });
+    if (!parRow) return null;
+    const pars = [];
+    for (let i = 1; i <= 18; i++) {
+      const val = parRow[String(i)] || parRow[i];
+      const n = parseInt(val);
+      if (!n || n < 3 || n > 6) return null; // invalid par
+      pars.push(n);
+    }
+    return pars.length === 18 ? pars : null;
+  } catch(e) { return null; }
+}
+
 async function checkGolfCourseAPI(query) {
   try {
     const resp = await fetch(`${WORKER_URL}/courses?search=${encodeURIComponent(query)}`);
+    if (!resp.ok) { console.log('GolfCourseAPI search failed:', resp.status); return null; }
     const data = await resp.json();
-    const courses = data.courses || [];
+    console.log('GolfCourseAPI search result:', JSON.stringify(data).substring(0, 300));
+
+    // API returns { courses: [...] } or an array directly
+    const courses = data.courses || (Array.isArray(data) ? data : []);
     if (!courses.length) return null;
-    // Find best match — prefer 18-hole courses with scorecard data
-    const match = courses.find(c => c.holes === 18 && c.tees && c.tees.length) ||
+
+    // Prefer 18-hole courses with scorecard data
+    const match = courses.find(c => c.holes === 18 && c.scorecard) ||
                   courses.find(c => c.holes === 18) ||
                   courses[0];
     if (!match) return null;
-    // Get full course detail to get hole-by-hole par
-    const detail = await fetch(`${WORKER_URL}/course/${match.id}`);
+
+    const courseName = match.club_name || match.courseName || match.name || query;
+
+    // Try parsing scorecard from search result first (saves an extra API call)
+    if (match.scorecard) {
+      const pars = parseScorecardPars(match.scorecard);
+      if (pars) return { name: courseName, pars };
+    }
+
+    // If no scorecard in search result, fetch full detail
+    const id = match.id || match.course_id;
+    if (!id) return { name: courseName, pars: null };
+    const detail = await fetch(`${WORKER_URL}/course/${id}`);
+    if (!detail.ok) return { name: courseName, pars: null };
     const course = await detail.json();
-    const tee = course.tees && course.tees.find(t => t.holes && t.holes.length === 18);
-    if (!tee) return { name: course.club_name || match.club_name, pars: null };
-    const pars = tee.holes
-      .sort((a, b) => a.number - b.number)
-      .map(h => h.par || 4);
-    if (pars.length !== 18) return null;
-    return { name: course.club_name || match.club_name, pars };
+    console.log('GolfCourseAPI detail:', JSON.stringify(course).substring(0, 300));
+
+    const sc = course.scorecard || (course.tees && course.tees[0] && course.tees[0].scorecard);
+    if (!sc) return { name: courseName, pars: null };
+    const pars = parseScorecardPars(sc);
+    return { name: course.club_name || courseName, pars };
   } catch(e) { console.log('GolfCourseAPI error:', e); return null; }
 }
 
@@ -704,11 +743,23 @@ window.lookupCourse = async function() {
     renderParEditor(false);
     return;
   }
+  // Found in API but no par data
+  if (apiMatch && !apiMatch.pars) {
+    courseNameTemp = apiMatch.name;
+    courseParTemp = Array(18).fill(4);
+    result.innerHTML = `<div style="padding:10px 14px;background:#fff8e1;border:1.5px solid var(--gold);border-radius:10px;font-size:12px;color:#8b6914;font-weight:600;margin-bottom:10px;">⛳ Found <strong>${apiMatch.name}</strong> but no scorecard data — enter par manually.</div>`;
+    renderParEditor(true);
+    return;
+  }
 
   // ── Not found — manual entry + save option ──
   courseNameTemp = name;
   courseParTemp = Array(18).fill(4);
-  result.innerHTML = `<div style="padding:10px 14px;background:#fff8e1;border:1.5px solid var(--gold);border-radius:10px;font-size:12px;color:#8b6914;font-weight:600;margin-bottom:10px;">⚠️ Course not found — enter par manually below. You can save it for future rounds.</div>`;
+  result.innerHTML = `<div style="padding:10px 14px;background:#fff8e1;border:1.5px solid var(--gold);border-radius:10px;font-size:12px;color:#8b6914;margin-bottom:10px;">
+    <div style="font-weight:700;margin-bottom:6px;">⚠️ Course not found</div>
+    <div style="font-weight:400;margin-bottom:6px;">Try searching with just the key words, e.g. <strong>"Pebble Beach"</strong> instead of "Pebble Beach Golf Links", or just <strong>"Spyglass"</strong>.</div>
+    <div style="font-weight:400;">If it's a private club, enter par manually and save it below.</div>
+  </div>`;
   renderParEditor(true); // true = show save button
 };
 
