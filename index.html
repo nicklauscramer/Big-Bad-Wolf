@@ -807,7 +807,7 @@ window.showPage = function(name) {
   if(name==='scoreboard') renderScoreboard();
   if(name==='scores'){ renderFullScorecard(); renderMyScoreEntry(); }
   if(name==='survey'){ surveyStep=0; renderSurvey(); }
-  if(name==='setup'){ renderWolfOrder(); updateGhostCard(); setTimeout(renderIdentityChips, 50); }
+  if(name==='setup'){ renderWolfOrder(); updateGhostCard(); setTimeout(renderIdentityChips, 100); }
 };
 
 // ── Setup ──
@@ -832,7 +832,9 @@ function updateGhostCard(){
 function toggleGhostCheck(){const on=document.getElementById('ghost-check').checked;document.getElementById('ghost-label').textContent=on?'Ghost: ON 👻':'Ghost: Off';document.getElementById('ghost-name-wrap').style.display=on?'block':'none';}
 
 function renderIdentityChips(){
-  const names=getPlayerNames();
+  // Use typed names if available, fall back to state.players (for page reload)
+  const typed = getPlayerNames();
+  const names = typed.length ? typed : (state.players || []);
   const container=document.getElementById('identity-chips');container.innerHTML='';
   const card=document.getElementById('identity-card');
   if(!names.length){card.style.display='none';return;}
@@ -847,6 +849,7 @@ function renderIdentityChips(){
       document.getElementById('my-name-display').textContent=p;
       document.getElementById('my-course-display').textContent=state.courseName||'';
       document.getElementById('my-score-entry').style.display='block';
+      showToast('Playing as ' + p);
     };
     container.appendChild(chip);
   });
@@ -1325,6 +1328,9 @@ async function init(){
     if(document.getElementById('wager-input'))document.getElementById('wager-input').value=state.wager;
     if(state.myName){document.getElementById('my-name-display').textContent=state.myName;document.getElementById('my-course-display').textContent=state.courseName||'';document.getElementById('my-score-entry').style.display='block';}
     showPage('scorecard');
+  } else if(state.players && state.players.length) {
+    // Round exists but not yet started — show setup with chips populated
+    setTimeout(renderIdentityChips, 150);
   }
 }
 
