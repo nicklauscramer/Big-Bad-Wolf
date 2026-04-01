@@ -512,6 +512,7 @@ function renderCourseStep(container) {
     </div>
     <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">💡 Tip: Use short names like <strong>Pebble Beach</strong>, <strong>Augusta</strong>, or <strong>TPC Sawgrass</strong></div>
     <div id="course-lookup-result"></div>
+    <div id="course-debug-panel" style="display:none;margin-top:10px;background:#1a1a1a;border-radius:10px;padding:12px;font-size:10px;color:#4caf50;font-family:monospace;white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto;"></div>
     <div id="course-par-editor" style="display:none;">
       <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;" id="course-par-title">Par per hole</div>
       <div class="par-grid" id="par-grid-inputs"></div>
@@ -626,6 +627,16 @@ function similarity(a, b) {
 
 const WORKER_URL = 'https://bigbadwolf.nickcramer0.workers.dev';
 
+function debugLog(msg, data) {
+  const panel = document.getElementById('course-debug-panel');
+  if (!panel) return;
+  panel.style.display = 'block';
+  const entry = data ? `[${msg}]\n${JSON.stringify(data, null, 2)}\n\n` : `[${msg}]\n\n`;
+  panel.textContent += entry;
+  panel.scrollTop = panel.scrollHeight;
+  console.log(msg, data || '');
+}
+
 // ── Tier 2: Check Firebase custom courses (crowdsourced) ──
 async function checkFirebaseCourses(query) {
   try {
@@ -669,13 +680,13 @@ function parseScorecardPars(scorecard) {
 async function checkGolfCourseAPI(query) {
   try {
     const resp = await fetch(`${WORKER_URL}/courses?search=${encodeURIComponent(query)}`);
-    if (!resp.ok) { console.log('GolfCourseAPI search failed:', resp.status); return null; }
+    if (!resp.ok) { debugLog('API search failed: ' + resp.status); return null; }
     const data = await resp.json();
-    console.log('GolfCourseAPI search result:', JSON.stringify(data).substring(0, 300));
+    debugLog('API search result', { total: courses.length, first: courses[0] || null });
 
     // API returns { courses: [...] } or an array directly
     const courses = data.courses || (Array.isArray(data) ? data : []);
-    if (!courses.length) return null;
+    if (!courses.length) { debugLog('No courses found in API response', data); return null; }
 
     // Prefer 18-hole courses with scorecard data
     const match = courses.find(c => c.holes === 18 && c.scorecard) ||
@@ -697,7 +708,7 @@ async function checkGolfCourseAPI(query) {
     const detail = await fetch(`${WORKER_URL}/course/${id}`);
     if (!detail.ok) return { name: courseName, pars: null };
     const course = await detail.json();
-    console.log('GolfCourseAPI detail:', JSON.stringify(course).substring(0, 300));
+    debugLog('API course detail', { name: course.club_name || course.courseName, hasScorecard: !!course.scorecard, teeCount: course.tees ? course.tees.length : 0 });
 
     const sc = course.scorecard || (course.tees && course.tees[0] && course.tees[0].scorecard);
     if (!sc) return { name: courseName, pars: null };
@@ -721,8 +732,11 @@ window.lookupCourse = async function() {
     return;
   }
 
+  const debugPanel = document.getElementById('course-debug-panel');
+  if (debugPanel) { debugPanel.textContent = ''; debugPanel.style.display = 'none'; }
   result.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:13px;">🔍 Searching courses…</div>';
 
+  debugLog('Searching: ' + name);
   // ── Tier 2: Firebase custom courses ──
   const firebaseMatch = await checkFirebaseCourses(name);
   if (firebaseMatch) {
@@ -733,10 +747,12 @@ window.lookupCourse = async function() {
     return;
   }
 
+  debugLog('Not in Firebase, trying GolfCourseAPI...');
   // ── Tier 3: GolfCourseAPI (30,000 courses) ──
   result.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:13px;">🔍 Checking course database…</div>';
   const apiMatch = await checkGolfCourseAPI(name);
   if (apiMatch && apiMatch.pars) {
+    debugLog('Found with pars!', { name: apiMatch.name, pars: apiMatch.pars });
     courseNameTemp = apiMatch.name;
     courseParTemp = apiMatch.pars;
     result.innerHTML = `<div style="padding:10px 14px;background:var(--green-pale);border:1.5px solid var(--green);border-radius:10px;font-size:13px;font-weight:600;color:var(--green);margin-bottom:10px;">✅ ${apiMatch.name}</div>`;
