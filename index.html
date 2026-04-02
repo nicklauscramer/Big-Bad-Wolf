@@ -324,6 +324,7 @@
           <div style="font-size:12px;font-weight:700;color:#8b6914;margin-bottom:8px;">🏆 Par 3 — Closest to pin?</div>
           <div class="player-chips" id="greenie-chips"></div>
           <div id="greenie-note" style="display:none;margin-top:8px;font-size:11px;color:#8b6914;font-weight:600;">🏆 <span id="greenie-winner-name"></span> — collects $<span id="greenie-amt-note"></span></div>
+          <div id="brownie-section" style="display:none;margin-top:10px;border-top:1px solid rgba(139,105,20,.2);padding-top:10px;"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="brownie-check" onchange="toggleBrownieCheck()" style="width:17px;height:17px;accent-color:#795548;"><span style="font-size:12px;font-weight:600;color:#795548;">💩 Brownie? (greenie winner three-putted)</span></label><div id="brownie-note" style="display:none;margin-top:6px;font-size:11px;color:#795548;font-weight:600;padding:7px 10px;background:#efebe9;border-radius:8px;">💩 Brownie! Greenie cancelled — <span id="brownie-winner-name"></span> pays $<span id="brownie-amt"></span> to each player</div></div>
         </div>
       </div>
       <button class="btn btn-primary" id="save-hole-btn" onclick="saveHole()">Save Hole ✓</button>
@@ -425,6 +426,8 @@ let state = {
   myName: null // which player this device is
 };
 let isScorer = false;
+let scorerEditing = false;
+let editingTimer = null;
 let unsubscribe = null;
 let saveTimeout = null;
 let scCurrentHole = 1;
@@ -436,7 +439,7 @@ const surveySteps = [
     render: renderCourseStep, validate: () => true
   },
   {
-    id:'reshuffle', title:'🔀 Reshuffle order on holes 16–18?',
+    id:'reshuffle', title:'🔀 Reshuffle wolf order based on standings?',
     sub:'Order based on who\'s losing the most money.',
     options:[{v:true,label:'Yes — reshuffle',sub:'Most behind = wolf'},{v:false,label:'No — keep original order',sub:'Wolf rotation stays fixed'}],
     key:'reshuffleOn16'
@@ -457,6 +460,12 @@ const surveySteps = [
     key:'greenies'
   },
   {
+    id:'brownies', title:'💩 Play brownies?',
+    sub:'If the greenie winner three-putts, greenie is cancelled — they pay $5 to everyone instead.',
+    options:[{v:true,label:'💩 Yes — play brownies',sub:'Three-putt penalty'},{v:false,label:'No brownies',sub:'Greenie winner keeps it'}],
+    key:'brownies'
+  },
+  {
     id:'wolfmodes', title:'🐺 Which wolf modes are allowed?',
     multi: true,
     options:[{v:'bigWolf',label:'Big Wolf',sub:'Solo · auto ×2'},{v:'lilWolf',label:'Lil Wolf',sub:'Solo · flat bet'}],
@@ -464,7 +473,7 @@ const surveySteps = [
   }
 ];
 let surveyStep = 0;
-let surveyAnswers = { reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true };
+let surveyAnswers = { reshuffleOn16:true, reshuffleHole:16, birdiesEagles:true, doubles:true, greenies:false, brownies:false, browniesWager:5, bigWolfAllowed:true, lilWolfAllowed:true };
 let courseParTemp = Array(18).fill(4);
 let courseNameTemp = '';
 
@@ -500,6 +509,8 @@ window.renderSurvey = function() {
 
   // If greenies selected yes, show greenie wager + par3 picker
   if (step.id === 'greenies' && surveyAnswers.greenies) renderGreeniesConfig(steps);
+  if (step.id === 'reshuffle' && surveyAnswers.reshuffleOn16) renderReshuffleHolePicker(steps);
+  if (step.id === 'brownies' && surveyAnswers.brownies) renderBrowniesConfig(steps);
 }
 
 function renderCourseStep(container) {
@@ -543,6 +554,35 @@ function renderGreeniesConfig(container) {
   if (!surveyAnswers.par3Holes) surveyAnswers.par3Holes = courseParTemp.map((p,i)=>p===3?i+1:-1).filter(x=>x>0);
 }
 
+function renderReshuffleHolePicker(container) {
+  let wrap = container.querySelector('#reshuffle-hole-wrap');
+  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'reshuffle-hole-wrap'; wrap.style.marginTop = '14px'; container.appendChild(wrap); }
+  wrap.innerHTML = '<div style="font-size:13px;font-weight:600;margin-bottom:10px;">Which hole does the reshuffle start on?</div>';
+  [14,15,16].forEach(h => {
+    const btn = document.createElement('div');
+    const sel = surveyAnswers.reshuffleHole === h;
+    btn.className = 'rule-option' + (sel ? ' selected' : '');
+    btn.innerHTML = '<div><div class="rule-option-label">Hole ' + h + '</div></div><div class="rule-check">' + (sel?'checkmark':'') + '</div>';
+    btn.querySelector('.rule-check').textContent = sel ? '✓' : '';
+    btn.onclick = () => {
+      surveyAnswers.reshuffleHole = h;
+      wrap.querySelectorAll('.rule-option').forEach(e => { e.classList.remove('selected'); e.querySelector('.rule-check').textContent=''; });
+      btn.classList.add('selected'); btn.querySelector('.rule-check').textContent='✓';
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+function renderBrowniesConfig(container) {
+  let wrap = container.querySelector('#brownies-config-wrap');
+  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'brownies-config-wrap'; wrap.style.marginTop = '14px'; container.appendChild(wrap); }
+  wrap.innerHTML = '<div style="font-size:13px;font-weight:600;margin-bottom:8px;">$ per brownie (paid to each player)</div>' +
+    '<div style="display:flex;align-items:center;gap:10px;">' +
+    '<span style="font-size:18px;font-weight:600;color:var(--green);">$</span>' +
+    '<input type="number" id="brownies-wager-survey" value="' + (surveyAnswers.browniesWager||5) + '" min="1" step="1" style="max-width:100px;" oninput="surveyAnswers.browniesWager=parseFloat(this.value)||5;">' +
+    '<span style="color:var(--muted);font-size:13px;">per player</span></div>';
+}
+
 window.setSurveyAnswer = function(key, val, el) {
   surveyAnswers[key] = val;
   el.closest('.card') ? null : null;
@@ -550,12 +590,21 @@ window.setSurveyAnswer = function(key, val, el) {
     e.classList.remove('selected'); e.querySelector('.rule-check').textContent='';
   });
   el.classList.add('selected'); el.querySelector('.rule-check').textContent='✓';
-  // Show greenie config if yes selected
+  const stepsEl = document.getElementById('survey-steps');
   if (key==='greenies') {
-    const steps = document.getElementById('survey-steps');
-    const existing = steps.querySelector('#greenie-wager-survey');
-    if (val && !existing) renderGreeniesConfig(steps);
-    if (!val) { const d=steps.querySelector('#survey-par3-grid'); if(d) d.closest('div').remove(); }
+    const existing = stepsEl.querySelector('#greenie-wager-survey');
+    if (val && !existing) renderGreeniesConfig(stepsEl);
+    if (!val) { const d=stepsEl.querySelector('#greenie-config-wrap'); if(d) d.remove(); }
+  }
+  if (key==='reshuffleOn16') {
+    const existing = stepsEl.querySelector('#reshuffle-hole-wrap');
+    if (val && !existing) renderReshuffleHolePicker(stepsEl);
+    if (!val) { const d=stepsEl.querySelector('#reshuffle-hole-wrap'); if(d) d.remove(); }
+  }
+  if (key==='brownies') {
+    const existing = stepsEl.querySelector('#brownies-config-wrap');
+    if (val && !existing) renderBrowniesConfig(stepsEl);
+    if (!val) { const d=stepsEl.querySelector('#brownies-config-wrap'); if(d) d.remove(); }
   }
 };
 
@@ -569,6 +618,11 @@ window.toggleMultiSurvey = function(key, el) {
 window.surveyNext = function() {
   surveyStep++;
   if (surveyStep >= surveySteps.length) { finishSurvey(); return; }
+  // Skip brownies if greenies not enabled
+  if (surveySteps[surveyStep] && surveySteps[surveyStep].id === 'brownies' && !surveyAnswers.greenies) {
+    surveyStep++;
+    if (surveyStep >= surveySteps.length) { finishSurvey(); return; }
+  }
   renderSurvey();
 };
 window.surveyBack = function() {
@@ -578,9 +632,12 @@ window.surveyBack = function() {
 window.finishSurvey = function() {
   state.rules = {
     reshuffleOn16: surveyAnswers.reshuffleOn16,
+    reshuffleHole: surveyAnswers.reshuffleHole || 16,
     birdiesEagles: surveyAnswers.birdiesEagles,
     doubles: surveyAnswers.doubles,
     greenies: surveyAnswers.greenies,
+    brownies: surveyAnswers.brownies && surveyAnswers.greenies,
+    browniesWager: surveyAnswers.browniesWager || 5,
     bigWolfAllowed: surveyAnswers.bigWolfAllowed !== false,
     lilWolfAllowed: surveyAnswers.lilWolfAllowed !== false,
   };
@@ -972,7 +1029,8 @@ function subscribeToRound(code) {
     try { localStorage.setItem('wolf-v4',JSON.stringify(state)); } catch(e) {}
     const active = document.querySelector('.page.active');
     if (active) {
-      if (active.id==='page-scorecard') renderScorecard();
+      if (active.id==='page-scorecard' && !scorerEditing) renderScorecard();
+      if (active.id==='page-scorecard' && scorerEditing) renderDots();
       if (active.id==='page-scoreboard') renderScoreboard();
       if (active.id==='page-scores') renderFullScorecard();
     }
@@ -1185,7 +1243,8 @@ function getAllRotationPlayers(){return state.players;}
 function isGhost(n){return state.ghostEnabled&&n===state.ghostName;}
 
 function getWolfForHole(hole){
-  if(state.rules.reshuffleOn16 && hole>=16 && state.players.length>0) return getPressureOrder(hole)[0];
+  const rfFrom = state.rules.reshuffleHole || 16;
+  if(state.rules.reshuffleOn16 && hole>=rfFrom && state.players.length>0) return getPressureOrder(hole)[0];
   const all=getAllRotationPlayers();if(!all.length)return'—';
   return all[(hole-1)%all.length];
 }
@@ -1201,37 +1260,38 @@ window.toggleBirdieCheck = function() {
   const on = document.getElementById('birdie-check').checked;
   const hole = state.currentHole;
   if (!state.holes[hole]) state.holes[hole] = {};
+  scorerEditing = true; clearTimeout(editingTimer);
+  editingTimer = setTimeout(() => { scorerEditing = false; }, 15000);
   document.getElementById('birdie-players').style.display = on ? 'block' : 'none';
   if (!on) {
-    // Clear birdies when unchecked
     state.holes[hole].birdies = [];
     document.querySelectorAll('#birdie-chips .chip').forEach(c => c.classList.remove('team'));
   }
-  // Eagle and birdie are mutually exclusive at the checkbox level
   if (on && document.getElementById('eagle-check').checked) {
     document.getElementById('eagle-check').checked = false;
     document.getElementById('eagle-players').style.display = 'none';
     state.holes[hole].eagles = [];
   }
-  updatePayoutNote(); saveState();
+  updatePayoutNote();
 };
 
 window.toggleEagleCheck = function() {
   const on = document.getElementById('eagle-check').checked;
   const hole = state.currentHole;
   if (!state.holes[hole]) state.holes[hole] = {};
+  scorerEditing = true; clearTimeout(editingTimer);
+  editingTimer = setTimeout(() => { scorerEditing = false; }, 15000);
   document.getElementById('eagle-players').style.display = on ? 'block' : 'none';
   if (!on) {
     state.holes[hole].eagles = [];
     document.querySelectorAll('#eagle-chips .chip').forEach(c => c.classList.remove('wolf-wins'));
   }
-  // Eagle and birdie are mutually exclusive at the checkbox level
   if (on && document.getElementById('birdie-check').checked) {
     document.getElementById('birdie-check').checked = false;
     document.getElementById('birdie-players').style.display = 'none';
     state.holes[hole].birdies = [];
   }
-  updatePayoutNote(); saveState();
+  updatePayoutNote();
 };
 
 window.toggleDouble=function(){
@@ -1326,6 +1386,20 @@ window.toggleEagle=function(name,chip){
   updatePayoutNote();saveState();
 };
 
+window.toggleBrownieCheck = function() {
+  const hole = state.currentHole;
+  if (!state.holes[hole]) state.holes[hole] = {};
+  const on = document.getElementById('brownie-check').checked;
+  state.holes[hole].brownie = on;
+  const note = document.getElementById('brownie-note');
+  if (on && state.holes[hole].greenie) {
+    note.style.display = 'block';
+    document.getElementById('brownie-winner-name').textContent = state.holes[hole].greenie;
+    document.getElementById('brownie-amt').textContent = state.rules.browniesWager || 5;
+  } else { note.style.display = 'none'; }
+  saveState();
+};
+
 window.selectGreenie=function(name){
   const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
   state.holes[hole].greenie=name;
@@ -1367,7 +1441,8 @@ function renderScorecard(){
 
   // Pressure banner
   const pb=document.getElementById('pressure-banner-el');
-  if(state.rules.reshuffleOn16&&hole>=16&&state.players.length>0){
+  const rfHole = state.rules.reshuffleHole || 16;
+  if(state.rules.reshuffleOn16&&hole>=rfHole&&state.players.length>0){
     pb.style.display='block';
     const order=getPressureOrder(hole),totals=computeWolfTotals();
     document.getElementById('pressure-order').innerHTML=order.map((p,i)=>{
@@ -1448,6 +1523,20 @@ function renderScorecard(){
     state.players.forEach(p=>{const chip=document.createElement('div');chip.className='chip'+(curG===p?' greenie-winner':'');chip.textContent='🏆 '+p;chip.onclick=()=>selectGreenie(p);gc.appendChild(chip);});
     const nc=document.createElement('div');nc.className='chip'+(curG===null&&hData.hasOwnProperty('greenie')?' greenie-winner':'');nc.textContent='❌ No Greenie';nc.onclick=()=>selectGreenie(null);gc.appendChild(nc);
     updateGreenieNote();
+    // Show brownie section if brownies enabled
+    const bSection = document.getElementById('brownie-section');
+    if (bSection) {
+      bSection.style.display = (state.rules && state.rules.brownies) ? 'block' : 'none';
+      if (state.rules && state.rules.brownies) {
+        const bOn = hData.brownie || false;
+        document.getElementById('brownie-check').checked = bOn;
+        if (bOn && hData.greenie) {
+          document.getElementById('brownie-note').style.display = 'block';
+          document.getElementById('brownie-winner-name').textContent = hData.greenie;
+          document.getElementById('brownie-amt').textContent = state.rules.browniesWager || 5;
+        } else { document.getElementById('brownie-note').style.display = 'none'; }
+      }
+    }
   }
 
   // Viewer lock
@@ -1458,6 +1547,7 @@ function renderScorecard(){
 }
 
 window.saveHole=function(){
+  scorerEditing = false; clearTimeout(editingTimer);
   if(!isScorer){showToast('Only scorer can save holes');return;}
   const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
   if(!state.holes[hole].winner){showToast('Select a result first');return;}
@@ -1634,8 +1724,13 @@ function computeGreenieTotals(){
     const h=state.holes[hNum],holeNum=parseInt(hNum);
     if(!h.greenie||!state.par3Holes.includes(holeNum))return;
     const winner=h.greenie;if(!players.includes(winner))return;
-    const amt=state.greenieWager||2;
-    players.forEach(p=>{if(p===winner)totals[p]+=amt*(players.length-1);else totals[p]-=amt;});
+    if(h.brownie&&state.rules&&state.rules.brownies){
+      const brownAmt=state.rules.browniesWager||5;
+      players.forEach(p=>{if(p===winner)totals[p]-=brownAmt*(players.length-1);else totals[p]+=brownAmt;});
+    }else{
+      const amt=state.greenieWager||2;
+      players.forEach(p=>{if(p===winner)totals[p]+=amt*(players.length-1);else totals[p]-=amt;});
+    }
   });
   return totals;
 }
