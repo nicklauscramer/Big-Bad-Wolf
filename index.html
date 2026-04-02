@@ -625,25 +625,21 @@ function similarity(a, b) {
 }
 
 const WORKER_URL = 'https://bigbadwolf.nickcramer0.workers.dev';
-let allCoursesCache = null; // cached list of courses from API
+const courseSearchCache = {}; // cache per query string
 
-// Fetch all available courses from GolfCourseAPI (called once, cached)
-async function fetchAllCourses() {
-  if (allCoursesCache) return allCoursesCache;
+async function fetchCoursesForQuery(q) {
+  if (courseSearchCache[q]) return courseSearchCache[q];
   try {
-    const resp = await fetch(`${WORKER_URL}/courses?search=a`);
+    const resp = await fetch(`${WORKER_URL}/courses?search=${encodeURIComponent(q)}`);
     if (!resp.ok) return [];
     const wrapper = await resp.json();
     if (wrapper.workerError) return [];
     let data;
     try { data = JSON.parse(wrapper.raw); } catch(e) { return []; }
-    allCoursesCache = data.courses || [];
-    debugLog('Loaded ' + allCoursesCache.length + ' courses from API');
-    return allCoursesCache;
-  } catch(e) {
-    debugLog('fetchAllCourses error: ' + e.message);
-    return [];
-  }
+    const courses = data.courses || [];
+    courseSearchCache[q] = courses;
+    return courses;
+  } catch(e) { return []; }
 }
 
 // Called on every keystroke in course search box
@@ -675,13 +671,9 @@ window.onCourseType = async function(val) {
     });
   } catch(e) {}
 
-  // Fetch API courses and filter client-side
-  const apiCourses = await fetchAllCourses();
+  // Search API with actual query
+  const apiCourses = q.length >= 3 ? await fetchCoursesForQuery(val.trim()) : [];
   const apiMatches = apiCourses
-    .filter(c => {
-      const name = (c.club_name || c.course_name || '').toLowerCase();
-      return name.includes(q);
-    })
     .slice(0, 8)
     .map(c => ({ name: c.club_name || c.course_name, id: c.id, source: 'api' }));
 
@@ -744,20 +736,20 @@ async function selectCourse(course, typedName) {
       } catch(e) {}
 
       if (courseData) {
-        const teesRaw = courseData.tees;
-        const teesArr = Array.isArray(teesRaw) ? teesRaw :
-                        (teesRaw && typeof teesRaw === 'object' ? Object.values(teesRaw) : []);
+        // Per API docs: tees = { male: [TeeBox], female: [TeeBox] }
+        // TeeBox.holes = [{ par, yardage, handicap }]
+        const tees = courseData.tees || {};
+        const teeGroups = [
+          ...(Array.isArray(tees.male) ? tees.male : []),
+          ...(Array.isArray(tees.female) ? tees.female : [])
+        ];
+        debugLog('selectCourse tees', { maleCount: tees.male ? tees.male.length : 0, femaleCount: tees.female ? tees.female.length : 0 });
 
-        // Try scorecard from course or tees
         let pars = null;
-        if (courseData.scorecard) pars = parseScorecardPars(courseData.scorecard);
-        if (!pars) {
-          for (const tee of teesArr) {
-            if (tee.scorecard) { pars = parseScorecardPars(tee.scorecard); if (pars) break; }
-            if (tee.holes && Array.isArray(tee.holes) && tee.holes.length === 18) {
-              pars = tee.holes.sort((a,b)=>a.number-b.number).map(h=>h.par||4);
-              if (pars.length === 18) break;
-            }
+        for (const tee of teeGroups) {
+          if (tee.holes && Array.isArray(tee.holes) && tee.holes.length === 18) {
+            const candidate = tee.holes.map(h => h.par || 4);
+            if (candidate.every(p => p >= 3 && p <= 6)) { pars = candidate; break; }
           }
         }
 
