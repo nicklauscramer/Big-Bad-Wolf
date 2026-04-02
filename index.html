@@ -426,8 +426,6 @@ let state = {
   myName: null // which player this device is
 };
 let isScorer = false;
-let scorerEditing = false;
-let editingTimer = null;
 let unsubscribe = null;
 let saveTimeout = null;
 let scCurrentHole = 1;
@@ -459,12 +457,7 @@ const surveySteps = [
     options:[{v:true,label:'Yes',sub:'Closest to pin wins'},{v:false,label:'No',sub:'Skip greenies'}],
     key:'greenies'
   },
-  {
-    id:'brownies', title:'💩 Play brownies?',
-    sub:'If the greenie winner three-putts, greenie is cancelled — they pay $5 to everyone instead.',
-    options:[{v:true,label:'💩 Yes — play brownies',sub:'Three-putt penalty'},{v:false,label:'No brownies',sub:'Greenie winner keeps it'}],
-    key:'brownies'
-  },
+
   {
     id:'wolfmodes', title:'🐺 Which wolf modes are allowed?',
     multi: true,
@@ -534,13 +527,26 @@ function renderGreeniesConfig(container) {
   const div = document.createElement('div');
   div.style.marginTop = '14px';
   div.innerHTML = `
-    <div style="font-size:13px;font-weight:600;margin-bottom:8px;">$ per greenie</div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;">$ per greenie (per player)</div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
       <span style="font-size:18px;font-weight:600;color:var(--green);">$</span>
       <input type="number" id="greenie-wager-survey" value="${surveyAnswers.greenieWager||2}" min="1" step="1" style="max-width:100px;" oninput="surveyAnswers.greenieWager=parseFloat(this.value)||2;">
     </div>
     <div style="font-size:13px;font-weight:600;margin-bottom:6px;">Which holes are Par 3s?</div>
-    <div class="par3-grid" id="survey-par3-grid"></div>`;
+    <div class="par3-grid" id="survey-par3-grid"></div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #f0f0f0;">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px;">💩 Play brownies?</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">A brownie occurs when the greenie winner three-putts — greenie is cancelled and they pay everyone instead.</div>
+      <div class="rule-option ${surveyAnswers.brownies?'selected':''}" id="brownies-yes-opt" onclick="setBrowniesAnswer(true,this)">
+        <div><div class="rule-option-label">💩 Yes — play brownies</div><div class="rule-option-sub">Three-putt cancels greenie, triggers penalty</div></div>
+        <div class="rule-check">${surveyAnswers.brownies?'✓':''}</div>
+      </div>
+      <div class="rule-option ${!surveyAnswers.brownies?'selected':''}" id="brownies-no-opt" onclick="setBrowniesAnswer(false,this)">
+        <div><div class="rule-option-label">No brownies</div><div class="rule-option-sub">Greenie winner always keeps it</div></div>
+        <div class="rule-check">${!surveyAnswers.brownies?'✓':''}</div>
+      </div>
+
+    </div>`;
   container.appendChild(div);
   const grid = div.querySelector('#survey-par3-grid');
   for (let i=1;i<=18;i++) {
@@ -553,6 +559,17 @@ function renderGreeniesConfig(container) {
   // Pre-fill par3 holes from courseParTemp
   if (!surveyAnswers.par3Holes) surveyAnswers.par3Holes = courseParTemp.map((p,i)=>p===3?i+1:-1).filter(x=>x>0);
 }
+
+window.setBrowniesAnswer = function(val, el) {
+  surveyAnswers.brownies = val;
+  document.querySelectorAll('#brownies-yes-opt,#brownies-no-opt').forEach(e => {
+    e.classList.remove('selected');
+    e.querySelector('.rule-check').textContent = '';
+  });
+  el.classList.add('selected');
+  el.querySelector('.rule-check').textContent = '✓';
+
+};
 
 function renderReshuffleHolePicker(container) {
   let wrap = container.querySelector('#reshuffle-hole-wrap');
@@ -618,11 +635,7 @@ window.toggleMultiSurvey = function(key, el) {
 window.surveyNext = function() {
   surveyStep++;
   if (surveyStep >= surveySteps.length) { finishSurvey(); return; }
-  // Skip brownies if greenies not enabled
-  if (surveySteps[surveyStep] && surveySteps[surveyStep].id === 'brownies' && !surveyAnswers.greenies) {
-    surveyStep++;
-    if (surveyStep >= surveySteps.length) { finishSurvey(); return; }
-  }
+
   renderSurvey();
 };
 window.surveyBack = function() {
@@ -1029,8 +1042,9 @@ function subscribeToRound(code) {
     try { localStorage.setItem('wolf-v4',JSON.stringify(state)); } catch(e) {}
     const active = document.querySelector('.page.active');
     if (active) {
-      if (active.id==='page-scorecard' && !scorerEditing) renderScorecard();
-      if (active.id==='page-scorecard' && scorerEditing) renderDots();
+      // Scorer drives the data — Firebase never overwrites their scorecard UI
+      // Only viewers get live re-renders of the scorecard
+      if (active.id==='page-scorecard' && !isScorer) renderScorecard();
       if (active.id==='page-scoreboard') renderScoreboard();
       if (active.id==='page-scores') renderFullScorecard();
     }
@@ -1260,9 +1274,6 @@ window.toggleBirdieCheck = function() {
   const on = document.getElementById('birdie-check').checked;
   const hole = state.currentHole;
   if (!state.holes[hole]) state.holes[hole] = {};
-  scorerEditing = true; clearTimeout(editingTimer);
-  editingTimer = setTimeout(() => { scorerEditing = false; }, 15000);
-  document.getElementById('birdie-players').style.display = on ? 'block' : 'none';
   if (!on) {
     state.holes[hole].birdies = [];
     document.querySelectorAll('#birdie-chips .chip').forEach(c => c.classList.remove('team'));
@@ -1272,16 +1283,18 @@ window.toggleBirdieCheck = function() {
     document.getElementById('eagle-players').style.display = 'none';
     state.holes[hole].eagles = [];
   }
+  // Save __pending immediately so Firebase re-render keeps checkbox checked
+  if (on && (!state.holes[hole].birdies || state.holes[hole].birdies.length === 0)) {
+    state.holes[hole].birdies = ['__pending'];
+  }
+  document.getElementById('birdie-players').style.display = on ? 'block' : 'none';
   updatePayoutNote();
+  saveState();
 };
-
 window.toggleEagleCheck = function() {
   const on = document.getElementById('eagle-check').checked;
   const hole = state.currentHole;
   if (!state.holes[hole]) state.holes[hole] = {};
-  scorerEditing = true; clearTimeout(editingTimer);
-  editingTimer = setTimeout(() => { scorerEditing = false; }, 15000);
-  document.getElementById('eagle-players').style.display = on ? 'block' : 'none';
   if (!on) {
     state.holes[hole].eagles = [];
     document.querySelectorAll('#eagle-chips .chip').forEach(c => c.classList.remove('wolf-wins'));
@@ -1291,9 +1304,14 @@ window.toggleEagleCheck = function() {
     document.getElementById('birdie-players').style.display = 'none';
     state.holes[hole].birdies = [];
   }
+  // Save __pending immediately so Firebase re-render keeps checkbox checked
+  if (on && (!state.holes[hole].eagles || state.holes[hole].eagles.length === 0)) {
+    state.holes[hole].eagles = ['__pending'];
+  }
+  document.getElementById('eagle-players').style.display = on ? 'block' : 'none';
   updatePayoutNote();
+  saveState();
 };
-
 window.toggleDouble=function(){
   const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
   const on=document.getElementById('double-check').checked;
@@ -1368,6 +1386,7 @@ window.togglePartner=function(name,chip){
 window.toggleBirdie=function(name,chip){
   const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
   if(!state.holes[hole].birdies)state.holes[hole].birdies=[];
+  state.holes[hole].birdies=state.holes[hole].birdies.filter(p=>p!=='__pending');
   const idx=state.holes[hole].birdies.indexOf(name);
   if(idx>-1){state.holes[hole].birdies.splice(idx,1);chip.classList.remove('team');}
   else{state.holes[hole].birdies.push(name);chip.classList.add('team');}
@@ -1377,6 +1396,7 @@ window.toggleBirdie=function(name,chip){
 window.toggleEagle=function(name,chip){
   const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
   if(!state.holes[hole].eagles)state.holes[hole].eagles=[];
+  state.holes[hole].eagles=state.holes[hole].eagles.filter(p=>p!=='__pending');
   const idx=state.holes[hole].eagles.indexOf(name);
   if(idx>-1){state.holes[hole].eagles.splice(idx,1);chip.classList.remove('wolf-wins');}
   else{
@@ -1395,7 +1415,7 @@ window.toggleBrownieCheck = function() {
   if (on && state.holes[hole].greenie) {
     note.style.display = 'block';
     document.getElementById('brownie-winner-name').textContent = state.holes[hole].greenie;
-    document.getElementById('brownie-amt').textContent = state.rules.browniesWager || 5;
+    document.getElementById('brownie-amt').textContent = state.greenieWager || 2;
   } else { note.style.display = 'none'; }
   saveState();
 };
@@ -1533,7 +1553,7 @@ function renderScorecard(){
         if (bOn && hData.greenie) {
           document.getElementById('brownie-note').style.display = 'block';
           document.getElementById('brownie-winner-name').textContent = hData.greenie;
-          document.getElementById('brownie-amt').textContent = state.rules.browniesWager || 5;
+          document.getElementById('brownie-amt').textContent = state.greenieWager || 2;
         } else { document.getElementById('brownie-note').style.display = 'none'; }
       }
     }
@@ -1547,7 +1567,6 @@ function renderScorecard(){
 }
 
 window.saveHole=function(){
-  scorerEditing = false; clearTimeout(editingTimer);
   if(!isScorer){showToast('Only scorer can save holes');return;}
   const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
   if(!state.holes[hole].winner){showToast('Select a result first');return;}
@@ -1725,7 +1744,7 @@ function computeGreenieTotals(){
     if(!h.greenie||!state.par3Holes.includes(holeNum))return;
     const winner=h.greenie;if(!players.includes(winner))return;
     if(h.brownie&&state.rules&&state.rules.brownies){
-      const brownAmt=state.rules.browniesWager||5;
+      const brownAmt=state.greenieWager||2; // same as greenie wager
       players.forEach(p=>{if(p===winner)totals[p]-=brownAmt*(players.length-1);else totals[p]+=brownAmt;});
     }else{
       const amt=state.greenieWager||2;
