@@ -506,13 +506,12 @@ function renderCourseStep(container) {
   container.innerHTML = `
     <div style="font-size:16px;font-weight:700;margin-bottom:6px;">⛳ Which course are you playing?</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">We'll auto-fill the par for each hole.</div>
-    <div style="display:flex;gap:8px;margin-bottom:12px;">
-      <input type="text" id="course-search-input" placeholder="e.g. Pebble Beach" style="flex:1;">
-      <button onclick="lookupCourse()" style="padding:10px 14px;border-radius:10px;border:none;background:var(--green);color:white;font-weight:600;font-size:13px;cursor:pointer;">Look up</button>
+    <div style="position:relative;margin-bottom:12px;">
+      <input type="text" id="course-search-input" placeholder="Start typing a course name..." style="width:100%;" oninput="onCourseType(this.value)">
+      <div id="course-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid var(--green);border-radius:0 0 10px 10px;max-height:220px;overflow-y:auto;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,.15);"></div>
     </div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">💡 Tip: Use short names like <strong>Pebble Beach</strong>, <strong>Augusta</strong>, or <strong>TPC Sawgrass</strong></div>
     <div id="course-lookup-result"></div>
-    <div id="course-debug-panel" style="display:none;margin-top:10px;background:#1a1a1a;border-radius:10px;padding:12px;font-size:10px;color:#4caf50;font-family:monospace;white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto;"></div>
+    <div id="course-debug-panel" style="display:none;margin-top:10px;background:#1a1a1a;border-radius:10px;padding:12px;font-size:10px;color:#4caf50;font-family:monospace;white-space:pre-wrap;word-break:break-all;max-height:160px;overflow-y:auto;"></div>
     <div id="course-par-editor" style="display:none;">
       <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;" id="course-par-title">Par per hole</div>
       <div class="par-grid" id="par-grid-inputs"></div>
@@ -626,6 +625,156 @@ function similarity(a, b) {
 }
 
 const WORKER_URL = 'https://bigbadwolf.nickcramer0.workers.dev';
+let allCoursesCache = null; // cached list of courses from API
+
+// Fetch all available courses from GolfCourseAPI (called once, cached)
+async function fetchAllCourses() {
+  if (allCoursesCache) return allCoursesCache;
+  try {
+    const resp = await fetch(`${WORKER_URL}/courses?search=a`);
+    if (!resp.ok) return [];
+    const wrapper = await resp.json();
+    if (wrapper.workerError) return [];
+    let data;
+    try { data = JSON.parse(wrapper.raw); } catch(e) { return []; }
+    allCoursesCache = data.courses || [];
+    debugLog('Loaded ' + allCoursesCache.length + ' courses from API');
+    return allCoursesCache;
+  } catch(e) {
+    debugLog('fetchAllCourses error: ' + e.message);
+    return [];
+  }
+}
+
+// Called on every keystroke in course search box
+window.onCourseType = async function(val) {
+  const q = val.trim().toLowerCase();
+  const suggestions = document.getElementById('course-suggestions');
+  const result = document.getElementById('course-lookup-result');
+
+  if (q.length < 2) {
+    suggestions.style.display = 'none';
+    return;
+  }
+
+  // Build combined list: local hardcoded + Firebase + API courses
+  const localMatches = LOCAL_COURSES.filter(c =>
+    c.name.toLowerCase().includes(q) ||
+    c.names.some(n => n.includes(q))
+  ).map(c => ({ name: c.name, pars: c.pars, source: 'local' }));
+
+  // Fetch Firebase custom courses
+  let firebaseMatches = [];
+  try {
+    const snap = await getDocs(collection(db, 'custom_courses'));
+    snap.docs.forEach(d => {
+      const data = d.data();
+      if (data.name.toLowerCase().includes(q)) {
+        firebaseMatches.push({ name: data.name, pars: data.pars, source: 'saved' });
+      }
+    });
+  } catch(e) {}
+
+  // Fetch API courses and filter client-side
+  const apiCourses = await fetchAllCourses();
+  const apiMatches = apiCourses
+    .filter(c => {
+      const name = (c.club_name || c.course_name || '').toLowerCase();
+      return name.includes(q);
+    })
+    .slice(0, 8)
+    .map(c => ({ name: c.club_name || c.course_name, id: c.id, source: 'api' }));
+
+  const allMatches = [...localMatches, ...firebaseMatches, ...apiMatches];
+
+  if (!allMatches.length) {
+    suggestions.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--muted);">No courses found — enter par manually below</div>';
+    suggestions.style.display = 'block';
+    // Show manual entry
+    courseNameTemp = val.trim();
+    courseParTemp = Array(18).fill(4);
+    result.innerHTML = '';
+    renderParEditor(true);
+    return;
+  }
+
+  suggestions.innerHTML = '';
+  suggestions.style.display = 'block';
+
+  allMatches.forEach(c => {
+    const item = document.createElement('div');
+    item.style.cssText = 'padding:11px 14px;border-bottom:1px solid #f0f0f0;cursor:pointer;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:space-between;';
+    const badge = c.source === 'local' ? '⚡' : c.source === 'saved' ? '💾' : '⛳';
+    item.innerHTML = `<span>${c.name}</span><span style="font-size:10px;color:var(--muted);">${badge}</span>`;
+    item.onmouseover = () => item.style.background = 'var(--green-pale)';
+    item.onmouseout  = () => item.style.background = 'white';
+    item.onclick = () => selectCourse(c, val.trim());
+    suggestions.appendChild(item);
+  });
+};
+
+async function selectCourse(course, typedName) {
+  const suggestions = document.getElementById('course-suggestions');
+  const result = document.getElementById('course-lookup-result');
+  suggestions.style.display = 'none';
+  document.getElementById('course-search-input').value = course.name;
+
+  // Local or Firebase — have pars already
+  if (course.pars) {
+    courseNameTemp = course.name;
+    courseParTemp = [...course.pars];
+    result.innerHTML = `<div style="padding:10px 14px;background:var(--green-pale);border:1.5px solid var(--green);border-radius:10px;font-size:13px;font-weight:600;color:var(--green);margin-bottom:10px;">✅ ${course.name}</div>`;
+    renderParEditor(false);
+    return;
+  }
+
+  // API course — need to fetch detail for pars
+  result.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--muted);">Loading scorecard…</div>';
+  courseNameTemp = course.name;
+  courseParTemp = Array(18).fill(4);
+
+  if (course.id) {
+    try {
+      const detailResp = await fetch(`${WORKER_URL}/course/${course.id}`);
+      const wrapper = await detailResp.json();
+      let courseData;
+      try {
+        const parsed = JSON.parse(wrapper.raw);
+        courseData = parsed.course || parsed;
+      } catch(e) {}
+
+      if (courseData) {
+        const teesRaw = courseData.tees;
+        const teesArr = Array.isArray(teesRaw) ? teesRaw :
+                        (teesRaw && typeof teesRaw === 'object' ? Object.values(teesRaw) : []);
+
+        // Try scorecard from course or tees
+        let pars = null;
+        if (courseData.scorecard) pars = parseScorecardPars(courseData.scorecard);
+        if (!pars) {
+          for (const tee of teesArr) {
+            if (tee.scorecard) { pars = parseScorecardPars(tee.scorecard); if (pars) break; }
+            if (tee.holes && Array.isArray(tee.holes) && tee.holes.length === 18) {
+              pars = tee.holes.sort((a,b)=>a.number-b.number).map(h=>h.par||4);
+              if (pars.length === 18) break;
+            }
+          }
+        }
+
+        if (pars) {
+          courseParTemp = pars;
+          result.innerHTML = `<div style="padding:10px 14px;background:var(--green-pale);border:1.5px solid var(--green);border-radius:10px;font-size:13px;font-weight:600;color:var(--green);margin-bottom:10px;">✅ ${course.name}</div>`;
+          renderParEditor(false);
+          return;
+        }
+      }
+    } catch(e) { debugLog('Detail fetch error: ' + e.message); }
+  }
+
+  // No scorecard data — manual entry
+  result.innerHTML = `<div style="padding:10px 14px;background:#fff8e1;border:1.5px solid var(--gold);border-radius:10px;font-size:12px;color:#8b6914;font-weight:600;margin-bottom:10px;">⛳ Found <strong>${course.name}</strong> but no scorecard — enter par manually.</div>`;
+  renderParEditor(true);
+}
 
 function debugLog(msg, data) {
   const panel = document.getElementById('course-debug-panel');
@@ -682,125 +831,69 @@ async function checkGolfCourseAPI(query) {
     const resp = await fetch(`${WORKER_URL}/courses?search=${encodeURIComponent(query)}`);
     if (!resp.ok) { debugLog('Worker fetch failed: ' + resp.status); return null; }
     const wrapper = await resp.json();
-    debugLog('Worker response', { httpStatus: wrapper.httpStatus, workerError: wrapper.workerError, rawPreview: wrapper.raw ? wrapper.raw.substring(0, 200) : null });
+    debugLog('Worker response', { httpStatus: wrapper.httpStatus, receivedSearch: wrapper.receivedSearch, rawPreview: wrapper.raw ? wrapper.raw.substring(0, 300) : null });
 
-    // Worker error
     if (wrapper.workerError) { debugLog('Worker error: ' + wrapper.workerError); return null; }
-    if (wrapper.httpStatus && wrapper.httpStatus !== 200) { debugLog('API HTTP status: ' + wrapper.httpStatus); return null; }
+    if (wrapper.httpStatus && wrapper.httpStatus !== 200) { debugLog('API HTTP error: ' + wrapper.httpStatus); return null; }
 
-    // Parse the raw response string
     let data;
-    try { data = JSON.parse(wrapper.raw || wrapper); } catch(e) { debugLog('JSON parse failed: ' + e.message); return null; }
+    try { data = JSON.parse(wrapper.raw); } catch(e) { debugLog('JSON parse failed: ' + e.message); return null; }
 
-    // API returns { courses: [...] } or array directly
-    const courses = data.courses || (Array.isArray(data) ? data : []);
-    debugLog('Courses found: ' + courses.length, courses[0] || null);
+    const courses = data.courses || [];
+    debugLog('Courses found: ' + courses.length, courses[0] ? { id: courses[0].id, name: courses[0].club_name } : null);
     if (!courses.length) return null;
 
-    // Prefer 18-hole courses with scorecard data
-    const match = courses.find(c => c.holes === 18 && c.scorecard) ||
-                  courses.find(c => c.holes === 18) ||
+    // Pick best match - prefer name containing search term
+    const q = query.toLowerCase();
+    const match = courses.find(c => c.club_name && c.club_name.toLowerCase().includes(q)) ||
+                  courses.find(c => c.course_name && c.course_name.toLowerCase().includes(q)) ||
                   courses[0];
-    if (!match) { debugLog('No suitable match in results'); return null; }
 
-    const courseName = match.club_name || match.courseName || match.name || query;
-    debugLog('Best match: ' + courseName, { holes: match.holes, hasScorecard: !!match.scorecard, id: match.id || match.course_id });
+    const courseName = match.club_name || match.course_name || query;
+    debugLog('Best match: ' + courseName, { id: match.id });
 
-    // Try parsing scorecard from search result first
-    if (match.scorecard) {
-      const pars = parseScorecardPars(match.scorecard);
-      if (pars) { debugLog('Parsed pars from search result', pars); return { name: courseName, pars }; }
-    }
-
-    // Fetch full detail
-    const id = match.id || match.course_id;
-    if (!id) { debugLog('No course ID found'); return { name: courseName, pars: null }; }
+    const id = match.id;
+    if (!id) { debugLog('No course ID'); return { name: courseName, pars: null }; }
 
     const detailResp = await fetch(`${WORKER_URL}/course/${id}`);
     const detailWrapper = await detailResp.json();
-    debugLog('Detail response', { httpStatus: detailWrapper.httpStatus, rawPreview: detailWrapper.raw ? detailWrapper.raw.substring(0, 200) : null });
+    debugLog('Detail response', { httpStatus: detailWrapper.httpStatus, rawPreview: detailWrapper.raw ? detailWrapper.raw.substring(0, 400) : null });
 
-    let course;
-    try { course = JSON.parse(detailWrapper.raw || detailWrapper); } catch(e) { return { name: courseName, pars: null }; }
+    let courseData;
+    try {
+      const parsed = JSON.parse(detailWrapper.raw);
+      courseData = parsed.course || parsed;
+    } catch(e) { debugLog('Detail parse failed: ' + e.message); return { name: courseName, pars: null }; }
 
-    const sc = course.scorecard || (course.tees && course.tees[0] && course.tees[0].scorecard);
-    if (!sc) { debugLog('No scorecard in detail'); return { name: courseName, pars: null }; }
-    const pars = parseScorecardPars(sc);
-    debugLog('Parsed pars from detail', pars);
-    return { name: course.club_name || courseName, pars };
+    // Per API docs: tees = { male: [TeeBox], female: [TeeBox] }
+    // TeeBox has holes: [{ par, yardage, handicap }]
+    const tees = courseData.tees || {};
+    debugLog('Tees keys', Object.keys(tees));
+
+    const teeGroups = [
+      ...(Array.isArray(tees.male) ? tees.male : []),
+      ...(Array.isArray(tees.female) ? tees.female : [])
+    ];
+    debugLog('Tee groups: ' + teeGroups.length, teeGroups[0] ? { name: teeGroups[0].tee_name, holeCount: teeGroups[0].holes ? teeGroups[0].holes.length : 0 } : null);
+
+    for (const tee of teeGroups) {
+      if (tee.holes && Array.isArray(tee.holes) && tee.holes.length === 18) {
+        const pars = tee.holes.map(h => h.par || 4);
+        if (pars.every(p => p >= 3 && p <= 6)) {
+          debugLog('Found pars from tee: ' + tee.tee_name, pars);
+          return { name: courseData.club_name || courseName, pars };
+        }
+      }
+    }
+
+    debugLog('No valid 18-hole tee data found');
+    return { name: courseData.club_name || courseName, pars: null };
   } catch(e) { debugLog('GolfCourseAPI ERROR: ' + e.message); return null; }
 }
 
-window.lookupCourse = async function() {
-  const name = document.getElementById('course-search-input').value.trim();
-  if (!name) { showToast('Enter a course name'); return; }
-  const result = document.getElementById('course-lookup-result');
+// lookupCourse replaced by onCourseType suggestion system
+window.lookupCourse = function() { onCourseType(document.getElementById('course-search-input').value); };
 
-  // ── Tier 1: Local hardcoded courses (instant) ──
-  const localMatch = checkLocalCourses(name);
-  if (localMatch) {
-    courseNameTemp = localMatch.name;
-    courseParTemp = [...localMatch.pars];
-    result.innerHTML = `<div style="padding:10px 14px;background:var(--green-pale);border:1.5px solid var(--green);border-radius:10px;font-size:13px;font-weight:600;color:var(--green);margin-bottom:10px;">✅ ${localMatch.name}</div>`;
-    renderParEditor(false);
-    return;
-  }
-
-  const debugPanel = document.getElementById('course-debug-panel');
-  if (debugPanel) { debugPanel.textContent = ''; debugPanel.style.display = 'block'; }
-  result.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:13px;">🔍 Searching courses…</div>';
-  debugLog('--- New search: ' + name + ' ---');
-
-  debugLog('Searching: ' + name);
-  // ── Tier 2: Firebase custom courses ──
-  let firebaseMatch = null;
-  try { firebaseMatch = await checkFirebaseCourses(name); }
-  catch(e) { debugLog('Firebase check failed: ' + e.message); }
-  debugLog('Firebase result: ' + (firebaseMatch ? 'FOUND' : 'null'));
-  if (firebaseMatch && firebaseMatch.name) {
-    courseNameTemp = firebaseMatch.name;
-    courseParTemp = [...firebaseMatch.pars];
-    result.innerHTML = `<div style="padding:10px 14px;background:var(--green-pale);border:1.5px solid var(--green);border-radius:10px;font-size:13px;font-weight:600;color:var(--green);margin-bottom:10px;">✅ ${firebaseMatch.name} <span style="font-weight:400;font-size:11px;">(saved course)</span></div>`;
-    renderParEditor(false);
-    return;
-  }
-
-  debugLog('Not in Firebase, trying GolfCourseAPI...');
-  // ── Tier 3: GolfCourseAPI (30,000 courses) ──
-  result.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:13px;">🔍 Checking course database…</div>';
-  let apiMatch = null;
-  try { apiMatch = await checkGolfCourseAPI(name); }
-  catch(e) { debugLog('GolfCourseAPI call failed: ' + e.message); }
-  debugLog('API result: ' + (apiMatch ? (apiMatch.pars ? 'FOUND with pars' : 'found but no pars') : 'null'));
-  if (apiMatch && apiMatch.pars) {
-    debugLog('Found with pars!', { name: apiMatch.name, pars: apiMatch.pars });
-    courseNameTemp = apiMatch.name;
-    courseParTemp = apiMatch.pars;
-    result.innerHTML = `<div style="padding:10px 14px;background:var(--green-pale);border:1.5px solid var(--green);border-radius:10px;font-size:13px;font-weight:600;color:var(--green);margin-bottom:10px;">✅ ${apiMatch.name}</div>`;
-    renderParEditor(false);
-    return;
-  }
-  // Found in API but no par data
-  if (apiMatch && !apiMatch.pars) {
-    courseNameTemp = apiMatch.name;
-    courseParTemp = Array(18).fill(4);
-    result.innerHTML = `<div style="padding:10px 14px;background:#fff8e1;border:1.5px solid var(--gold);border-radius:10px;font-size:12px;color:#8b6914;font-weight:600;margin-bottom:10px;">⛳ Found <strong>${apiMatch.name}</strong> but no scorecard data — enter par manually.</div>`;
-    renderParEditor(true);
-    return;
-  }
-
-  // ── Not found — manual entry + save option ──
-  courseNameTemp = name;
-  courseParTemp = Array(18).fill(4);
-  result.innerHTML = `<div style="padding:10px 14px;background:#fff8e1;border:1.5px solid var(--gold);border-radius:10px;font-size:12px;color:#8b6914;margin-bottom:10px;">
-    <div style="font-weight:700;margin-bottom:6px;">⚠️ Course not found</div>
-    <div style="font-weight:400;margin-bottom:6px;">Try searching with just the key words, e.g. <strong>"Pebble Beach"</strong> instead of "Pebble Beach Golf Links", or just <strong>"Spyglass"</strong>.</div>
-    <div style="font-weight:400;">If it's a private club, enter par manually and save it below.</div>
-  </div>`;
-  renderParEditor(true); // true = show save button
-};
-
-// ── Save custom course to Firebase ──
 window.saveCustomCourse = async function() {
   const name = courseNameTemp.trim();
   const pars = [...courseParTemp];
