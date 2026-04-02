@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wolf Golf Tracker</title>
+<title>Wolf Money</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -41,7 +41,7 @@
   .btn-danger{background:#ffebee;color:#c62828;}
   .hole-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
   .hole-indicator{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--green);letter-spacing:2px;line-height:1;}
-  .hole-indicator span{font-size:13px;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400;display:block;text-align:center;}
+  .hole-indicator span{font-size:13px;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400;display:inline;}
   .nav-btn{background:white;border:1.5px solid #e0e0e0;border-radius:10px;padding:9px 16px;font-size:17px;cursor:pointer;color:var(--green);}
   .nav-btn:disabled{opacity:.3;cursor:default;}
   .chip{padding:7px 14px;border-radius:20px;border:1.5px solid #e0e0e0;background:white;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;color:var(--text);user-select:none;display:inline-block;}
@@ -146,8 +146,7 @@
 <body>
 <div class="app">
   <div class="header">
-    <div class="header-title">🐺 WOLF</div>
-    <div class="header-sub">Golf Money Tracker</div>
+    
     <div class="header-actions">
       <span style="display:flex;align-items:center;font-size:10px;color:rgba(255,255,255,.7);gap:3px;"><span class="sync-dot" id="sync-dot"></span><span id="sync-text"></span></span>
     </div>
@@ -156,8 +155,8 @@
   <!-- LOBBY -->
   <div id="page-lobby" class="page active">
     <div class="card" style="text-align:center;padding:32px 24px;">
-      <div style="font-size:52px;margin-bottom:10px;">🐺</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">WOLF GOLF TRACKER</div>
+      <img src="wolf-logo.png" alt="Wolf" style="width:220px;height:183px;object-fit:cover;border-radius:14px;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">WOLF MONEY</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:22px;">Live multiplayer · money · scores</div>
       <button class="btn btn-primary" onclick="clearAllState();showPage('survey')" style="margin-bottom:10px;">🏌️ Start New Round</button>
       <div style="font-size:12px;color:var(--muted);margin:12px 0;">— or join a round in progress —</div>
@@ -243,8 +242,8 @@
       <div style="margin-bottom:14px;">
         <div style="font-size:12px;color:var(--muted);font-weight:500;margin-bottom:7px;">Wolf Mode</div>
         <div style="display:flex;gap:6px;">
-          <button id="btn-big-wolf" onclick="setWolfMode('big')" style="flex:1;padding:9px 4px;border-radius:10px;border:2px solid #ddd;background:white;font-size:11px;font-weight:700;cursor:pointer;color:var(--muted);">🐺 Big Wolf<br><span style="font-weight:400;font-size:9px;">Solo·×2</span></button>
-          <button id="btn-lil-wolf" onclick="setWolfMode('lil')" style="flex:1;padding:9px 4px;border-radius:10px;border:2px solid #ddd;background:white;font-size:11px;font-weight:700;cursor:pointer;color:var(--muted);">😅 Lil Wolf<br><span style="font-weight:400;font-size:9px;">Solo·flat</span></button>
+          <button id="btn-blind-wolf" onclick="setWolfMode('big')" style="flex:1;padding:9px 4px;border-radius:10px;border:2px solid #ddd;background:white;font-size:11px;font-weight:700;cursor:pointer;color:var(--muted);">🫣 Blind Wolf<br><span style="font-weight:400;font-size:9px;">Solo·×2</span></button>
+          <button id="btn-big-wolf" onclick="setWolfMode('lil')" style="flex:1;padding:9px 4px;border-radius:10px;border:2px solid #ddd;background:white;font-size:11px;font-weight:700;cursor:pointer;color:var(--muted);">🐺 Big Wolf<br><span style="font-weight:400;font-size:9px;">Solo·flat</span></button>
           <button id="btn-no-wolf-mode" onclick="setWolfMode('none')" style="flex:1;padding:9px 4px;border-radius:10px;border:2px solid var(--green);background:var(--green-pale);font-size:11px;font-weight:700;cursor:pointer;color:var(--green);">🤝 Partner<br><span style="font-weight:400;font-size:9px;">Pick team</span></button>
         </div>
       </div>
@@ -284,8 +283,8 @@
         <div class="money-input-wrap"><span>$</span><input type="number" id="hole-money" placeholder="5" min="0" step="1" oninput="updatePayoutNote()"></div>
       </div>
       <!-- Payout notes -->
-      <div id="big-wolf-note" style="display:none;background:#fff3e0;border:1.5px solid #e65100;border-radius:9px;padding:9px 12px;margin-bottom:8px;font-size:11px;color:#bf360c;font-weight:600;line-height:1.5;">🐺 Big Wolf solo — ×2 — wins/loses $<span id="lw-2x">0</span><br><span style="font-weight:500;">Each opp: $<span id="lw-1x">0</span></span></div>
-      <div id="lil-wolf-note" style="display:none;background:#fce4ec;border:1.5px solid #e91e63;border-radius:9px;padding:9px 12px;margin-bottom:8px;font-size:11px;color:#880e4f;font-weight:600;line-height:1.5;">😅 Lil Wolf solo — flat — wins/loses $<span id="lw-lil-2x">0</span><br><span style="font-weight:500;">Each opp: $<span id="lw-lil-1x">0</span></span></div>
+      <div id="blind-wolf-note" style="display:none;background:#fff3e0;border:1.5px solid #e65100;border-radius:9px;padding:9px 12px;margin-bottom:8px;font-size:11px;color:#bf360c;font-weight:600;line-height:1.5;">🫣 Blind Wolf solo — ×2 (picked before tee shots) — wins/loses $<span id="lw-2x">0</span><br><span style="font-weight:500;">Each opp: $<span id="lw-1x">0</span></span></div>
+      <div id="big-wolf-note" style="display:none;background:#fce4ec;border:1.5px solid #e91e63;border-radius:9px;padding:9px 12px;margin-bottom:8px;font-size:11px;color:#880e4f;font-weight:600;line-height:1.5;">🐺 Big Wolf solo — flat (picked after tee shots) — wins/loses $<span id="lw-lil-2x">0</span><br><span style="font-weight:500;">Each opp: $<span id="lw-lil-1x">0</span></span></div>
       <div id="double-note" style="display:none;background:#f3e5f5;border:1.5px solid #9c27b0;border-radius:9px;padding:9px 12px;margin-bottom:8px;font-size:11px;color:#6a1b9a;font-weight:600;">🔴 Doubled → $<span id="d-amt">0</span>/person</div>
       <div id="redouble-note" style="display:none;background:#e8f5e3;border:1.5px solid var(--green);border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:var(--green);font-weight:600;">🟢 Re-Doubled → $<span id="rd-amt">0</span>/person</div>
       <div id="ghost-note" style="display:none;background:#f3e5f5;border:1.5px solid #9c27b0;border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:#6a1b9a;font-weight:600;">👻 Ghost net split among 3 real players</div>
@@ -372,6 +371,25 @@
     </div>
   </div>
 
+  <!-- PAYMENTS -->
+  <div id="page-payments" class="page">
+    <div class="card" style="text-align:center;padding:28px 20px;" id="payments-empty" style="display:block;">
+      <div style="font-size:40px;margin-bottom:10px;">💸</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green);letter-spacing:2px;margin-bottom:8px;">SETTLEMENT</div>
+      <div style="font-size:13px;color:var(--muted);" id="payments-subtitle">Complete all 18 holes to see who pays who.</div>
+    </div>
+    <div id="payments-content" style="display:none;">
+      <div class="card" style="padding:16px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:12px;">💸 WHO PAYS WHO</div>
+        <div id="payments-list"></div>
+      </div>
+      <div class="card" style="padding:16px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:12px;">📊 FINAL STANDINGS</div>
+        <div id="payments-standings"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- SCOREBOARD -->
   <div id="page-scoreboard" class="page">
     <div id="scoreboard-code-display" style="display:none;margin-bottom:10px;"></div>
@@ -392,6 +410,7 @@
   <button class="nav-tab" id="nav-setup" onclick="showPage('setup')"><span class="tab-icon">⚙️</span>Setup</button>
   <button class="nav-tab" id="nav-scorecard" onclick="showPage('scorecard')"><span class="tab-icon">🏌️</span>Wolf</button>
   <button class="nav-tab" id="nav-scores" onclick="showPage('scores')"><span class="tab-icon">📋</span>Scores</button>
+  <button class="nav-tab" id="nav-payments" onclick="showPage('payments')"><span class="tab-icon">💸</span>Payments</button>
   <button class="nav-tab" id="nav-scoreboard" onclick="showPage('scoreboard')"><span class="tab-icon">🏆</span>Money</button>
 </div>
 <div class="toast" id="toast"></div>
@@ -461,7 +480,7 @@ const surveySteps = [
   {
     id:'wolfmodes', title:'🐺 Which wolf modes are allowed?',
     multi: true,
-    options:[{v:'bigWolf',label:'Big Wolf',sub:'Solo · auto ×2'},{v:'lilWolf',label:'Lil Wolf',sub:'Solo · flat bet'}],
+    options:[{v:'bigWolf',label:'🫣 Blind Wolf',sub:'Solo · auto ×2 (picks before tee shots)'},{v:'lilWolf',label:'🐺 Big Wolf',sub:'Solo · flat bet (picks after tee shots)'}],
     key:'wolfModes'
   }
 ];
@@ -1141,6 +1160,7 @@ window.showPage = function(name) {
   const nav=document.getElementById('nav-'+name);if(nav)nav.classList.add('active');
   if(name==='scorecard') renderScorecard();
   if(name==='scoreboard') renderScoreboard();
+  if(name==='payments') renderPayments();
   if(name==='scores'){ renderFullScorecard(); renderMyScoreEntry(); renderScoreTabIdentity(); }
   if(name==='survey'){ surveyStep=0; renderSurvey(); }
   if(name==='setup'){ renderWolfOrder(); updateGhostCard(); }
@@ -1337,7 +1357,7 @@ window.updatePayoutNote=function(){
   if(bigWolf)e*=2;if(doubled)e*=2;if(reDoubled)e*=2;
   if(hasEagle)e*=3;else if(hasBirdie)e*=2;
   const numOpps=state.players.length-1+(state.ghostEnabled?1:0);
-  const bwn=document.getElementById('big-wolf-note'),lwn=document.getElementById('lil-wolf-note');
+  const bwn=document.getElementById('blind-wolf-note'),lwn=document.getElementById('big-wolf-note');
   const dn=document.getElementById('double-note'),rdn=document.getElementById('redouble-note');
   const gn=document.getElementById('ghost-note'),bn=document.getElementById('birdie-note'),en=document.getElementById('eagle-note');
   if(bigWolf){bwn.style.display='block';document.getElementById('lw-2x').textContent=(e*numOpps).toFixed(0);document.getElementById('lw-1x').textContent=e.toFixed(0);lwn.style.display='none';}
@@ -1359,8 +1379,8 @@ window.setWolfMode=function(mode){
   state.holes[hole].loneWolf=(mode==='big'||mode==='lil');
   state.holes[hole].bigWolf=(mode==='big');state.holes[hole].lilWolf=(mode==='lil');
   document.getElementById('team-section').style.display=mode==='none'?'block':'none';
-  ['btn-big-wolf','btn-lil-wolf','btn-no-wolf-mode'].forEach(id=>{const b=document.getElementById(id);b.style.border='2px solid #ddd';b.style.background='white';b.style.color='var(--muted)';});
-  const ab=document.getElementById(mode==='big'?'btn-big-wolf':mode==='lil'?'btn-lil-wolf':'btn-no-wolf-mode');
+  ['btn-blind-wolf','btn-big-wolf','btn-no-wolf-mode'].forEach(id=>{const b=document.getElementById(id);b.style.border='2px solid #ddd';b.style.background='white';b.style.color='var(--muted)';});
+  const ab=document.getElementById(mode==='big'?'btn-blind-wolf':mode==='lil'?'btn-big-wolf':'btn-no-wolf-mode');
   ab.style.border='2px solid var(--green)';ab.style.background='var(--green-pale)';ab.style.color='var(--green)';
   updatePayoutNote();saveState();
 };
@@ -1454,7 +1474,7 @@ function renderScorecard(){
   const hole=state.currentHole,hData=state.holes[hole]||{};
   const wolfName=getWolfForHole(hole);
 
-  document.getElementById('hole-num-display').innerHTML=`${hole}<span>of 18</span>`;
+  document.getElementById('hole-num-display').innerHTML=`${hole} <span>of 18</span>`;
   document.getElementById('wolf-display').textContent=wolfName;
   document.getElementById('prev-btn').disabled=hole<=1;
   document.getElementById('next-btn').disabled=hole>=18;
@@ -1472,12 +1492,12 @@ function renderScorecard(){
   }else pb.style.display='none';
 
   // Wolf mode buttons (show/hide Big Wolf and Lil Wolf based on rules)
-  document.getElementById('btn-big-wolf').style.display=state.rules.bigWolfAllowed?'block':'none';
-  document.getElementById('btn-lil-wolf').style.display=state.rules.lilWolfAllowed?'block':'none';
+  document.getElementById('btn-blind-wolf').style.display=state.rules.bigWolfAllowed?'block':'none';
+  document.getElementById('btn-big-wolf').style.display=state.rules.lilWolfAllowed?'block':'none';
   const wolfMode=hData.wolfMode||'none';
   document.getElementById('team-section').style.display=wolfMode==='none'?'block':'none';
-  ['btn-big-wolf','btn-lil-wolf','btn-no-wolf-mode'].forEach(id=>{const b=document.getElementById(id);b.style.border='2px solid #ddd';b.style.background='white';b.style.color='var(--muted)';});
-  const activeId=wolfMode==='big'?'btn-big-wolf':wolfMode==='lil'?'btn-lil-wolf':'btn-no-wolf-mode';
+  ['btn-blind-wolf','btn-big-wolf','btn-no-wolf-mode'].forEach(id=>{const b=document.getElementById(id);b.style.border='2px solid #ddd';b.style.background='white';b.style.color='var(--muted)';});
+  const activeId=wolfMode==='big'?'btn-blind-wolf':wolfMode==='lil'?'btn-big-wolf':'btn-no-wolf-mode';
   const ab=document.getElementById(activeId);if(ab){ab.style.border='2px solid var(--green)';ab.style.background='var(--green-pale)';ab.style.color='var(--green)';}
 
   // Double section
@@ -1791,7 +1811,7 @@ function renderScoreboard(){
     const others=getAllRotationPlayers().filter(p=>!wolfTeam.includes(p));
     const resClass=h.winner==='wolf'?'wolf-wins':h.winner==='team'?'team-wins':'push';
     const resLabel=h.winner==='wolf'?'🐺 Wolf':h.winner==='team'?'🤝 Team':'↔ Push';
-    const mTag=h.bigWolf?' <span style="background:#fff3e0;color:#e65100;padding:1px 5px;border-radius:6px;font-size:9px;">BIG ×2</span>':h.lilWolf?' <span style="background:#fce4ec;color:#880e4f;padding:1px 5px;border-radius:6px;font-size:9px;">LIL</span>':'';
+    const mTag=h.bigWolf?' <span style="background:#fff3e0;color:#e65100;padding:1px 5px;border-radius:6px;font-size:9px;">BLIND ×2</span>':h.lilWolf?' <span style="background:#fce4ec;color:#880e4f;padding:1px 5px;border-radius:6px;font-size:9px;">BIG</span>':'';
     const dTag=h.doubled?' <span style="background:#f3e5f5;color:#6a1b9a;padding:1px 5px;border-radius:6px;font-size:9px;">🔴×2</span>':'';
     const rdTag=h.reDoubled?' <span style="background:#e8f5e3;color:var(--green);padding:1px 5px;border-radius:6px;font-size:9px;">🟢×4</span>':'';
     const bTag=(h.birdies&&h.birdies.length>0)?' <span style="background:#e8f5e3;color:var(--green);padding:1px 5px;border-radius:6px;font-size:9px;">🐦×2</span>':'';
@@ -1800,6 +1820,99 @@ function renderScoreboard(){
     row.innerHTML=`<div class="h-num">${hNum}</div><div class="h-details"><div class="h-wolf">🐺 ${h.wolf}${mTag}${rdTag||dTag}${h.eagles&&h.eagles.length>0?eTag:bTag}</div><div class="h-teams">${wolfTeam.join(', ')} vs ${others.join(', ')||'all'}</div></div><div class="h-result ${resClass}">${resLabel}</div><div class="h-money">$${h.money||state.wager}</div>`;
     hist.appendChild(row);
   });
+}
+
+// ── Settlement math ──
+// Minimizes number of transactions using greedy creditor/debtor approach
+function computeSettlement() {
+  const wolf = computeWolfTotals();
+  const greenie = computeGreenieTotals();
+  const players = state.players;
+  const net = {};
+  players.forEach(p => { net[p] = (wolf[p]||0) + (greenie[p]||0); });
+
+  // Split into debtors (owe money) and creditors (owed money)
+  const debtors   = players.filter(p => net[p] < -0.01).map(p => ({ name:p, amt: -net[p] })).sort((a,b) => b.amt-a.amt);
+  const creditors = players.filter(p => net[p] >  0.01).map(p => ({ name:p, amt:  net[p] })).sort((a,b) => b.amt-a.amt);
+
+  const transactions = [];
+  let d = 0, c = 0;
+  while (d < debtors.length && c < creditors.length) {
+    const pay = Math.min(debtors[d].amt, creditors[c].amt);
+    if (pay > 0.01) {
+      transactions.push({ from: debtors[d].name, to: creditors[c].name, amt: pay });
+    }
+    debtors[d].amt   -= pay;
+    creditors[c].amt -= pay;
+    if (debtors[d].amt   < 0.01) d++;
+    if (creditors[c].amt < 0.01) c++;
+  }
+  return { transactions, net };
+}
+
+function renderPayments() {
+  if (!state.players.length) return;
+  const holesPlayed = Object.keys(state.holes).filter(h => state.holes[h].winner).length;
+  const empty = document.getElementById('payments-empty');
+  const content = document.getElementById('payments-content');
+  const subtitle = document.getElementById('payments-subtitle');
+
+  if (holesPlayed === 0) {
+    empty.style.display = 'block'; content.style.display = 'none';
+    subtitle.textContent = 'No holes saved yet.';
+    return;
+  }
+
+  empty.style.display = 'none';
+  content.style.display = 'block';
+
+  const { transactions, net } = computeSettlement();
+  const list = document.getElementById('payments-list');
+  list.innerHTML = '';
+
+  if (transactions.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:12px;">Everyone is even — no payments needed! 🎉</div>';
+  } else {
+    transactions.forEach(t => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f0f0f0;';
+      row.innerHTML = `
+        <div style="font-size:15px;font-weight:600;">${t.from}</div>
+        <div style="text-align:center;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:2px;">pays</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green);">$${t.amt.toFixed(2)}</div>
+        </div>
+        <div style="font-size:15px;font-weight:600;">${t.to}</div>
+      `;
+      list.appendChild(row);
+    });
+  }
+
+  // Final standings
+  const standings = document.getElementById('payments-standings');
+  standings.innerHTML = '';
+  const sorted = [...state.players].sort((a,b) => net[b] - net[a]);
+  sorted.forEach((p, i) => {
+    const n = net[p];
+    const cls = n > 0 ? 'amount-pos' : n < 0 ? 'amount-neg' : 'amount-zero';
+    const sign = n > 0 ? '+' : '';
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0;';
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:11px;color:var(--muted);width:18px;">${i+1}</span>
+        <span style="font-weight:600;font-size:15px;">${p}</span>
+      </div>
+      <span class="amount-cell ${cls}">${sign}$${Math.abs(n).toFixed(2)}</span>
+    `;
+    standings.appendChild(row);
+  });
+  if (holesPlayed < 18) {
+    const note = document.createElement('div');
+    note.style.cssText = 'font-size:11px;color:var(--muted);text-align:center;padding-top:10px;';
+    note.textContent = `Based on ${holesPlayed} of 18 holes played`;
+    standings.appendChild(note);
+  }
 }
 
 window.resetRound=function(){
