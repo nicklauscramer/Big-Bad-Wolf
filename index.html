@@ -680,39 +680,53 @@ function parseScorecardPars(scorecard) {
 async function checkGolfCourseAPI(query) {
   try {
     const resp = await fetch(`${WORKER_URL}/courses?search=${encodeURIComponent(query)}`);
-    if (!resp.ok) { debugLog('API search failed: ' + resp.status); return null; }
-    const data = await resp.json();
-    debugLog('API search result', { total: courses.length, first: courses[0] || null });
+    if (!resp.ok) { debugLog('Worker fetch failed: ' + resp.status); return null; }
+    const wrapper = await resp.json();
+    debugLog('Worker response', { httpStatus: wrapper.httpStatus, workerError: wrapper.workerError, rawPreview: wrapper.raw ? wrapper.raw.substring(0, 200) : null });
 
-    // API returns { courses: [...] } or an array directly
+    // Worker error
+    if (wrapper.workerError) { debugLog('Worker error: ' + wrapper.workerError); return null; }
+    if (wrapper.httpStatus && wrapper.httpStatus !== 200) { debugLog('API HTTP status: ' + wrapper.httpStatus); return null; }
+
+    // Parse the raw response string
+    let data;
+    try { data = JSON.parse(wrapper.raw || wrapper); } catch(e) { debugLog('JSON parse failed: ' + e.message); return null; }
+
+    // API returns { courses: [...] } or array directly
     const courses = data.courses || (Array.isArray(data) ? data : []);
-    if (!courses.length) { debugLog('No courses found in API response', data); return null; }
+    debugLog('Courses found: ' + courses.length, courses[0] || null);
+    if (!courses.length) return null;
 
     // Prefer 18-hole courses with scorecard data
     const match = courses.find(c => c.holes === 18 && c.scorecard) ||
                   courses.find(c => c.holes === 18) ||
                   courses[0];
-    if (!match) return null;
+    if (!match) { debugLog('No suitable match in results'); return null; }
 
     const courseName = match.club_name || match.courseName || match.name || query;
+    debugLog('Best match: ' + courseName, { holes: match.holes, hasScorecard: !!match.scorecard, id: match.id || match.course_id });
 
-    // Try parsing scorecard from search result first (saves an extra API call)
+    // Try parsing scorecard from search result first
     if (match.scorecard) {
       const pars = parseScorecardPars(match.scorecard);
-      if (pars) return { name: courseName, pars };
+      if (pars) { debugLog('Parsed pars from search result', pars); return { name: courseName, pars }; }
     }
 
-    // If no scorecard in search result, fetch full detail
+    // Fetch full detail
     const id = match.id || match.course_id;
-    if (!id) return { name: courseName, pars: null };
-    const detail = await fetch(`${WORKER_URL}/course/${id}`);
-    if (!detail.ok) return { name: courseName, pars: null };
-    const course = await detail.json();
-    debugLog('API course detail', { name: course.club_name || course.courseName, hasScorecard: !!course.scorecard, teeCount: course.tees ? course.tees.length : 0 });
+    if (!id) { debugLog('No course ID found'); return { name: courseName, pars: null }; }
+
+    const detailResp = await fetch(`${WORKER_URL}/course/${id}`);
+    const detailWrapper = await detailResp.json();
+    debugLog('Detail response', { httpStatus: detailWrapper.httpStatus, rawPreview: detailWrapper.raw ? detailWrapper.raw.substring(0, 200) : null });
+
+    let course;
+    try { course = JSON.parse(detailWrapper.raw || detailWrapper); } catch(e) { return { name: courseName, pars: null }; }
 
     const sc = course.scorecard || (course.tees && course.tees[0] && course.tees[0].scorecard);
-    if (!sc) return { name: courseName, pars: null };
+    if (!sc) { debugLog('No scorecard in detail'); return { name: courseName, pars: null }; }
     const pars = parseScorecardPars(sc);
+    debugLog('Parsed pars from detail', pars);
     return { name: course.club_name || courseName, pars };
   } catch(e) { debugLog('GolfCourseAPI ERROR: ' + e.message); return null; }
 }
