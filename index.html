@@ -194,12 +194,12 @@
     <div class="card" style="text-align:center;padding:28px 20px;">
       <div style="font-size:36px;margin-bottom:10px;">🐺</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">INVITE PLAYERS</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Share this code or link so others can join</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Share with your group before teeing off</div>
       <div id="share-code-display" style="font-family:'Bebas Neue',sans-serif;font-size:54px;letter-spacing:10px;color:var(--green);background:var(--green-pale);border-radius:14px;padding:16px;margin-bottom:16px;"></div>
-      <button onclick="shareRoundLink()" style="width:100%;padding:13px;border-radius:12px;border:none;background:var(--gold);color:white;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:10px;">🔗 Share Link</button>
-      <button onclick="navigator.clipboard.writeText(document.getElementById('share-code-display').textContent.trim()).then(()=>showToast('Code copied! 📋'))" style="width:100%;padding:13px;border-radius:12px;border:1.5px solid var(--green);background:white;color:var(--green);font-weight:700;font-size:15px;cursor:pointer;margin-bottom:20px;">📋 Copy Code</button>
+      <button onclick="shareRoundLink()" style="width:100%;padding:13px;border-radius:12px;border:none;background:var(--gold);color:white;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:10px;">🔗 Share Invite Link</button>
+      <button onclick="navigator.clipboard.writeText(document.getElementById('share-code-display').textContent.trim()).then(()=>showToast('Code copied! 📋'))" style="width:100%;padding:13px;border-radius:12px;border:1.5px solid #e0e0e0;background:white;color:var(--muted);font-weight:600;font-size:14px;cursor:pointer;margin-bottom:20px;">📋 Copy Code Only</button>
       <div style="border-top:1px solid #f0f0f0;padding-top:20px;">
-        <button onclick="showPage('setup')" style="width:100%;padding:14px;border-radius:12px;border:none;background:var(--green);color:white;font-weight:700;font-size:16px;cursor:pointer;">Continue to Setup →</button>
+        <button onclick="launchRound()" style="width:100%;padding:16px;border-radius:12px;border:none;background:var(--green);color:white;font-weight:700;font-size:17px;cursor:pointer;">🏌️ Let's Play</button>
       </div>
     </div>
   </div>
@@ -1186,7 +1186,7 @@ function showIdentityPicker(code) {
 
 window.confirmIdentity = function(name, code, modal) {
   // Use '__viewer__' sentinel so myName is never null after joining — prevents re-asking on each hole
-  state.myName = name || '__viewer__';
+  myName = name || '__viewer__';
   modal.remove();
   if (name) {
     document.getElementById('viewer-banner').style.display='block';
@@ -1219,13 +1219,8 @@ window.showPage = function(name) {
   if(name==='scoreboard') renderScoreboard();
   if(name==='payments') renderPayments();
   if(name==='share') {
-    if (!state.roundCode) {
-      const code = generateCode();
-      state.roundCode = code;
-      isScorer = true;
-      subscribeToRound(code);
-    }
-    document.getElementById('share-code-display').textContent = state.roundCode;
+    // Code already set by startRound — just display it
+    if (state.roundCode) document.getElementById('share-code-display').textContent = state.roundCode;
   }
   if(name==='scores'){ renderFullScorecard(); renderMyScoreEntry(); renderScoreTabIdentity(); }
   if(name==='survey'){ surveyStep=0; renderSurvey(); }
@@ -1273,7 +1268,7 @@ window.renderWolfOrder = function(){
 window.startRound = async function() {
   const players=getPlayerNames();
   if(players.length<2){showToast('Enter at least 2 players');return;}
-  // Show identity picker modal before launching round
+  // Show identity picker modal, then go to share page before scorecard
   showIdentityPickerModal(players, (chosenName) => {
     myName = chosenName;
     const code = state.roundCode || generateCode();
@@ -1294,9 +1289,16 @@ window.startRound = async function() {
       document.getElementById('my-course-display').textContent=state.courseName||'';
       document.getElementById('my-score-entry').style.display='block';
     }
-    showPage('scorecard');
-    showToast('Round started! Code: '+code);
+    // Show share screen first — player taps "Let's Play" to go to scorecard
+    document.getElementById('share-code-display').textContent = code;
+    showPage('share');
   });
+};
+
+// Called from "Let's Play" button on share page
+window.launchRound = function() {
+  showPage('scorecard');
+  showToast('Round started! 🏌️');
 };
 
 function showIdentityPickerModal(players, callback) {
