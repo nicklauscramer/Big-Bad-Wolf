@@ -166,7 +166,7 @@
       <img src="wolf-logo.png" alt="Wolf" style="width:220px;height:183px;object-fit:cover;border-radius:14px;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">WOLF MONEY</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:22px;">Live multiplayer · money · scores</div>
-      <button class="btn btn-primary" onclick="if(state.roundCode&&!confirm('Start a new round? Current round data will be lost.')){return;}clearAllState();localStorage.removeItem('wolf-v4');showPage('survey')" style="margin-bottom:10px;">🏌️ Start New Round</button>
+      <button class="btn btn-primary" onclick="startNewRound()" style="margin-bottom:10px;">🏌️ Start New Round</button>
       <div style="font-size:12px;color:var(--muted);margin:12px 0;">— or join a round in progress —</div>
       <div style="display:flex;gap:8px;">
         <input type="text" id="join-code-input" placeholder="Enter 6-digit code" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-size:17px;font-weight:700;text-align:center;">
@@ -2032,6 +2032,13 @@ window.resetRound=function(){
   if(!confirm('Start a new round? This will clear all current data.'))return;
   clearAllState();
   showPage('lobby');
+};
+
+window.startNewRound = function() {
+  if (state.roundCode && !confirm('Start a new round? Current round data will be lost.')) return;
+  clearAllState();
+  localStorage.removeItem('wolf-v4');
+  showPage('survey');
 };
 
 window.clearAllState = function clearAllState(){
