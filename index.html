@@ -70,12 +70,12 @@
   .money-input-wrap input{max-width:80px;border-color:var(--gold);}
   .hole-dots{display:flex;flex-wrap:nowrap;gap:3px;justify-content:center;margin-bottom:12px;overflow-x:auto;padding:4px 2px;scrollbar-width:none;}
   .hole-dots::-webkit-scrollbar{display:none;}
-  .hole-dot{width:22px;height:22px;border-radius:50%;border:1.5px solid #ddd;background:white;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:var(--muted);cursor:pointer;flex-shrink:0;}
-  .hole-dot.current{border-color:var(--green);color:var(--green);box-shadow:0 0 0 3px rgba(45,90,39,.15);}
-  .hole-dot.wolf-won{background:var(--green);border-color:var(--green);color:white;}
-  .hole-dot.team-won{background:#1565c0;border-color:#1565c0;color:white;}
-  .hole-dot.pushed{background:#607d8b;border-color:#607d8b;color:white;}
-  .hole-dot.scored{border-color:var(--gold);}
+  .hole-dot{width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--muted);cursor:pointer;flex-shrink:0;border-radius:4px;}
+  .hole-dot.current{color:var(--green);text-decoration:underline;}
+  .hole-dot.wolf-won{color:var(--green);}
+  .hole-dot.team-won{color:#1565c0;}
+  .hole-dot.pushed{color:#f0a500;}
+  .hole-dot.scored{color:var(--gold);}
   .score-table{background:white;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:16px;}
   .score-header{background:var(--green);color:white;display:grid;padding:10px 14px;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;}
   .score-row{display:grid;padding:12px 14px;border-bottom:1px solid #f0f0f0;align-items:center;}
@@ -1566,7 +1566,8 @@ function renderScorecard(){
     const order=getPressureOrder(hole),totals=computeWolfTotals();
     document.getElementById('pressure-order').innerHTML=order.map((p,i)=>{
       const net=totals[p]||0,sign=net>=0?'+':'';
-      return`<span>${p}${i===0?' 🐺 <strong>WOLF</strong>':` — ${i+1}${i===1?'nd':i===2?'rd':'th'}`} <span style="color:#f0d080;">(${sign}$${Math.abs(net).toFixed(2)})</span></span>`;
+      const color=net>0?'#4caf50':net<0?'#ef5350':'#f0d080';
+      return`<span>${p}${i===0?' 🐺 <strong>WOLF</strong>':` — ${i+1}${i===1?'nd':i===2?'rd':'th'}`} <span style="color:${color};">${sign}$${Math.abs(net).toFixed(2)}</span></span>`;
     }).join('<br>');
   }else pb.style.display='none';
 
