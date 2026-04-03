@@ -773,7 +773,7 @@ window.onCourseType = async function(val) {
   const apiCourses = q.length >= 3 ? await fetchCoursesForQuery(val.trim()) : [];
   const apiMatches = apiCourses
     .slice(0, 8)
-    .map(c => ({ name: c.club_name || c.course_name, id: c.id, source: 'api' }));
+    .map(c => ({ name: c.club_name || c.course_name, id: c.id, source: 'api', city: c.location && c.location.city ? c.location.city : '', state: c.location && c.location.state ? c.location.state : '' }));
 
   const allMatches = [...localMatches, ...firebaseMatches, ...apiMatches];
 
@@ -793,9 +793,16 @@ window.onCourseType = async function(val) {
 
   allMatches.forEach(c => {
     const item = document.createElement('div');
-    item.style.cssText = 'padding:11px 14px;border-bottom:1px solid #f0f0f0;cursor:pointer;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:space-between;';
+    item.style.cssText = 'padding:10px 14px;border-bottom:1px solid #f0f0f0;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;';
     const badge = c.source === 'local' ? '⚡' : c.source === 'saved' ? '💾' : '⛳';
-    item.innerHTML = `<span>${c.name}</span><span style="font-size:10px;color:var(--muted);">${badge}</span>`;
+    const location = c.city && c.state ? `<div style="font-size:11px;color:var(--muted);margin-top:1px;">${c.city}, ${c.state}</div>` :
+                     c.city ? `<div style="font-size:11px;color:var(--muted);margin-top:1px;">${c.city}</div>` : '';
+    item.innerHTML = `
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.name}</div>
+        ${location}
+      </div>
+      <span style="font-size:12px;flex-shrink:0;">${badge}</span>`;
     item.onmouseover = () => item.style.background = 'var(--green-pale)';
     item.onmouseout  = () => item.style.background = 'white';
     item.onclick = () => selectCourse(c, val.trim());
