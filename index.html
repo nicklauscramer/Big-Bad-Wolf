@@ -543,7 +543,7 @@ function renderCourseStep(container) {
       <div id="course-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid var(--green);border-radius:0 0 10px 10px;max-height:220px;overflow-y:auto;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,.15);"></div>
     </div>
     <div id="course-lookup-result"></div>
-    <div id="course-debug-panel" style="display:none;margin-top:10px;background:#1a1a1a;border-radius:10px;padding:12px;font-size:10px;color:#4caf50;font-family:monospace;white-space:pre-wrap;word-break:break-all;max-height:160px;overflow-y:auto;"></div>
+    <div id="course-debug-panel" style="display:none;"></div>
     <div id="course-par-editor" style="display:none;">
       <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;" id="course-par-title">Par per hole</div>
       <div class="par-grid" id="par-grid-inputs"></div>
@@ -873,15 +873,7 @@ async function selectCourse(course, typedName) {
   renderParEditor(true);
 }
 
-function debugLog(msg, data) {
-  const panel = document.getElementById('course-debug-panel');
-  if (!panel) return;
-  panel.style.display = 'block';
-  const entry = data ? `[${msg}]\n${JSON.stringify(data, null, 2)}\n\n` : `[${msg}]\n\n`;
-  panel.textContent += entry;
-  panel.scrollTop = panel.scrollHeight;
-  console.log(msg, data || '');
-}
+function debugLog(msg, data) { /* debug removed */ }
 
 // ── Tier 2: Check Firebase custom courses (crowdsourced) ──
 async function checkFirebaseCourses(query) {
@@ -1951,6 +1943,15 @@ window.clearAllState = function clearAllState(){
       strokes:{}, myName:null
     };
     try{localStorage.removeItem('wolf-v4');}catch(e){}
+    // Reset course lookup state
+    courseNameTemp = '';
+    courseParTemp = Array(18).fill(4);
+    surveyAnswers = { reshuffleOn16:true, reshuffleHole:16, birdiesEagles:true, doubles:true, greenies:false, brownies:false, browniesWager:5, bigWolfAllowed:true, lilWolfAllowed:true };
+    surveyStep = 0;
+    const searchEl = document.getElementById('course-search-input'); if(searchEl) searchEl.value = '';
+    const lookupResult = document.getElementById('course-lookup-result'); if(lookupResult) lookupResult.innerHTML = '';
+    const parEditor = document.getElementById('course-par-editor'); if(parEditor) parEditor.style.display = 'none';
+    const debugPanelEl = document.getElementById('course-debug-panel'); if(debugPanelEl) { debugPanelEl.textContent=''; debugPanelEl.style.display='none'; }
     document.querySelectorAll('.player-name').forEach(inp => inp.value='');
     const wrap = document.getElementById('player-inputs');
     if(wrap) wrap.querySelectorAll('.player-row').forEach((row,i)=>{ if(i>=4) row.remove(); });
