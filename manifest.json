@@ -2,7 +2,7 @@
   "name": "Wolf Money",
   "short_name": "Wolf Money",
   "description": "Wolf Golf Money Tracker",
-  "start_url": "/wolfcheeseboard/",
+  "start_url": "/big-bad-wolf/",
   "display": "standalone",
   "background_color": "#faf7f0",
   "theme_color": "#2d5a27",
