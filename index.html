@@ -68,8 +68,9 @@
   .money-input-wrap{display:flex;align-items:center;gap:4px;}
   .money-input-wrap span{font-weight:600;color:var(--gold);font-size:16px;}
   .money-input-wrap input{max-width:80px;border-color:var(--gold);}
-  .hole-dots{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-bottom:16px;}
-  .hole-dot{width:20px;height:20px;border-radius:50%;border:1.5px solid #ddd;background:white;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:var(--muted);cursor:pointer;}
+  .hole-dots{display:flex;flex-wrap:nowrap;gap:3px;justify-content:center;margin-bottom:12px;overflow-x:auto;padding:4px 2px;scrollbar-width:none;}
+  .hole-dots::-webkit-scrollbar{display:none;}
+  .hole-dot{width:22px;height:22px;border-radius:50%;border:1.5px solid #ddd;background:white;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:var(--muted);cursor:pointer;flex-shrink:0;}
   .hole-dot.current{border-color:var(--green);color:var(--green);box-shadow:0 0 0 3px rgba(45,90,39,.15);}
   .hole-dot.wolf-won{background:var(--green);border-color:var(--green);color:white;}
   .hole-dot.team-won{background:#1565c0;border-color:#1565c0;color:white;}
@@ -188,9 +189,34 @@
     </div>
   </div>
 
+  <!-- SHARE -->
+  <div id="page-share" class="page">
+    <div class="card" style="text-align:center;padding:28px 20px;">
+      <div style="font-size:36px;margin-bottom:10px;">🐺</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">INVITE PLAYERS</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Share this code or link so others can join</div>
+      <div id="share-code-display" style="font-family:'Bebas Neue',sans-serif;font-size:54px;letter-spacing:10px;color:var(--green);background:var(--green-pale);border-radius:14px;padding:16px;margin-bottom:16px;"></div>
+      <button onclick="shareRoundLink()" style="width:100%;padding:13px;border-radius:12px;border:none;background:var(--gold);color:white;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:10px;">🔗 Share Link</button>
+      <button onclick="navigator.clipboard.writeText(document.getElementById('share-code-display').textContent.trim()).then(()=>showToast('Code copied! 📋'))" style="width:100%;padding:13px;border-radius:12px;border:1.5px solid var(--green);background:white;color:var(--green);font-weight:700;font-size:15px;cursor:pointer;margin-bottom:20px;">📋 Copy Code</button>
+      <div style="border-top:1px solid #f0f0f0;padding-top:20px;">
+        <button onclick="showPage('setup')" style="width:100%;padding:14px;border-radius:12px;border:none;background:var(--green);color:white;font-weight:700;font-size:16px;cursor:pointer;">Continue to Setup →</button>
+      </div>
+    </div>
+  </div>
+
   <!-- SETUP (players + wager, after survey) -->
   <div id="page-setup" class="page">
     <div id="round-code-display"></div>
+    <div id="share-round-card" style="display:none;margin-bottom:14px;">
+      <div style="background:var(--green);border-radius:14px;padding:18px 20px;color:white;text-align:center;">
+        <div style="font-size:11px;letter-spacing:2px;opacity:.8;margin-bottom:4px;">SHARE WITH PLAYERS</div>
+        <div id="share-code-value" style="font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:8px;color:var(--gold-light);line-height:1;margin-bottom:12px;"></div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="shareRoundLink()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid rgba(255,255,255,.4);background:transparent;color:white;font-weight:700;font-size:13px;cursor:pointer;">🔗 Share Link</button>
+          <button onclick="copyRoundCode()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid rgba(255,255,255,.4);background:transparent;color:white;font-weight:700;font-size:13px;cursor:pointer;">📋 Copy Code</button>
+        </div>
+      </div>
+    </div>
     <div class="card">
       <div class="section-label">👥 Players (2–6)</div>
       <div id="player-inputs">
@@ -336,6 +362,7 @@
         </div>
       </div>
       <button class="btn btn-primary" id="save-hole-btn" onclick="saveHole()">Save Hole ✓</button>
+      <button class="btn btn-primary" id="finish-round-btn" onclick="finishRound()" style="display:none;background:var(--gold);border-color:var(--gold);">🏁 Finish Round</button>
     </div>
   </div>
 
@@ -451,9 +478,11 @@ let state = {
   courseName:'', coursePar:Array(18).fill(4), // par per hole 1-18
   // stroke scores: { playerName: { 1: strokes, 2: strokes, ... } }
   strokes:{},
-  myName: null // which player this device is
 };
 let isScorer = false;
+let myName = null; // stored outside state so Firebase sync never overwrites it
+let scorerEditing = false;
+let editingTimer = null;
 let unsubscribe = null;
 let saveTimeout = null;
 let scCurrentHole = 1;
@@ -689,6 +718,25 @@ window.finishSurvey = function() {
   state.par3Holes = surveyAnswers.par3Holes || courseParTemp.map((p,i)=>p===3?i+1:-1).filter(x=>x>0);
   showPage('setup');
 }
+
+window.copyRoundCode = function(){
+  if(!state.roundCode)return;
+  navigator.clipboard.writeText(state.roundCode).then(()=>showToast('Code copied: '+state.roundCode));
+};
+window.shareRoundLink = function() {
+  const code = state.roundCode;
+  if (!code) return;
+  const url = window.location.href.split('?')[0] + '?join=' + code;
+  if (navigator.share) {
+    navigator.share({
+      title: 'Join my Wolf Money round!',
+      text: 'Join my Wolf round — code: ' + code,
+      url: url
+    }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url).then(() => showToast('Link copied! 📋'));
+  }
+};
 
 // ── Course lookup via Anthropic API ──
 // ── Local course database (always checked first before AI) ──
@@ -1064,8 +1112,8 @@ function subscribeToRound(code) {
     if (!snap.exists()) return;
     const data = snap.data();
     const prevHole = state.currentHole;
-    const prevMyName = state.myName;
-    state = {...state, ...data, currentHole:prevHole, myName:prevMyName};
+    state = {...state, ...data, currentHole:prevHole};
+    // myName is a standalone variable, never overwritten by Firebase
     try { localStorage.setItem('wolf-v4',JSON.stringify(state)); } catch(e) {}
     const active = document.querySelector('.page.active');
     if (active) {
@@ -1085,12 +1133,18 @@ function generateCode() {
 }
 
 function showRoundCode(code) {
+  const sc=document.getElementById('share-round-card');
+  const sv=document.getElementById('share-code-value');
+  if(sc&&sv){sv.textContent=code;sc.style.display='block';}
   document.getElementById('round-code-display').innerHTML = `
     <div class="round-code-box">
       <div style="font-size:10px;letter-spacing:2px;opacity:.8;margin-bottom:6px;"><span class="live-pulse"></span>ROUND LIVE</div>
       <div class="round-code-value">${code}</div>
-      <div style="font-size:11px;opacity:.7;margin-top:6px;">Share this code so others can join live</div>
-      <button onclick="copyCode('${code}')" style="margin-top:8px;padding:7px 18px;border-radius:20px;border:1.5px solid rgba(255,255,255,.4);background:transparent;color:white;font-weight:600;font-size:12px;cursor:pointer;">📋 Copy Code</button>
+      <div style="font-size:11px;opacity:.7;margin-top:6px;">Share so others can join live</div>
+      <div style="display:flex;gap:8px;margin-top:10px;justify-content:center;">
+        <button onclick="copyCode('${code}')" style="padding:7px 16px;border-radius:20px;border:1.5px solid rgba(255,255,255,.4);background:transparent;color:white;font-weight:600;font-size:12px;cursor:pointer;">📋 Copy Code</button>
+        <button onclick="shareRoundLink()" style="padding:7px 16px;border-radius:20px;border:none;background:var(--gold);color:white;font-weight:600;font-size:12px;cursor:pointer;">🔗 Share Link</button>
+      </div>
     </div>`;
   const sb = document.getElementById('scoreboard-code-display');
   sb.style.display='block';
@@ -1108,10 +1162,9 @@ window.joinRound = async function() {
     const snap = await getDoc(doc(db,'rounds',code));
     if (!snap.exists()) { showToast('Round not found'); return; }
     const data = snap.data();
-    state = {...state,...data,currentHole:1,roundCode:code};
+    state = {...state,...data,currentHole:1,roundCode:code,myName:null};
     isScorer = false;
     subscribeToRound(code);
-    // Ask who they are
     showIdentityPicker(code);
   } catch(e) { showToast('Connection failed'); }
 };
@@ -1137,7 +1190,8 @@ function showIdentityPicker(code) {
 }
 
 window.confirmIdentity = function(name, code, modal) {
-  state.myName = name;
+  // Use '__viewer__' sentinel so myName is never null after joining — prevents re-asking on each hole
+  state.myName = name || '__viewer__';
   modal.remove();
   if (name) {
     document.getElementById('viewer-banner').style.display='block';
@@ -1169,6 +1223,15 @@ window.showPage = function(name) {
   if(name==='scorecard') renderScorecard();
   if(name==='scoreboard') renderScoreboard();
   if(name==='payments') renderPayments();
+  if(name==='share') {
+    if (!state.roundCode) {
+      const code = generateCode();
+      state.roundCode = code;
+      isScorer = true;
+      subscribeToRound(code);
+    }
+    document.getElementById('share-code-display').textContent = state.roundCode;
+  }
   if(name==='scores'){ renderFullScorecard(); renderMyScoreEntry(); renderScoreTabIdentity(); }
   if(name==='survey'){ surveyStep=0; renderSurvey(); }
   if(name==='setup'){ renderWolfOrder(); updateGhostCard(); }
@@ -1217,8 +1280,8 @@ window.startRound = async function() {
   if(players.length<2){showToast('Enter at least 2 players');return;}
   // Show identity picker modal before launching round
   showIdentityPickerModal(players, (chosenName) => {
-    state.myName = chosenName;
-    const code=generateCode();
+    myName = chosenName;
+    const code = state.roundCode || generateCode();
     state.players=players;
     state.wager=parseFloat(document.getElementById('wager-input').value)||5;
     state.wolfOrder=[...players];
@@ -1229,10 +1292,10 @@ window.startRound = async function() {
     state.roundCode=code;
     isScorer=true;
     showRoundCode(code);
-    subscribeToRound(code);
+    if (!unsubscribe) subscribeToRound(code);
     saveState();
-    if(state.myName){
-      document.getElementById('my-name-display').textContent=state.myName;
+    if(myName){
+      document.getElementById('my-name-display').textContent=myName;
       document.getElementById('my-course-display').textContent=state.courseName||'';
       document.getElementById('my-score-entry').style.display='block';
     }
@@ -1406,9 +1469,17 @@ window.togglePartner=function(name,chip){
   const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
   if(!state.holes[hole].partners)state.holes[hole].partners=[];
   const idx=state.holes[hole].partners.indexOf(name);
-  if(idx>-1){state.holes[hole].partners.splice(idx,1);chip.classList.remove('team');}
-  else{state.holes[hole].partners.push(name);chip.classList.add('team');}
-  saveState();
+  // Single select — deselect all others first
+  document.querySelectorAll('#partner-chips .chip').forEach(c=>c.classList.remove('team'));
+  if(idx>-1){
+    // Tapping same player deselects
+    state.holes[hole].partners=[];
+  } else {
+    // Select only this player
+    state.holes[hole].partners=[name];
+    chip.classList.add('team');
+  }
+  updatePayoutNote();saveState();
 };
 
 window.toggleBirdie=function(name,chip){
@@ -1470,7 +1541,7 @@ function renderDots(){
   const container=document.getElementById('hole-dots');container.innerHTML='';
   for(let i=1;i<=18;i++){
     const d=document.createElement('div'),h=state.holes[i]||{};
-    const hasMyScore=state.myName&&state.strokes[state.myName]&&state.strokes[state.myName][i];
+    const hasMyScore=myName&&state.strokes[myName]&&state.strokes[myName][i];
     d.className='hole-dot'+(i===state.currentHole?' current':'')+(h.winner==='wolf'?' wolf-won':h.winner==='team'?' team-won':h.winner==='push'?' pushed':hasMyScore?' scored':'');
     d.textContent=i;d.onclick=()=>{state.currentHole=i;renderScorecard();};
     container.appendChild(d);
@@ -1589,7 +1660,9 @@ function renderScorecard(){
 
   // Viewer lock
   const canEdit=isScorer;
-  document.getElementById('save-hole-btn').style.display=canEdit?'block':'none';
+  const isLastHole = state.currentHole === 18;
+  document.getElementById('save-hole-btn').style.display = (canEdit && !isLastHole) ? 'block' : 'none';
+  document.getElementById('finish-round-btn').style.display = (canEdit && isLastHole) ? 'block' : 'none';
 
   updatePayoutNote();renderDots();
 }
@@ -1607,6 +1680,35 @@ window.saveHole=function(){
   if(!state.holes[hole].eagles)state.holes[hole].eagles=[];
   saveState();renderDots();showToast(`Hole ${hole} saved! ✓`);
   if(hole<18)setTimeout(()=>{state.currentHole=hole+1;renderScorecard();},600);
+  else renderScorecard(); // refresh to show Finish Round button
+};
+
+window.finishRound = function() {
+  const hole = state.currentHole;
+  if (!state.holes[hole] || !state.holes[hole].winner) { showToast('Select a result first'); return; }
+  // Save hole 18 first
+  state.holes[hole].money = parseFloat(document.getElementById('hole-money').value) || state.wager;
+  state.holes[hole].wolf = getWolfForHole(hole);
+  state.holes[hole].doubled = document.getElementById('double-check').checked;
+  state.holes[hole].reDoubled = document.getElementById('redouble-check').checked;
+  if (!state.holes[hole].partners) state.holes[hole].partners = [];
+  if (!state.holes[hole].birdies) state.holes[hole].birdies = [];
+  if (!state.holes[hole].eagles) state.holes[hole].eagles = [];
+  saveState();
+  renderDots();
+  showToast('Round complete! 🏁');
+  // Background check for incomplete holes (non-blocking)
+  setTimeout(() => {
+    const incomplete = [];
+    for (let h = 1; h <= 18; h++) {
+      if (!state.holes[h] || !state.holes[h].winner) incomplete.push(h);
+    }
+    if (incomplete.length > 0) {
+      showToast(`⚠️ Holes ${incomplete.join(', ')} not saved`);
+    }
+  }, 800);
+  // Navigate to payments immediately
+  showPage('payments');
 };
 
 window.prevHole=function(){if(state.currentHole>1){state.currentHole--;renderScorecard();}};
@@ -1616,10 +1718,10 @@ window.nextHole=function(){if(state.currentHole<18){state.currentHole++;renderSc
 window.renderScoreTabIdentity = function() {
   const prompt = document.getElementById('identity-prompt');
   const entry = document.getElementById('my-score-entry');
-  if (state.myName) {
+  if (myName) {
     prompt.style.display = 'none';
     entry.style.display = 'block';
-    document.getElementById('my-name-display').textContent = state.myName;
+    document.getElementById('my-name-display').textContent = myName;
     document.getElementById('my-course-display').textContent = state.courseName || '';
     renderMyScoreEntry();
     return;
@@ -1635,7 +1737,7 @@ window.renderScoreTabIdentity = function() {
     btn.style.cssText = "width:100%;padding:12px 16px;border-radius:10px;border:2px solid #e0e0e0;background:white;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;text-align:left;";
     btn.textContent = p;
     btn.onclick = () => {
-      state.myName = p;
+      myName = p;
       document.getElementById('my-name-display').textContent = p;
       document.getElementById('my-course-display').textContent = state.courseName || '';
       prompt.style.display = 'none';
@@ -1649,7 +1751,7 @@ window.renderScoreTabIdentity = function() {
 }
 
 window.showIdentityPrompt = function() {
-  state.myName = null;
+  myName = null;
   renderScoreTabIdentity();
 };
 
@@ -1663,12 +1765,12 @@ window.adjustScore=function(delta){
 };
 
 window.saveMyScore=function(){
-  if(!state.myName)return;
+  if(!myName)return;
   const val=parseInt(document.getElementById('my-score-input').value);
   if(isNaN(val)||val<1)return;
   if(!state.strokes)state.strokes={};
-  if(!state.strokes[state.myName])state.strokes[state.myName]={};
-  state.strokes[state.myName][scCurrentHole]=val;
+  if(!state.strokes[myName])state.strokes[myName]={};
+  state.strokes[myName][scCurrentHole]=val;
   const par=state.coursePar[scCurrentHole-1]||4,diff=val-par;
   const vp=document.getElementById('score-vs-par');
   vp.textContent=diff===0?'E':diff>0?'+'+diff:''+diff;
@@ -1677,13 +1779,13 @@ window.saveMyScore=function(){
 };
 
 function renderMyScoreEntry(){
-  if(!state.myName||!state.players.length)return;
+  if(!myName||!state.players.length)return;
   document.getElementById('sc-hole-num').textContent=scCurrentHole;
   const par=state.coursePar[scCurrentHole-1]||4;
   document.getElementById('sc-par-display').textContent=par;
   document.getElementById('sc-prev-btn').disabled=scCurrentHole<=1;
   document.getElementById('sc-next-btn').disabled=scCurrentHole>=18;
-  const myStrokes=state.strokes&&state.strokes[state.myName]&&state.strokes[state.myName][scCurrentHole];
+  const myStrokes=state.strokes&&state.strokes[myName]&&state.strokes[myName][scCurrentHole];
   const input=document.getElementById('my-score-input');
   input.value=myStrokes||'';
   const vp=document.getElementById('score-vs-par');
@@ -1701,7 +1803,7 @@ function renderFullScorecard(){
   html+=`<div style="background:var(--green);color:white;padding:6px 4px;text-align:center;font-weight:700;">H</div>`;
   html+=`<div style="background:var(--green);color:white;padding:6px 2px;text-align:center;font-weight:700;">Par</div>`;
   players.forEach(p=>{
-    const isMe=p===state.myName;
+    const isMe=p===myName;
     html+=`<div style="background:${isMe?'var(--gold)':'var(--green)'};color:white;padding:6px 2px;text-align:center;font-weight:700;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.split(' ')[0]}</div>`;
   });
   // Rows
@@ -1940,9 +2042,10 @@ window.clearAllState = function clearAllState(){
       roundCode:null,
       rules:{ reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true },
       courseName:'', coursePar:Array(18).fill(4),
-      strokes:{}, myName:null
+      strokes:{}
     };
     try{localStorage.removeItem('wolf-v4');}catch(e){}
+    myName = null;
     // Reset course lookup state
     courseNameTemp = '';
     courseParTemp = Array(18).fill(4);
@@ -1983,7 +2086,7 @@ async function init(){
     }
     document.querySelectorAll('.player-name').forEach((inp,i)=>{if(state.players[i])inp.value=state.players[i];});
     if(document.getElementById('wager-input'))document.getElementById('wager-input').value=state.wager;
-    if(state.myName){document.getElementById('my-name-display').textContent=state.myName;document.getElementById('my-course-display').textContent=state.courseName||'';document.getElementById('my-score-entry').style.display='block';}
+    if(myName){document.getElementById('my-name-display').textContent=myName;document.getElementById('my-course-display').textContent=state.courseName||'';document.getElementById('my-score-entry').style.display='block';}
     showPage('scorecard');
   } else if(state.players && state.players.length) {
     // Round exists but not yet started — show setup with chips populated
