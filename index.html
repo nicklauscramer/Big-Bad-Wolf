@@ -166,7 +166,7 @@
       <img src="wolf-logo.png" alt="Wolf" style="width:220px;height:183px;object-fit:cover;border-radius:14px;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">WOLF MONEY</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:22px;">Live multiplayer · money · scores</div>
-      <button class="btn btn-primary" onclick="clearAllState();showPage('survey')" style="margin-bottom:10px;">🏌️ Start New Round</button>
+      <button class="btn btn-primary" onclick="if(state.roundCode&&!confirm('Start a new round? Current round data will be lost.')){return;}clearAllState();localStorage.removeItem('wolf-v4');showPage('survey')" style="margin-bottom:10px;">🏌️ Start New Round</button>
       <div style="font-size:12px;color:var(--muted);margin:12px 0;">— or join a round in progress —</div>
       <div style="display:flex;gap:8px;">
         <input type="text" id="join-code-input" placeholder="Enter 6-digit code" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-size:17px;font-weight:700;text-align:center;">
@@ -207,16 +207,7 @@
   <!-- SETUP (players + wager, after survey) -->
   <div id="page-setup" class="page">
     <div id="round-code-display"></div>
-    <div id="share-round-card" style="display:none;margin-bottom:14px;">
-      <div style="background:var(--green);border-radius:14px;padding:18px 20px;color:white;text-align:center;">
-        <div style="font-size:11px;letter-spacing:2px;opacity:.8;margin-bottom:4px;">SHARE WITH PLAYERS</div>
-        <div id="share-code-value" style="font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:8px;color:var(--gold-light);line-height:1;margin-bottom:12px;"></div>
-        <div style="display:flex;gap:8px;">
-          <button onclick="shareRoundLink()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid rgba(255,255,255,.4);background:transparent;color:white;font-weight:700;font-size:13px;cursor:pointer;">🔗 Share Link</button>
-          <button onclick="copyRoundCode()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid rgba(255,255,255,.4);background:transparent;color:white;font-weight:700;font-size:13px;cursor:pointer;">📋 Copy Code</button>
-        </div>
-      </div>
-    </div>
+
     <div class="card">
       <div class="section-label">👥 Players (2–6)</div>
       <div id="player-inputs">
@@ -424,6 +415,7 @@
         <div id="payments-standings"></div>
       </div>
     </div>
+    <button class="btn btn-danger" onclick="resetRound()">🔄 New Round</button>
   </div>
 
   <!-- SCOREBOARD -->
@@ -727,14 +719,13 @@ window.shareRoundLink = function() {
   const code = state.roundCode;
   if (!code) return;
   const url = window.location.href.split('?')[0] + '?join=' + code;
+  const text = 'Join my Wolf Money round! Code: ' + code + '\n' + url;
   if (navigator.share) {
-    navigator.share({
-      title: 'Join my Wolf Money round!',
-      text: 'Join my Wolf round — code: ' + code,
-      url: url
-    }).catch(() => {});
+    navigator.share({ title: 'Wolf Money — Join My Round', text, url }).catch(() => {
+      navigator.clipboard.writeText(text).then(() => showToast('Link copied! 📋'));
+    });
   } else {
-    navigator.clipboard.writeText(url).then(() => showToast('Link copied! 📋'));
+    navigator.clipboard.writeText(text).then(() => showToast('Link copied! 📋'));
   }
 };
 
@@ -789,7 +780,12 @@ async function fetchCoursesForQuery(q) {
 }
 
 // Called on every keystroke in course search box
+let courseTypeTimer = null;
 window.onCourseType = async function(val) {
+  clearTimeout(courseTypeTimer);
+  courseTypeTimer = setTimeout(() => _doCourseType(val), 350);
+};
+async function _doCourseType(val) {
   const q = val.trim().toLowerCase();
   const suggestions = document.getElementById('course-suggestions');
   const result = document.getElementById('course-lookup-result');
@@ -1059,7 +1055,7 @@ function renderParEditor(showSave = false) {
   for (let i=0;i<18;i++) {
     const cell = document.createElement('div');
     cell.className = 'par-cell';
-    cell.innerHTML = `<div class="par-cell-label">H${i+1}</div><input type="number" min="3" max="6" value="${courseParTemp[i]}" style="width:100%;text-align:center;font-size:13px;font-weight:700;padding:5px 2px;border:1.5px solid #e0e0e0;border-radius:7px;" oninput="courseParTemp[${i}]=parseInt(this.value)||4;">`;
+    cell.innerHTML = `<div class="par-cell-label">H${i+1}</div><input type="number" min="3" max="6" value="${courseParTemp[i]}" style="width:100%;text-align:center;font-size:13px;font-weight:700;padding:5px 2px;border:1.5px solid #e0e0e0;border-radius:7px;" oninput="courseParTemp[${i}]=parseInt(this.value)||4;surveyAnswers.par3Holes=courseParTemp.map((p,idx)=>p===3?idx+1:-1).filter(x=>x>0);">`;
     grid.appendChild(cell);
   }
   // Save course button — shown when course wasn't found in any database
@@ -1141,9 +1137,8 @@ function showRoundCode(code) {
       <div style="font-size:10px;letter-spacing:2px;opacity:.8;margin-bottom:6px;"><span class="live-pulse"></span>ROUND LIVE</div>
       <div class="round-code-value">${code}</div>
       <div style="font-size:11px;opacity:.7;margin-top:6px;">Share so others can join live</div>
-      <div style="display:flex;gap:8px;margin-top:10px;justify-content:center;">
-        <button onclick="copyCode('${code}')" style="padding:7px 16px;border-radius:20px;border:1.5px solid rgba(255,255,255,.4);background:transparent;color:white;font-weight:600;font-size:12px;cursor:pointer;">📋 Copy Code</button>
-        <button onclick="shareRoundLink()" style="padding:7px 16px;border-radius:20px;border:none;background:var(--gold);color:white;font-weight:600;font-size:12px;cursor:pointer;">🔗 Share Link</button>
+      <div style="margin-top:10px;">
+        <button onclick="shareRoundLink()" style="width:100%;padding:10px;border-radius:20px;border:none;background:var(--gold);color:white;font-weight:700;font-size:13px;cursor:pointer;">🔗 Share Invite Link</button>
       </div>
     </div>`;
   const sb = document.getElementById('scoreboard-code-display');
@@ -1350,7 +1345,9 @@ function isGhost(n){return state.ghostEnabled&&n===state.ghostName;}
 function getWolfForHole(hole){
   const rfFrom = state.rules.reshuffleHole || 16;
   if(state.rules.reshuffleOn16 && hole>=rfFrom && state.players.length>0) return getPressureOrder(hole)[0];
-  const all=getAllRotationPlayers();if(!all.length)return'—';
+  // Use saved wolfOrder from state (not DOM) so viewers see correct wolf
+  const all = (state.wolfOrder && state.wolfOrder.length) ? state.wolfOrder : getAllRotationPlayers();
+  if(!all.length) return '—';
   return all[(hole-1)%all.length];
 }
 
@@ -1422,7 +1419,7 @@ window.updatePayoutNote=function(){
   const hData=state.holes[state.currentHole]||{};
   const bigWolf=hData.bigWolf||false,lilWolf=hData.lilWolf||false;
   const doubled=hData.doubled||false,reDoubled=hData.reDoubled||false;
-  const hasBirdie=(hData.birdies||[]).length>0,hasEagle=(hData.eagles||[]).length>0;
+  const hasBirdie=(hData.birdies||[]).filter(p=>p!=="__pending").length>0,hasEagle=(hData.eagles||[]).filter(p=>p!=="__pending").length>0;
   const base=parseFloat(document.getElementById('hole-money').value)||state.wager;
   let e=base;
   if(bigWolf)e*=2;if(doubled)e*=2;if(reDoubled)e*=2;
@@ -1672,13 +1669,20 @@ window.saveHole=function(){
   if(!isScorer){showToast('Only scorer can save holes');return;}
   const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
   if(!state.holes[hole].winner){showToast('Select a result first');return;}
+  // Warn if partner mode but no partner selected
+  const wolfMode=state.holes[hole].wolfMode||'none';
+  const partners=(state.holes[hole].partners||[]).filter(p=>p!=='__pending');
+  if(wolfMode==='none' && partners.length===0 && (state.holes[hole].winner==='wolf'||state.holes[hole].winner==='team')){
+    if(!confirm('No partner selected — save anyway?')){return;}
+  }
   state.holes[hole].money=parseFloat(document.getElementById('hole-money').value)||state.wager;
   state.holes[hole].wolf=getWolfForHole(hole);
   state.holes[hole].doubled=document.getElementById('double-check').checked;
   state.holes[hole].reDoubled=document.getElementById('redouble-check').checked;
   if(!state.holes[hole].partners)state.holes[hole].partners=[];
-  if(!state.holes[hole].birdies)state.holes[hole].birdies=[];
-  if(!state.holes[hole].eagles)state.holes[hole].eagles=[];
+  // Clean up __pending placeholders before saving
+  state.holes[hole].birdies=(state.holes[hole].birdies||[]).filter(p=>p!=='__pending');
+  state.holes[hole].eagles=(state.holes[hole].eagles||[]).filter(p=>p!=='__pending');
   saveState();renderDots();showToast(`Hole ${hole} saved! ✓`);
   if(hole<18)setTimeout(()=>{state.currentHole=hole+1;renderScorecard();},600);
   else renderScorecard(); // refresh to show Finish Round button
@@ -1693,22 +1697,20 @@ window.finishRound = function() {
   state.holes[hole].doubled = document.getElementById('double-check').checked;
   state.holes[hole].reDoubled = document.getElementById('redouble-check').checked;
   if (!state.holes[hole].partners) state.holes[hole].partners = [];
-  if (!state.holes[hole].birdies) state.holes[hole].birdies = [];
-  if (!state.holes[hole].eagles) state.holes[hole].eagles = [];
+  state.holes[hole].birdies = (state.holes[hole].birdies||[]).filter(p=>p!=='__pending');
+  state.holes[hole].eagles = (state.holes[hole].eagles||[]).filter(p=>p!=='__pending');
   saveState();
   renderDots();
   showToast('Round complete! 🏁');
-  // Background check for incomplete holes (non-blocking)
-  setTimeout(() => {
-    const incomplete = [];
-    for (let h = 1; h <= 18; h++) {
-      if (!state.holes[h] || !state.holes[h].winner) incomplete.push(h);
-    }
-    if (incomplete.length > 0) {
-      showToast(`⚠️ Holes ${incomplete.join(', ')} not saved`);
-    }
-  }, 800);
-  // Navigate to payments immediately
+  // Check for incomplete holes
+  const incomplete = [];
+  for (let h = 1; h <= 17; h++) { // hole 18 just saved above
+    if (!state.holes[h] || !state.holes[h].winner) incomplete.push(h);
+  }
+  if (incomplete.length > 0) {
+    const proceed = confirm(`⚠️ ${incomplete.length} hole${incomplete.length>1?'s haven\'t':' hasn\'t'} been saved (${incomplete.join(', ')}). Finish anyway?`);
+    if (!proceed) return;
+  }
   showPage('payments');
 };
 
@@ -1846,7 +1848,7 @@ function computeWolfTotals(){
     const h=state.holes[hNum];if(!h.winner||h.winner==='push')return;
     const base=h.money||state.wager,bigWolf=h.bigWolf||false,lilWolf=h.lilWolf||false;
     const isSolo=bigWolf||lilWolf||(h.loneWolf&&!h.wolfMode);
-    const hasBirdie=(h.birdies||[]).length>0,hasEagle=(h.eagles||[]).length>0;
+    const hasBirdie=(h.birdies||[]).filter(p=>p!=="__pending").length>0,hasEagle=(h.eagles||[]).filter(p=>p!=="__pending").length>0;
     const doubled=h.doubled||false,reDoubled=h.reDoubled||false;
     let e=base;if(bigWolf)e*=2;if(doubled)e*=2;if(reDoubled)e*=2;
     if(hasEagle)e*=3;else if(hasBirdie)e*=2;
@@ -2047,6 +2049,7 @@ window.clearAllState = function clearAllState(){
     };
     try{localStorage.removeItem('wolf-v4');}catch(e){}
     myName = null;
+    scCurrentHole = 1; // reset scores tab hole counter
     // Reset course lookup state
     courseNameTemp = '';
     courseParTemp = Array(18).fill(4);
@@ -2075,7 +2078,16 @@ window.clearAllState = function clearAllState(){
 
 // ── Init ──
 async function init(){
-  try{const s=localStorage.getItem('wolf-v4');if(s){const p=JSON.parse(s);state={...state,...p};}}catch(e){}
+  try{
+    const s=localStorage.getItem('wolf-v4');
+    if(s){
+      const p=JSON.parse(s);
+      // Only restore if round was updated in the last 12 hours
+      const age = p.updatedAt ? (Date.now() - new Date(p.updatedAt.seconds*1000||p.updatedAt).getTime()) : Infinity;
+      if(age < 12*60*60*1000) { state={...state,...p}; }
+      else { localStorage.removeItem('wolf-v4'); }
+    }
+  }catch(e){}
   if(state.roundCode&&state.players.length){
     isScorer=true;showRoundCode(state.roundCode);subscribeToRound(state.roundCode);
     // Restore player inputs
