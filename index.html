@@ -515,7 +515,7 @@ const surveySteps = [
   }
 ];
 let surveyStep = 0;
-let surveyAnswers = { reshuffleOn16:true, reshuffleHole:16, birdiesEagles:true, doubles:true, greenies:false, brownies:false, browniesWager:5, bigWolfAllowed:true, lilWolfAllowed:true };
+let surveyAnswers = { reshuffleOn16:true, reshuffleHole:16, birdiesEagles:true, doubles:true, greenies:false, greenieWager:2, brownies:false, browniesWager:5, bigWolfAllowed:true, lilWolfAllowed:true };
 let courseParTemp = Array(18).fill(4);
 let courseNameTemp = '';
 
@@ -706,9 +706,10 @@ window.finishSurvey = function() {
   state.courseName = courseNameTemp;
   state.coursePar = [...courseParTemp];
   state.greeniesEnabled = surveyAnswers.greenies;
-  // Read greenieWager directly from DOM input in case oninput didn't fire
+  // Read greenieWager — DOM input is source of truth, surveyAnswers as fallback
   const gwInput = document.getElementById('greenie-wager-survey');
-  state.greenieWager = gwInput ? (parseFloat(gwInput.value) || surveyAnswers.greenieWager || 2) : (surveyAnswers.greenieWager || 2);
+  const gwFromDom = gwInput ? parseFloat(gwInput.value) : NaN;
+  state.greenieWager = (!isNaN(gwFromDom) && gwFromDom > 0) ? gwFromDom : (surveyAnswers.greenieWager || 2);
   state.par3Holes = surveyAnswers.par3Holes || courseParTemp.map((p,i)=>p===3?i+1:-1).filter(x=>x>0);
   showPage('setup');
 }
@@ -2096,7 +2097,7 @@ window.clearAllState = function clearAllState(){
     // Reset course lookup state
     courseNameTemp = '';
     courseParTemp = Array(18).fill(4);
-    surveyAnswers = { reshuffleOn16:true, reshuffleHole:16, birdiesEagles:true, doubles:true, greenies:false, brownies:false, browniesWager:5, bigWolfAllowed:true, lilWolfAllowed:true };
+    surveyAnswers = { reshuffleOn16:true, reshuffleHole:16, birdiesEagles:true, doubles:true, greenies:false, greenieWager:2, brownies:false, browniesWager:5, bigWolfAllowed:true, lilWolfAllowed:true };
     surveyStep = 0;
     const searchEl = document.getElementById('course-search-input'); if(searchEl) searchEl.value = '';
     const lookupResult = document.getElementById('course-lookup-result'); if(lookupResult) lookupResult.innerHTML = '';
