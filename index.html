@@ -710,6 +710,7 @@ window.finishSurvey = function() {
   const gwInput = document.getElementById('greenie-wager-survey');
   const gwFromDom = gwInput ? parseFloat(gwInput.value) : NaN;
   state.greenieWager = (!isNaN(gwFromDom) && gwFromDom > 0) ? gwFromDom : (surveyAnswers.greenieWager || 2);
+  alert('finishSurvey: surveyAnswers.greenieWager=' + surveyAnswers.greenieWager + ' gwInput=' + (gwInput?gwInput.value:'null') + ' → state.greenieWager=' + state.greenieWager);
   state.par3Holes = surveyAnswers.par3Holes || courseParTemp.map((p,i)=>p===3?i+1:-1).filter(x=>x>0);
   showPage('setup');
 }
@@ -1117,6 +1118,7 @@ function subscribeToRound(code) {
     if (prevGreenieWager && prevGreenieWager > (state.greenieWager || 0)) {
       state.greenieWager = prevGreenieWager;
     }
+    console.log('onSnapshot: prevGreenieWager=' + prevGreenieWager + ' data.greenieWager=' + data.greenieWager + ' final=' + state.greenieWager);
     // myName is a standalone variable, never overwritten by Firebase
     try { localStorage.setItem('wolf-v4',JSON.stringify(state)); } catch(e) {}
     const active = document.querySelector('.page.active');
@@ -1290,6 +1292,7 @@ window.startRound = async function() {
     state.roundCode=code;
     // Explicitly re-assert survey values that must survive Firebase sync
     if (surveyAnswers.greenieWager) state.greenieWager = surveyAnswers.greenieWager;
+    alert('startRound: surveyAnswers.greenieWager=' + surveyAnswers.greenieWager + ' state.greenieWager=' + state.greenieWager);
     isScorer=true;
     showRoundCode(code);
     if (!unsubscribe) subscribeToRound(code);
