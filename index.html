@@ -1569,9 +1569,17 @@ window.setWolfMode=function(mode){
 window.setWinner=function(w){
   const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
   state.holes[hole].winner=w;
+  // Normal result buttons
   document.getElementById('btn-wolf-wins').className='winner-btn'+(w==='wolf'?' wolf-wins':'');
   document.getElementById('btn-team-wins').className='winner-btn'+(w==='team'?' team-wins':'');
   document.getElementById('btn-push').className='winner-btn'+(w==='push'?' push':'');
+  // Drop wolf result buttons
+  const dbw=document.getElementById('btn-dropper-wins');
+  const dbl=document.getElementById('btn-dropper-loses');
+  const dbp=document.getElementById('btn-drop-push');
+  if(dbw)dbw.className='winner-btn'+(w==='dropper'?' wolf-wins':'');
+  if(dbl)dbl.className='winner-btn'+(w==='wolf'?' team-wins':'');
+  if(dbp)dbp.className='winner-btn'+(w==='push'?' push':'');
   saveState();
 };
 
