@@ -247,6 +247,7 @@
       👁️ Viewing live as <span id="viewer-name-display">Viewer</span>
     </div>
     <div class="hole-dots" id="hole-dots"></div>
+    <div id="carryover-banner" style="display:none;background:linear-gradient(135deg,#e65100,#ff8f00);border-radius:10px;padding:9px 14px;margin-bottom:10px;color:white;font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px;"></div>
     <div class="card" id="scorecard-inner">
       <div class="hole-nav">
         <button class="nav-btn" id="prev-btn" onclick="prevHole()">←</button>
@@ -295,20 +296,34 @@
       <div id="team-section">
         <div class="team-label">Wolf's Team</div>
         <div class="player-chips" id="partner-chips"></div>
+        <div id="drop-wolf-section" style="display:none;margin-top:10px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="drop-wolf-check" onchange="toggleDropWolf()" style="width:17px;height:17px;accent-color:#1565c0;">
+            <span style="font-size:13px;font-weight:600;color:#1565c0;">💧 Drop Wolf? <span style="font-weight:400;color:var(--muted);font-size:11px;">(partner goes solo)</span></span>
+          </label>
+          <div id="drop-wolf-note" style="display:none;margin-top:6px;font-size:11px;color:#1565c0;font-weight:600;padding:7px 10px;background:#e3f2fd;border-radius:8px;border:1px solid #1565c0;">💧 <span id="dropper-name"></span> goes solo vs everyone</div>
+        </div>
       </div>
       <div class="divider"></div>
       <div class="team-label" style="margin-bottom:6px;">Result</div>
-      <div class="winner-row">
+      <div class="winner-row" id="result-row-normal">
         <button class="winner-btn" id="btn-wolf-wins" onclick="setWinner('wolf')">🐺 Wolf Wins</button>
         <button class="winner-btn" id="btn-team-wins" onclick="setWinner('team')">🤝 Team Wins</button>
         <button class="winner-btn" id="btn-push" onclick="setWinner('push')">↔ Push</button>
+      </div>
+      <div class="winner-row" id="result-row-drop" style="display:none;">
+        <button class="winner-btn" id="btn-dropper-wins" onclick="setWinner('dropper')">💧 Dropper Wins</button>
+        <button class="winner-btn" id="btn-dropper-loses" onclick="setWinner('wolf')">🐺 Wolf+Team Win</button>
+        <button class="winner-btn" id="btn-drop-push" onclick="setWinner('push')">↔ Push</button>
       </div>
       <div class="money-row">
         <span style="font-size:20px;">💵</span>
         <span style="font-size:12px;color:var(--muted);font-weight:500;flex:1;">Base $/player</span>
         <div class="money-input-wrap"><span>$</span><input type="number" id="hole-money" placeholder="5" min="0" step="1" oninput="updatePayoutNote()"></div>
       </div>
+      <div id="carry-note" style="display:none;font-size:11px;color:#e65100;font-weight:600;padding:6px 10px;background:#fff3e0;border-radius:8px;margin-bottom:8px;"></div>
       <!-- Payout notes -->
+      <div id="drop-wolf-payout-note" style="display:none;background:#e3f2fd;border:1.5px solid #1565c0;border-radius:9px;padding:9px 12px;margin-bottom:8px;font-size:11px;color:#1565c0;font-weight:600;line-height:1.5;">💧 <span id="dropper-solo-name"></span> goes solo — wins/loses $<span id="dw-total">0</span><br><span style="font-weight:500;">Each opp: $<span id="dw-each">0</span></span></div>
       <div id="blind-wolf-note" style="display:none;background:#fff3e0;border:1.5px solid #e65100;border-radius:9px;padding:9px 12px;margin-bottom:8px;font-size:11px;color:#bf360c;font-weight:600;line-height:1.5;">🫣 Blind Wolf solo — ×2 (picked before tee shots) — wins/loses $<span id="lw-2x">0</span><br><span style="font-weight:500;">Each opp: $<span id="lw-1x">0</span></span></div>
       <div id="big-wolf-note" style="display:none;background:#fce4ec;border:1.5px solid #e91e63;border-radius:9px;padding:9px 12px;margin-bottom:8px;font-size:11px;color:#880e4f;font-weight:600;line-height:1.5;">🐺 Big Wolf solo — flat (picked after tee shots) — wins/loses $<span id="lw-lil-2x">0</span><br><span style="font-weight:500;">Each opp: $<span id="lw-lil-1x">0</span></span></div>
       <div id="double-note" style="display:none;background:#f3e5f5;border:1.5px solid #9c27b0;border-radius:9px;padding:9px 12px;margin-bottom:8px;font-size:11px;color:#6a1b9a;font-weight:600;">🔴 Doubled → $<span id="d-amt">0</span>/person</div>
@@ -465,7 +480,7 @@ let state = {
   greeniesEnabled:false, par3Holes:[], greenieWager:2,
   roundCode:null,
   // rule flags (from survey)
-  rules:{ reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true },
+  rules:{ reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true, dropWolfAllowed:false, carryoverEnabled:false, greenieCarryoverEnabled:false },
   // course data
   courseName:'', coursePar:Array(18).fill(4), // par per hole 1-18
   // stroke scores: { playerName: { 1: strokes, 2: strokes, ... } }
@@ -502,11 +517,29 @@ const surveySteps = [
     key:'doubles'
   },
   {
+    id:'dropwolf', title:'💧 Allow dropping the wolf?',
+    sub:'The picked partner can reject the wolf and go solo against everyone.',
+    options:[{v:true,label:'Yes — allow drop wolf',sub:'Partner goes solo, wolf joins the other team'},{v:false,label:'No — partner must accept',sub:'No dropping allowed'}],
+    key:'dropWolfAllowed'
+  },
+  {
     id:'greenies', title:'🏆 Play greenies on par 3s?',
     options:[{v:true,label:'Yes',sub:'Closest to pin wins'},{v:false,label:'No',sub:'Skip greenies'}],
     key:'greenies'
   },
 
+  {
+    id:'carryover', title:'🔄 Wolf push carryover?',
+    sub:'If a hole pushes, the base wager carries to the next hole.',
+    options:[{v:true,label:'Yes — carry over',sub:'Pushed holes stack until someone wins'},{v:false,label:'No carryover',sub:'Pushes stay as pushes'}],
+    key:'carryoverEnabled'
+  },
+  {
+    id:'greeniecarryover', title:'🏆 Greenie carryover?',
+    sub:'If no greenie winner, the pot carries to the next par 3.',
+    options:[{v:true,label:'Yes — carry over',sub:'Unclaimed greenies stack to next par 3'},{v:false,label:'No carryover',sub:'Unclaimed greenies are lost'}],
+    key:'greenieCarryoverEnabled'
+  },
   {
     id:'wolfmodes', title:'🐺 Which wolf modes are allowed?',
     multi: true,
@@ -515,7 +548,7 @@ const surveySteps = [
   }
 ];
 let surveyStep = 0;
-let surveyAnswers = { reshuffleOn16:true, reshuffleHole:16, birdiesEagles:true, doubles:true, greenies:false, greenieWager:2, brownies:false, browniesWager:5, bigWolfAllowed:true, lilWolfAllowed:true };
+let surveyAnswers = { reshuffleOn16:true, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, carryoverEnabled:false, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, bigWolfAllowed:true, lilWolfAllowed:true };
 let courseParTemp = Array(18).fill(4);
 let courseNameTemp = '';
 
@@ -711,6 +744,9 @@ window.finishSurvey = function() {
     browniesWager: surveyAnswers.browniesWager || 5,
     bigWolfAllowed: surveyAnswers.bigWolfAllowed !== false,
     lilWolfAllowed: surveyAnswers.lilWolfAllowed !== false,
+    dropWolfAllowed: surveyAnswers.dropWolfAllowed === true,
+    carryoverEnabled: surveyAnswers.carryoverEnabled === true,
+    greenieCarryoverEnabled: surveyAnswers.greenieCarryoverEnabled === true,
   };
   state.courseName = courseNameTemp;
   state.coursePar = [...courseParTemp];
@@ -1389,6 +1425,15 @@ function getPressureOrder(hole){
     const wolfName=h.wolf,partners=h.partners||[],wolfWon=h.winner==='wolf';
     const ghost=state.ghostEnabled?state.ghostName:null;
     const allP=ghost?[...state.players,ghost]:[...state.players];
+    const wolfDropped2=h.wolfDropped||false;
+    if(wolfDropped2 && partners.length>0){
+      const dropper=partners[0];const dropperWon=h.winner==='dropper';
+      const rd=state.players.filter(p=>p===dropper);
+      const ro2=allP.filter(p=>p!==dropper).filter(p=>state.players.includes(p));
+      if(dropperWon){rd.forEach(p=>{totals[p]+=e*ro2.length;});ro2.forEach(p=>{totals[p]-=e;});}
+      else if(h.winner!=='push'){rd.forEach(p=>{totals[p]-=e*ro2.length;});ro2.forEach(p=>{totals[p]+=e;});}
+      return;
+    }
     let wolfTeam,oppTeam;
     if(isSolo){wolfTeam=[wolfName];oppTeam=allP.filter(p=>p!==wolfName);}
     else{wolfTeam=[wolfName,...partners];oppTeam=allP.filter(p=>!wolfTeam.includes(p));}
@@ -1399,7 +1444,6 @@ function getPressureOrder(hole){
       else{rw.forEach(p=>{totals[p]-=e*ro.length;});ro.forEach(p=>{totals[p]+=e;});}
     }else{
       const winners=wolfWon?rw:ro,losers=wolfWon?ro:rw;
-      // Each loser pays e to each winner individually
       winners.forEach(p=>{totals[p]+=e*losers.length;});
       losers.forEach(p=>{totals[p]-=e*winners.length;});
     }
@@ -1469,10 +1513,12 @@ window.toggleReDouble=function(){
 
 window.updatePayoutNote=function(){
   const hData=state.holes[state.currentHole]||{};
+  const wolfDropped=hData.wolfDropped||false;
   const bigWolf=hData.bigWolf||false,lilWolf=hData.lilWolf||false;
   const doubled=hData.doubled||false,reDoubled=hData.reDoubled||false;
   const hasBirdie=(hData.birdies||[]).filter(p=>p!=="__pending").length>0,hasEagle=(hData.eagles||[]).filter(p=>p!=="__pending").length>0;
   const base=parseFloat(document.getElementById('hole-money').value)||state.wager;
+  const holeCarry=(computeWolfCarryovers()[state.currentHole]||0);
   let e=base;
   if(bigWolf)e*=2;if(doubled)e*=2;if(reDoubled)e*=2;
   if(hasEagle)e*=3;else if(hasBirdie)e*=2;
@@ -1480,12 +1526,26 @@ window.updatePayoutNote=function(){
   const bwn=document.getElementById('blind-wolf-note'),lwn=document.getElementById('big-wolf-note');
   const dn=document.getElementById('double-note'),rdn=document.getElementById('redouble-note');
   const gn=document.getElementById('ghost-note'),bn=document.getElementById('birdie-note'),en=document.getElementById('eagle-note');
-  if(bigWolf){bwn.style.display='block';document.getElementById('lw-2x').textContent=(e*numOpps).toFixed(0);document.getElementById('lw-1x').textContent=e.toFixed(0);lwn.style.display='none';}
-  else if(lilWolf){lwn.style.display='block';document.getElementById('lw-lil-2x').textContent=(e*numOpps).toFixed(0);document.getElementById('lw-lil-1x').textContent=e.toFixed(0);bwn.style.display='none';}
-  else{bwn.style.display='none';lwn.style.display='none';}
+  const dwn=document.getElementById('drop-wolf-payout-note');
+  const dropper=(hData.partners||[])[0]||'';
+  if(wolfDropped&&dropper){
+    if(dwn){dwn.style.display='block';document.getElementById('dw-total').textContent=(e*numOpps).toFixed(0);document.getElementById('dw-each').textContent=e.toFixed(0);}
+    bwn.style.display='none';lwn.style.display='none';
+  }else{
+    if(dwn)dwn.style.display='none';
+    if(bigWolf){bwn.style.display='block';document.getElementById('lw-2x').textContent=(e*numOpps).toFixed(0);document.getElementById('lw-1x').textContent=e.toFixed(0);lwn.style.display='none';}
+    else if(lilWolf){lwn.style.display='block';document.getElementById('lw-lil-2x').textContent=(e*numOpps).toFixed(0);document.getElementById('lw-lil-1x').textContent=e.toFixed(0);bwn.style.display='none';}
+    else{bwn.style.display='none';lwn.style.display='none';}
+  }
   dn.style.display=doubled?'block':'none';if(doubled)document.getElementById('d-amt').textContent=e.toFixed(0);
   rdn.style.display=reDoubled?'block':'none';if(reDoubled)document.getElementById('rd-amt').textContent=e.toFixed(0);
   gn.style.display=state.ghostEnabled?'block':'none';
+  const carryNote=document.getElementById('carry-note');
+  if(carryNote){
+    const wc=computeWolfCarryovers()[state.currentHole]||0;
+    carryNote.style.display=wc>0?'block':'none';
+    if(wc>0)carryNote.textContent=`🔄 +$${wc} carryover (paid separately, not multiplied)`;
+  }
   if(state.rules.birdiesEagles){
     if(hasEagle){en.style.display='block';document.getElementById('eagle-amt').textContent=e.toFixed(0);bn.style.display='none';}
     else if(hasBirdie){bn.style.display='block';document.getElementById('birdie-amt').textContent=e.toFixed(0);en.style.display='none';}
@@ -1514,19 +1574,50 @@ window.setWinner=function(w){
   saveState();
 };
 
+window.toggleDropWolf = function() {
+  const hole = state.currentHole;
+  if (!state.holes[hole]) state.holes[hole] = {};
+  const on = document.getElementById('drop-wolf-check').checked;
+  state.holes[hole].wolfDropped = on;
+  // Show/hide result rows
+  document.getElementById('result-row-normal').style.display = on ? 'none' : 'flex';
+  document.getElementById('result-row-drop').style.display = on ? 'flex' : 'none';
+  // Show dropper note
+  const partner = (state.holes[hole].partners || [])[0] || '';
+  document.getElementById('drop-wolf-note').style.display = on && partner ? 'block' : 'none';
+  document.getElementById('dropper-name').textContent = partner;
+  document.getElementById('dropper-solo-name').textContent = partner;
+  // Clear winner if switching modes
+  if (state.holes[hole].winner) {
+    state.holes[hole].winner = null;
+    document.querySelectorAll('.winner-btn').forEach(b => b.className = 'winner-btn');
+  }
+  updatePayoutNote();
+  saveState();
+};
+
 window.togglePartner=function(name,chip){
   const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
   if(!state.holes[hole].partners)state.holes[hole].partners=[];
   const idx=state.holes[hole].partners.indexOf(name);
-  // Single select — deselect all others first
   document.querySelectorAll('#partner-chips .chip').forEach(c=>c.classList.remove('team'));
   if(idx>-1){
-    // Tapping same player deselects
     state.holes[hole].partners=[];
+    state.holes[hole].wolfDropped=false;
   } else {
-    // Select only this player
     state.holes[hole].partners=[name];
     chip.classList.add('team');
+  }
+  // Show drop wolf checkbox once a partner is selected
+  const dwSection=document.getElementById('drop-wolf-section');
+  const hasPartner=(state.holes[hole].partners||[]).length>0;
+  if(dwSection) dwSection.style.display=(state.rules.dropWolfAllowed&&hasPartner)?'block':'none';
+  if(!hasPartner){
+    const dwCheck=document.getElementById('drop-wolf-check');
+    if(dwCheck)dwCheck.checked=false;
+    state.holes[hole].wolfDropped=false;
+    document.getElementById('result-row-normal').style.display='flex';
+    document.getElementById('result-row-drop').style.display='none';
   }
   updatePayoutNote();saveState();
 };
@@ -1607,6 +1698,18 @@ function renderScorecard(){
   document.getElementById('prev-btn').disabled=hole<=1;
   document.getElementById('next-btn').disabled=hole>=18;
 
+  // Carryover banners
+  const cb=document.getElementById('carryover-banner');
+  if(cb){
+    const wCarries=computeWolfCarryovers(),gCarries=computeGreenieCarryovers();
+    const wCarry=wCarries[hole]||0,gCarry=gCarries[hole]||0;
+    const parts=[];
+    if(wCarry>0)parts.push(`🔄 Wolf Carryover: +$${wCarry.toFixed(0)}`);
+    if(gCarry>0)parts.push(`🏆 Greenie Carryover: +$${gCarry.toFixed(0)}`);
+    if(parts.length>0){cb.style.display='flex';cb.innerHTML='⚡ '+parts.join(' &nbsp;|&nbsp; ');}
+    else{cb.style.display='none';}
+  }
+
   // Pressure banner
   const pb=document.getElementById('pressure-banner-el');
   const rfHole = state.rules.reshuffleHole || 16;
@@ -1634,6 +1737,26 @@ function renderScorecard(){
   const dbl=hData.doubled||false,rdb=hData.reDoubled||false;
   document.getElementById('double-check').checked=dbl;document.getElementById('double-label').textContent=dbl?'ON 🔴':'Off';
   document.getElementById('redouble-check').checked=rdb;document.getElementById('redouble-check').disabled=!dbl;document.getElementById('redouble-label').textContent=rdb?'ON 🟢':'Off';
+
+  // Drop wolf section — show only if partner selected and rule allows
+  const dwSection = document.getElementById('drop-wolf-section');
+  const hasPartner = (hData.partners||[]).filter(p=>p!=='__pending').length > 0;
+  const wolfDropped = hData.wolfDropped || false;
+  dwSection.style.display = (state.rules.dropWolfAllowed && wolfMode==='none' && hasPartner) ? 'block' : 'none';
+  document.getElementById('drop-wolf-check').checked = wolfDropped;
+  const dropPartner = (hData.partners||[])[0] || '';
+  document.getElementById('drop-wolf-note').style.display = wolfDropped && dropPartner ? 'block' : 'none';
+  document.getElementById('dropper-name').textContent = dropPartner;
+  document.getElementById('dropper-solo-name').textContent = dropPartner;
+  // Show correct result row
+  document.getElementById('result-row-normal').style.display = wolfDropped ? 'none' : 'flex';
+  document.getElementById('result-row-drop').style.display = wolfDropped ? 'flex' : 'none';
+  // Update dropper result buttons
+  if (wolfDropped) {
+    document.getElementById('btn-dropper-wins').className = 'winner-btn' + (w==='dropper' ? ' wolf-wins' : '');
+    document.getElementById('btn-dropper-loses').className = 'winner-btn' + (w==='wolf' ? ' team-wins' : '');
+    document.getElementById('btn-drop-push').className = 'winner-btn' + (w==='push' ? ' push' : '');
+  }
 
   // Partner chips
   const allPlayers=getAllRotationPlayers(),chipsContainer=document.getElementById('partner-chips');chipsContainer.innerHTML='';
@@ -1732,6 +1855,7 @@ window.saveHole=function(){
   state.holes[hole].doubled=document.getElementById('double-check').checked;
   state.holes[hole].reDoubled=document.getElementById('redouble-check').checked;
   if(!state.holes[hole].partners)state.holes[hole].partners=[];
+  if(state.holes[hole].wolfDropped===undefined)state.holes[hole].wolfDropped=false;
   // Clean up __pending placeholders before saving
   state.holes[hole].birdies=(state.holes[hole].birdies||[]).filter(p=>p!=='__pending');
   state.holes[hole].eagles=(state.holes[hole].eagles||[]).filter(p=>p!=='__pending');
@@ -1891,11 +2015,51 @@ function renderFullScorecard(){
   grid.innerHTML=html;
 }
 
+// ── Carryover helpers ──
+function computeWolfCarryovers() {
+  // Returns { holeNum: carryAmount } for each hole that has a carry into it
+  const carries = {};
+  if (!state.rules.carryoverEnabled) return carries;
+  let pending = 0;
+  for (let h = 1; h <= 18; h++) {
+    const hole = state.holes[h];
+    if (pending > 0) carries[h] = pending;
+    if (!hole || !hole.winner) break; // hole not played yet
+    if (hole.winner === 'push') {
+      pending += (hole.money || state.wager); // base wager only
+    } else {
+      pending = 0; // someone won, carryover consumed
+    }
+  }
+  return carries;
+}
+
+function computeGreenieCarryovers() {
+  // Returns { holeNum: carryAmount } for each par3 that has a greenie carry into it
+  const carries = {};
+  if (!state.rules.greenieCarryoverEnabled || !state.greeniesEnabled) return carries;
+  const par3s = [...state.par3Holes].sort((a,b) => a-b);
+  let pending = 0;
+  for (const h of par3s) {
+    if (pending > 0) carries[h] = pending;
+    const hole = state.holes[h];
+    if (!hole) break; // not played yet
+    const hasWinner = hole.greenie && hole.greenie !== null && hole.greenie !== 'null';
+    if (!hasWinner) {
+      pending += (state.greenieWager || 2);
+    } else {
+      pending = 0; // greenie won, carry consumed
+    }
+  }
+  return carries;
+}
+
 // ── Payout math ──
 function computeWolfTotals(){
   const players=state.players,ghost=state.ghostEnabled?state.ghostName:null;
   const allP=ghost?[...players,ghost]:[...players];
   const totals={};players.forEach(p=>totals[p]=0);
+  const wolfCarries = computeWolfCarryovers();
   Object.keys(state.holes).forEach(hNum=>{
     const h=state.holes[hNum];if(!h.winner||h.winner==='push')return;
     const base=h.money||state.wager,bigWolf=h.bigWolf||false,lilWolf=h.lilWolf||false;
@@ -1904,7 +2068,23 @@ function computeWolfTotals(){
     const doubled=h.doubled||false,reDoubled=h.reDoubled||false;
     let e=base;if(bigWolf)e*=2;if(doubled)e*=2;if(reDoubled)e*=2;
     if(hasEagle)e*=3;else if(hasBirdie)e*=2;
+    const carry=wolfCarries[parseInt(hNum)]||0;
     const wolfName=h.wolf,partners=h.partners||[],wolfWon=h.winner==='wolf';
+    const wolfDropped=h.wolfDropped||false;
+    // Drop wolf: partner goes solo, wolf joins the other team
+    if(wolfDropped && partners.length>0){
+      const dropper=partners[0];
+      const dropperWon=h.winner==='dropper';
+      // Dropper is solo vs everyone else
+      const dropperTeam=allP.filter(p=>p===dropper);
+      const otherTeam=allP.filter(p=>p!==dropper);
+      const rd=dropperTeam.filter(p=>players.includes(p));
+      const ro2=otherTeam.filter(p=>players.includes(p));
+      if(dropperWon){rd.forEach(p=>{totals[p]+=e*ro2.length;});ro2.forEach(p=>{totals[p]-=e;});}
+      else if(h.winner==='push'){} // no money moves
+      else{rd.forEach(p=>{totals[p]-=e*ro2.length;});ro2.forEach(p=>{totals[p]+=e;});}
+      return; // handled
+    }
     let wolfTeam,oppTeam;
     if(isSolo){wolfTeam=[wolfName];oppTeam=allP.filter(p=>p!==wolfName);}
     else{wolfTeam=[wolfName,...partners];oppTeam=allP.filter(p=>!wolfTeam.includes(p));}
@@ -1918,6 +2098,26 @@ function computeWolfTotals(){
       winners.forEach(p=>{totals[p]+=e*losers.length;});
       losers.forEach(p=>{totals[p]-=e*winners.length;});
     }
+    // Apply carryover — same direct-pay model, independent of multipliers
+    if(carry>0){
+      const wolfWon2=h.winner==='wolf',dropWon=h.winner==='dropper';
+      const wolfDropped3=h.wolfDropped||false;
+      let cWinners,cLosers;
+      if(wolfDropped3&&(h.partners||[]).length>0){
+        const dropper=(h.partners||[])[0];
+        cWinners=dropWon?players.filter(p=>p===dropper):players.filter(p=>p!==dropper);
+        cLosers=dropWon?players.filter(p=>p!==dropper):players.filter(p=>p===dropper);
+      }else if(isSolo){
+        const wn=h.wolf,wt=players.filter(p=>p===wn),ot=players.filter(p=>p!==wn);
+        cWinners=wolfWon2?wt:ot;cLosers=wolfWon2?ot:wt;
+      }else{
+        const wt=[h.wolf,...(h.partners||[])].filter(p=>players.includes(p));
+        const ot=players.filter(p=>!wt.includes(p));
+        cWinners=wolfWon2?wt:ot;cLosers=wolfWon2?ot:wt;
+      }
+      cWinners.forEach(p=>{totals[p]+=carry*cLosers.length;});
+      cLosers.forEach(p=>{totals[p]-=carry*cWinners.length;});
+    }
   });
   return totals;
 }
@@ -1925,16 +2125,25 @@ function computeWolfTotals(){
 function computeGreenieTotals(){
   const players=state.players,totals={};players.forEach(p=>totals[p]=0);
   if(!state.greeniesEnabled)return totals;
+  const gCarries=computeGreenieCarryovers();
   Object.keys(state.holes).forEach(hNum=>{
     const h=state.holes[hNum],holeNum=parseInt(hNum);
-    if(!h.greenie||!state.par3Holes.includes(holeNum))return;
-    const winner=h.greenie;if(!players.includes(winner))return;
+    if(!state.par3Holes.includes(holeNum))return;
+    const carry=gCarries[holeNum]||0;
+    if(!h.greenie||!players.includes(h.greenie)){
+      // No winner — carry handled by computeGreenieCarryovers, nothing to pay here
+      return;
+    }
+    const winner=h.greenie;
+    const totalAmt=(state.greenieWager||2)+carry; // base + any carry
     if(h.brownie&&state.rules&&state.rules.brownies){
-      const brownAmt=state.greenieWager||2; // same as greenie wager
+      // Brownie: greenie cancelled, winner pays everyone
+      const brownAmt=state.greenieWager||2;
       players.forEach(p=>{if(p===winner)totals[p]-=brownAmt*(players.length-1);else totals[p]+=brownAmt;});
+      // Carryover also goes out — winner pays carry to each player too
+      if(carry>0) players.forEach(p=>{if(p===winner)totals[p]-=carry*(players.length-1);else totals[p]+=carry;});
     }else{
-      const amt=state.greenieWager||2;
-      players.forEach(p=>{if(p===winner)totals[p]+=amt*(players.length-1);else totals[p]-=amt;});
+      players.forEach(p=>{if(p===winner)totals[p]+=totalAmt*(players.length-1);else totals[p]-=totalAmt;});
     }
   });
   return totals;
@@ -2103,7 +2312,7 @@ window.clearAllState = function clearAllState(){
       ghostEnabled:false, ghostName:'Ghost',
       greeniesEnabled:false, par3Holes:[], greenieWager:2,
       roundCode:null,
-      rules:{ reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true },
+      rules:{ reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true, dropWolfAllowed:false, carryoverEnabled:false, greenieCarryoverEnabled:false },
       courseName:'', coursePar:Array(18).fill(4),
       strokes:{}
     };
@@ -2113,7 +2322,7 @@ window.clearAllState = function clearAllState(){
     // Reset course lookup state
     courseNameTemp = '';
     courseParTemp = Array(18).fill(4);
-    surveyAnswers = { reshuffleOn16:true, reshuffleHole:16, birdiesEagles:true, doubles:true, greenies:false, greenieWager:2, brownies:false, browniesWager:5, bigWolfAllowed:true, lilWolfAllowed:true };
+    surveyAnswers = { reshuffleOn16:true, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, carryoverEnabled:false, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, bigWolfAllowed:true, lilWolfAllowed:true };
     surveyStep = 0;
     const searchEl = document.getElementById('course-search-input'); if(searchEl) searchEl.value = '';
     const lookupResult = document.getElementById('course-lookup-result'); if(lookupResult) lookupResult.innerHTML = '';
