@@ -1422,7 +1422,7 @@ function getPressureOrder(hole){
     const doubled=h.doubled||false,reDoubled=h.reDoubled||false;
     let e=base;if(bigWolf)e*=2;if(doubled)e*=2;if(reDoubled)e*=2;
     if(hasEagle)e*=3;else if(hasBirdie)e*=2;
-    const wolfName=h.wolf,partners=h.partners||[],wolfWon=h.winner==='wolf';
+    const wolfName=h.wolf,partners=h.partners||[],wolfWon=(h.winner==='wolf'||h.winner==='team');
     const ghost=state.ghostEnabled?state.ghostName:null;
     const allP=ghost?[...state.players,ghost]:[...state.players];
     const wolfDropped2=h.wolfDropped||false;
@@ -2069,7 +2069,7 @@ function computeWolfTotals(){
     let e=base;if(bigWolf)e*=2;if(doubled)e*=2;if(reDoubled)e*=2;
     if(hasEagle)e*=3;else if(hasBirdie)e*=2;
     const carry=wolfCarries[parseInt(hNum)]||0;
-    const wolfName=h.wolf,partners=h.partners||[],wolfWon=h.winner==='wolf';
+    const wolfName=h.wolf,partners=h.partners||[],wolfWon=(h.winner==='wolf'||h.winner==='team');
     const wolfDropped=h.wolfDropped||false;
     // Drop wolf: partner goes solo, wolf joins the other team
     if(wolfDropped && partners.length>0){
@@ -2100,7 +2100,7 @@ function computeWolfTotals(){
     }
     // Apply carryover — same direct-pay model, independent of multipliers
     if(carry>0){
-      const wolfWon2=h.winner==='wolf',dropWon=h.winner==='dropper';
+      const wolfWon2=(h.winner==='wolf'||h.winner==='team'),dropWon=h.winner==='dropper';
       const wolfDropped3=h.wolfDropped||false;
       let cWinners,cLosers;
       if(wolfDropped3&&(h.partners||[]).length>0){
