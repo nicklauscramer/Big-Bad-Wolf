@@ -579,7 +579,7 @@ function renderGreeniesConfig(container) {
     <div style="font-size:13px;font-weight:600;margin-bottom:8px;">$ per greenie (per player)</div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
       <span style="font-size:18px;font-weight:600;color:var(--green);">$</span>
-      <input type="number" id="greenie-wager-survey" value="${surveyAnswers.greenieWager||2}" min="1" step="1" style="max-width:100px;" oninput="if(this.value)surveyAnswers.greenieWager=parseFloat(this.value)||2;">
+      <input type="number" id="greenie-wager-survey" value="${surveyAnswers.greenieWager||2}" min="1" step="1" style="max-width:100px;" oninput="surveyAnswers.greenieWager=parseFloat(this.value)||surveyAnswers.greenieWager||2;">
     </div>
     <div style="font-size:13px;font-weight:600;margin-bottom:6px;">Which holes are Par 3s?</div>
     <div class="par3-grid" id="survey-par3-grid"></div>
@@ -681,13 +681,22 @@ window.toggleMultiSurvey = function(key, el) {
   el.querySelector('.rule-check').textContent = surveyAnswers[k] ? '✓' : '';
 };
 
+function captureCurrentSurveyInputs() {
+  // Save any typed values before re-rendering the survey step
+  const gw = document.getElementById('greenie-wager-survey');
+  if (gw && parseFloat(gw.value) > 0) surveyAnswers.greenieWager = parseFloat(gw.value);
+  const bw = document.getElementById('brownies-wager-survey');
+  if (bw && parseFloat(bw.value) > 0) surveyAnswers.browniesWager = parseFloat(bw.value);
+}
+
 window.surveyNext = function() {
+  captureCurrentSurveyInputs();
   surveyStep++;
   if (surveyStep >= surveySteps.length) { finishSurvey(); return; }
-
   renderSurvey();
 };
 window.surveyBack = function() {
+  captureCurrentSurveyInputs();
   if (surveyStep > 0) { surveyStep--; renderSurvey(); }
 };
 
@@ -710,7 +719,6 @@ window.finishSurvey = function() {
   const gwInput = document.getElementById('greenie-wager-survey');
   const gwFromDom = gwInput ? parseFloat(gwInput.value) : NaN;
   state.greenieWager = (!isNaN(gwFromDom) && gwFromDom > 0) ? gwFromDom : (surveyAnswers.greenieWager || 2);
-  alert('finishSurvey: surveyAnswers.greenieWager=' + surveyAnswers.greenieWager + ' gwInput=' + (gwInput?gwInput.value:'null') + ' → state.greenieWager=' + state.greenieWager);
   state.par3Holes = surveyAnswers.par3Holes || courseParTemp.map((p,i)=>p===3?i+1:-1).filter(x=>x>0);
   showPage('setup');
 }
@@ -1118,7 +1126,6 @@ function subscribeToRound(code) {
     if (prevGreenieWager && prevGreenieWager > (state.greenieWager || 0)) {
       state.greenieWager = prevGreenieWager;
     }
-    console.log('onSnapshot: prevGreenieWager=' + prevGreenieWager + ' data.greenieWager=' + data.greenieWager + ' final=' + state.greenieWager);
     // myName is a standalone variable, never overwritten by Firebase
     try { localStorage.setItem('wolf-v4',JSON.stringify(state)); } catch(e) {}
     const active = document.querySelector('.page.active');
@@ -1292,7 +1299,6 @@ window.startRound = async function() {
     state.roundCode=code;
     // Explicitly re-assert survey values that must survive Firebase sync
     if (surveyAnswers.greenieWager) state.greenieWager = surveyAnswers.greenieWager;
-    alert('startRound: surveyAnswers.greenieWager=' + surveyAnswers.greenieWager + ' state.greenieWager=' + state.greenieWager);
     isScorer=true;
     showRoundCode(code);
     if (!unsubscribe) subscribeToRound(code);
