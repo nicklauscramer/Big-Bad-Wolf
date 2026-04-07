@@ -1465,33 +1465,24 @@ window.renderWolfOrder = function(){
 window.startRound = async function() {
   const players=getPlayerNames();
   if(players.length<2){showToast('Enter at least 2 players');return;}
-  // Show identity picker modal, then go to share page before scorecard
-  showIdentityPickerModal(players, (chosenName) => {
-    myName = chosenName;
-    const code = state.roundCode || generateCode();
-    state.players=players;
-    state.wager=parseFloat(document.getElementById('wager-input').value)||5;
-    state.wolfOrder=[...players];
-    state.currentHole=1;state.holes={};
-    state.ghostEnabled=document.getElementById('ghost-check').checked&&players.length===3;
-    state.ghostName=document.getElementById('ghost-name-input').value.trim()||'Ghost';
-    state.strokes={};
-    state.roundCode=code;
-    // Explicitly re-assert survey values that must survive Firebase sync
-    if (surveyAnswers.greenieWager) state.greenieWager = surveyAnswers.greenieWager;
-    isScorer=true;
-    showRoundCode(code);
-    if (!unsubscribe) subscribeToRound(code);
-    saveState();
-    if(myName){
-      // my-name-display removed — using dropdown selector
-      document.getElementById('my-course-display').textContent=state.courseName||'';
-      document.getElementById('my-score-entry').style.display='block';
-    }
-    // Show share screen first — player taps "Let's Play" to go to scorecard
-    document.getElementById('share-code-display').textContent = code;
-    showPage('share');
-  });
+  // No identity modal — admin is always the scorer
+  myName = players[0];
+  const code = state.roundCode || generateCode();
+  state.players=players;
+  state.wager=parseFloat(document.getElementById('wager-input').value)||5;
+  state.wolfOrder=[...players];
+  state.currentHole=1;state.holes={};
+  state.ghostEnabled=document.getElementById('ghost-check').checked&&players.length===3;
+  state.ghostName=document.getElementById('ghost-name-input').value.trim()||'Ghost';
+  state.strokes={};
+  state.roundCode=code;
+  if (surveyAnswers.greenieWager) state.greenieWager = surveyAnswers.greenieWager;
+  isScorer=true;
+  showRoundCode(code);
+  if (!unsubscribe) subscribeToRound(code);
+  saveState();
+  document.getElementById('share-code-display').textContent = code;
+  showPage('share');
 };
 
 // Called from "Let's Play" button on share page
