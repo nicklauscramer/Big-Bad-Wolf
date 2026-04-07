@@ -367,6 +367,13 @@
           <div id="brownie-section" style="display:none;margin-top:10px;border-top:1px solid rgba(139,105,20,.2);padding-top:10px;"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="brownie-check" onchange="toggleBrownieCheck()" style="width:17px;height:17px;accent-color:#795548;"><span style="font-size:12px;font-weight:600;color:#795548;">💩 Brownie? (greenie winner three-putted)</span></label><div id="brownie-note" style="display:none;margin-top:6px;font-size:11px;color:#795548;font-weight:600;padding:7px 10px;background:#efebe9;border-radius:8px;">💩 Brownie! Greenie cancelled — <span id="brownie-winner-name"></span> pays $<span id="brownie-amt"></span> to each player</div></div>
         </div>
       </div>
+      <!-- Sandy section -->
+      <div id="sandy-section" style="display:none;">
+        <div class="divider"></div>
+        <div style="font-size:12px;font-weight:700;color:#b45309;margin-bottom:8px;">🏖️ Sandie? (par or better from bunker)</div>
+        <div class="player-chips" id="sandy-chips"></div>
+        <div id="sandy-note" style="display:none;margin-top:8px;font-size:11px;color:#b45309;font-weight:600;padding:7px 10px;background:#fef3c7;border-radius:8px;border:1px solid #b45309;"></div>
+      </div>
       <button class="btn btn-primary" id="save-hole-btn" onclick="saveHole()">Save Hole ✓</button>
       <button class="btn btn-primary" id="finish-round-btn" onclick="finishRound()" style="display:none;background:var(--gold);border-color:var(--gold);">🏁 Finish Round</button>
     </div>
@@ -374,18 +381,15 @@
 
   <!-- SCORECARD TAB (stroke scores) -->
   <div id="page-scores" class="page">
-    <div class="card" id="identity-prompt" style="display:none;">
-      <div class="section-label">🙋 Who Are You?</div>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Select your name to enter your score.</p>
-      <div id="score-tab-identity-chips" style="display:flex;flex-direction:column;gap:8px;"></div>
-    </div>
-    <div id="my-score-entry" style="display:none;">
-      <div class="card">
-        <div class="section-label">✏️ Enter Your Score</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <div style="font-size:13px;color:var(--muted);">Playing as: <strong id="my-name-display">—</strong></div>
-          <button onclick="showIdentityPrompt()" style="padding:5px 10px;border-radius:8px;border:1.5px solid #e0e0e0;background:white;font-size:11px;font-weight:600;cursor:pointer;color:var(--muted);">Change</button>
-        </div>
+    <div class="card" id="score-entry-card">
+      <div class="section-label">✏️ Enter Scores</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span style="font-size:13px;color:var(--muted);font-weight:500;">Player:</span>
+        <select id="score-player-select" onchange="onScorePlayerChange()" style="flex:1;">
+          <option value="">— select player —</option>
+        </select>
+      </div>
+      <div id="my-score-entry" style="display:none;">
         <div style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:12px;"><span id="my-course-display"></span></div>
         <div class="hole-nav" style="margin-bottom:10px;">
           <button class="nav-btn" id="sc-prev-btn" onclick="scPrevHole()">←</button>
@@ -418,6 +422,36 @@
     </div>
   </div>
 
+  <!-- GROUP MATCH -->
+  <div id="page-groupmatch" class="page">
+    <div id="gm-not-enabled" class="card" style="text-align:center;padding:28px 20px;">
+      <div style="font-size:36px;margin-bottom:10px;">🏆</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--green);letter-spacing:2px;margin-bottom:8px;">GROUP MATCH</div>
+      <div style="font-size:13px;color:var(--muted);">No group match active for this round.</div>
+    </div>
+    <div id="gm-content" style="display:none;">
+      <div class="card" style="padding:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);">🏆 GROUP MATCH</div>
+          <div id="gm-code-display" style="font-size:11px;color:var(--green);font-weight:700;letter-spacing:2px;"></div>
+        </div>
+        <div id="gm-groups-grid"></div>
+      </div>
+      <div class="card" style="padding:14px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:12px;">🥚 EGGS</div>
+        <div id="gm-eggs-grid"></div>
+      </div>
+      <div class="card" id="gm-greenies-card" style="padding:14px;display:none;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:12px;">🏆 GREENIES</div>
+        <div id="gm-greenies-content"></div>
+      </div>
+      <div class="card" style="padding:14px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:12px;">💸 GROUP BET RESULTS</div>
+        <div id="gm-bets-content"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- PAYMENTS -->
   <div id="page-payments" class="page">
     <div class="card" style="text-align:center;padding:28px 20px;" id="payments-empty" style="display:block;">
@@ -447,6 +481,10 @@
       <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:#8b6914;padding:12px 4px 5px;">🏆 GREENIES</div>
       <div class="score-table" id="greenie-board-table"></div>
     </div>
+    <div id="sandy-board-wrap" style="display:none;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:#b45309;padding:12px 4px 5px;">🏖️ SANDIES</div>
+      <div class="score-table" id="sandy-board-table"></div>
+    </div>
     <div class="hole-history" id="hole-history"><div class="history-header">Hole Log</div><div class="empty-state"><p style="padding:16px;font-size:12px;">No holes saved yet.</p></div></div>
     <button class="btn btn-danger" onclick="resetRound()">🔄 New Round</button>
   </div>
@@ -458,7 +496,8 @@
   <button class="nav-tab" id="nav-setup" onclick="showPage('setup')"><span class="tab-icon">⚙️</span>Setup</button>
   <button class="nav-tab" id="nav-scorecard" onclick="showPage('scorecard')"><span class="tab-icon">🏌️</span>Wolf</button>
   <button class="nav-tab" id="nav-scores" onclick="showPage('scores')"><span class="tab-icon">📋</span>Scores</button>
-  <button class="nav-tab" id="nav-scoreboard" onclick="showPage('scoreboard')"><span class="tab-icon">🏆</span>Money</button>
+  <button class="nav-tab" id="nav-groupmatch" onclick="showPage('groupmatch')" style="display:none;"><span class="tab-icon">🏆</span>Groups</button>
+  <button class="nav-tab" id="nav-scoreboard" onclick="showPage('scoreboard')"><span class="tab-icon">💰</span>Money</button>
   <button class="nav-tab" id="nav-payments" onclick="showPage('payments')"><span class="tab-icon">💸</span>Payments</button>
 </div>
 <div class="toast" id="toast"></div>
@@ -485,11 +524,12 @@ let state = {
   greeniesEnabled:false, par3Holes:[], greenieWager:2,
   roundCode:null,
   // rule flags (from survey)
-  rules:{ reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true, dropWolfAllowed:false, carryoverEnabled:false, greenieCarryoverEnabled:false },
+  rules:{ reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true, dropWolfAllowed:false, carryoverEnabled:false, greenieCarryoverEnabled:false, sandysEnabled:false, sandyBet:2 },
   // course data
   courseName:'', coursePar:Array(18).fill(4), // par per hole 1-18
   // stroke scores: { playerName: { 1: strokes, 2: strokes, ... } }
   strokes:{},
+  groupMatch:{ enabled:false },
 };
 let isScorer = false;
 let myName = null; // stored outside state so Firebase sync never overwrites it
@@ -506,44 +546,56 @@ const surveySteps = [
     render: renderCourseStep, validate: () => true
   },
   {
-    id:'reshuffle', title:'🔀 Reshuffle wolf order based on standings?',
-    sub:'Order based on who\'s losing the most money.',
-    options:[{v:true,label:'Yes — reshuffle',sub:'Most behind = wolf'},{v:false,label:'No — keep original order',sub:'Wolf rotation stays fixed'}],
+    id:'reshuffle', title:'🔀 Reshuffle Wolf Order?',
+    sub:'Wolf order reshuffled based on standings starting at the selected hole.',
+    options:[{v:true,label:'Yes — reshuffle',sub:'Most behind becomes wolf'},{v:false,label:'No — keep original order',sub:'Wolf rotation stays fixed'}],
     key:'reshuffleOn16'
   },
   {
-    id:'birdies', title:'🐦 Do birdies & eagles affect the hole?',
-    options:[{v:true,label:'Yes',sub:'Birdie ×2, Eagle ×3'},{v:false,label:'No',sub:'Stroke bonuses not used'}],
+    id:'birdies', title:'🐦 Birdies & Eagles?',
+    options:[{v:true,label:'Yes',sub:'Birdie doubles, Eagle triples the hole'},{v:false,label:'No',sub:'Birdies and eagles have no effect'}],
     key:'birdiesEagles'
   },
   {
-    id:'doubles', title:'🔴 Allow doubles & re-doubles?',
+    id:'doubles', title:'🔴 Allow Doubles & Re-Doubles?',
     options:[{v:true,label:'Yes',sub:'Non-wolf can double, wolf can re-double'},{v:false,label:'No',sub:'No doubling'}],
     key:'doubles'
   },
   {
-    id:'dropwolf', title:'💧 Allow dropping the wolf?',
-    sub:'The picked partner can reject the wolf and go solo against everyone.',
+    id:'dropwolf', title:'💧 Allow Dropping the Wolf?',
+    sub:'The picked partner can reject and go solo against everyone.',
     options:[{v:true,label:'Yes — allow drop wolf',sub:'Partner goes solo, wolf joins the other team'},{v:false,label:'No — partner must accept',sub:'No dropping allowed'}],
     key:'dropWolfAllowed'
   },
   {
-    id:'greenies', title:'🏆 Play greenies on par 3s?',
+    id:'greenies', title:'🏆 Play Greenies on Par 3s?',
     options:[{v:true,label:'Yes',sub:'Closest to pin wins'},{v:false,label:'No',sub:'Skip greenies'}],
     key:'greenies'
   },
 
   {
-    id:'carryover', title:'🔄 Wolf push carryover?',
-    sub:'If a hole pushes, the base wager carries to the next hole.',
-    options:[{v:true,label:'Yes — carry over',sub:'Pushed holes stack until someone wins'},{v:false,label:'No carryover',sub:'Pushes stay as pushes'}],
+    id:'sandys', title:'🏖️ Play Sandies?',
+    sub:'A sandie is when a player makes par or better from a bunker.',
+    options:[{v:true,label:'Yes — play sandies',sub:'Make par or better from a bunker to collect'},{v:false,label:'No Sandies',sub:'Skip sandies'}],
+    key:'sandysEnabled'
+  },
+  {
+    id:'carryover', title:'🔄 Push Carryover?',
+    sub:'If a hole pushes, the base wager carries over to the next hole.',
+    options:[{v:true,label:'Yes — Carryover',sub:'Pushed holes stack until someone wins.'},{v:false,label:'No Carryover',sub:'Pushes stay as pushes.'}],
     key:'carryoverEnabled'
   },
   {
-    id:'greeniecarryover', title:'🏆 Greenie carryover?',
-    sub:'If no greenie winner, the pot carries to the next par 3.',
-    options:[{v:true,label:'Yes — carry over',sub:'Unclaimed greenies stack to next par 3'},{v:false,label:'No carryover',sub:'Unclaimed greenies are lost'}],
+    id:'greeniecarryover', title:'🏆 Greenie Carryover?',
+    sub:'If no greenie winner, the pot carries over to the next par 3.',
+    options:[{v:true,label:'Yes — Carryover',sub:'Unclaimed greenies stack to the next par 3.'},{v:false,label:'No Carryover',sub:'Unclaimed greenies are lost.'}],
     key:'greenieCarryoverEnabled'
+  },
+  {
+    id:'groupmatch', title:'🏆 Join a Group Match?',
+    sub:'Track best ball, eggs, and group bets across multiple groups.',
+    options:[{v:true,label:'Yes — join or create a group match',sub:'Link with other groups playing today'},{v:false,label:'No',sub:'Single group only'}],
+    key:'groupMatchEnabled'
   },
   {
     id:'wolfmodes', title:'🐺 Which wolf modes are allowed?',
@@ -553,7 +605,7 @@ const surveySteps = [
   }
 ];
 let surveyStep = 0;
-let surveyAnswers = { reshuffleOn16:true, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, carryoverEnabled:false, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, bigWolfAllowed:true, lilWolfAllowed:true };
+let surveyAnswers = { groupMatchEnabled:false, reshuffleOn16:true, sandysEnabled:false, sandyBet:2, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, carryoverEnabled:false, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, bigWolfAllowed:true, lilWolfAllowed:true };
 let courseParTemp = Array(18).fill(4);
 let courseNameTemp = '';
 
@@ -647,6 +699,60 @@ function renderGreeniesConfig(container) {
   if (!surveyAnswers.par3Holes) surveyAnswers.par3Holes = courseParTemp.map((p,i)=>p===3?i+1:-1).filter(x=>x>0);
 }
 
+function renderSandyConfig(container) {
+  let wrap = container.querySelector('#sandy-config');
+  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'sandy-config'; wrap.style.marginTop = '14px'; container.appendChild(wrap); }
+  wrap.innerHTML = `
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;">$ per sandy (paid by each player)</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:18px;font-weight:600;color:var(--green);">$</span>
+      <input type="number" min="1" value="${surveyAnswers.sandyBet||2}" style="max-width:100px;"
+        oninput="if(this.value)surveyAnswers.sandyBet=parseFloat(this.value)||2;">
+      <span style="color:var(--muted);font-size:13px;">per player</span>
+    </div>`;
+}
+
+function renderGroupMatchConfig(container) {
+  let wrap = container.querySelector('#group-match-config');
+  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'group-match-config'; wrap.style.marginTop = '14px'; container.appendChild(wrap); }
+  wrap.innerHTML = `
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Your group name</div>
+    <input type="text" id="gm-group-name" placeholder="e.g. Group A, Team Nick" value="${surveyAnswers.groupName||''}" style="margin-bottom:14px;" oninput="surveyAnswers.groupName=this.value.trim()">
+    <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Group match code</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Create a new match or enter an existing code to join other groups.</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <input type="text" id="gm-code-input" placeholder="Enter match code" maxlength="6" style="text-transform:uppercase;letter-spacing:3px;font-weight:700;flex:1;" oninput="surveyAnswers.groupMatchCode=this.value.trim().toUpperCase()">
+      <button onclick="generateGroupMatchCode()" style="padding:10px 14px;border-radius:10px;border:none;background:var(--green);color:white;font-weight:600;font-size:12px;cursor:pointer;white-space:nowrap;">New Code</button>
+    </div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Bet amounts</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+      <div style="text-align:center;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Front 9 $</div>
+        <input type="number" min="0" value="${surveyAnswers.gmFront9Bet||5}" style="text-align:center;" oninput="surveyAnswers.gmFront9Bet=parseFloat(this.value)||0">
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Back 9 $</div>
+        <input type="number" min="0" value="${surveyAnswers.gmBack9Bet||5}" style="text-align:center;" oninput="surveyAnswers.gmBack9Bet=parseFloat(this.value)||0">
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Total $</div>
+        <input type="number" min="0" value="${surveyAnswers.gmTotalBet||5}" style="text-align:center;" oninput="surveyAnswers.gmTotalBet=parseFloat(this.value)||0">
+      </div>
+    </div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;">🥚 Egg bet ($ per egg)</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Lowest score to par on a hole across all groups. Ties = no egg.</div>
+    <input type="number" min="0" value="${surveyAnswers.gmEggBet||2}" style="max-width:100px;" oninput="surveyAnswers.gmEggBet=parseFloat(this.value)||0">
+  `;
+}
+
+window.generateGroupMatchCode = function() {
+  const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const code = Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join('');
+  document.getElementById('gm-code-input').value = code;
+  surveyAnswers.groupMatchCode = code;
+  showToast('Match code: ' + code);
+};
+
 window.setBrowniesAnswer = function(val, el) {
   surveyAnswers.brownies = val;
   document.querySelectorAll('#brownies-yes-opt,#brownies-no-opt').forEach(e => {
@@ -695,6 +801,16 @@ window.setSurveyAnswer = function(key, val, el) {
   });
   el.classList.add('selected'); el.querySelector('.rule-check').textContent='✓';
   const stepsEl = document.getElementById('survey-steps');
+  if (key==='groupMatchEnabled') {
+    const existing = stepsEl.querySelector('#group-match-config');
+    if (val && !existing) renderGroupMatchConfig(stepsEl);
+    if (!val) { const d=stepsEl.querySelector('#group-match-config'); if(d) d.remove(); }
+  }
+  if (key==='sandysEnabled') {
+    const existing = stepsEl.querySelector('#sandy-config');
+    if (val && !existing) renderSandyConfig(stepsEl);
+    if (!val) { const d=stepsEl.querySelector('#sandy-config'); if(d) d.remove(); }
+  }
   if (key==='greenies') {
     const existing = stepsEl.querySelector('#greenie-wager-survey');
     if (val && !existing) renderGreeniesConfig(stepsEl);
@@ -720,11 +836,12 @@ window.toggleMultiSurvey = function(key, el) {
 };
 
 function captureCurrentSurveyInputs() {
-  // Save any typed values before re-rendering the survey step
   const gw = document.getElementById('greenie-wager-survey');
   if (gw && parseFloat(gw.value) > 0) surveyAnswers.greenieWager = parseFloat(gw.value);
   const bw = document.getElementById('brownies-wager-survey');
   if (bw && parseFloat(bw.value) > 0) surveyAnswers.browniesWager = parseFloat(bw.value);
+  const sw = document.querySelector('#sandy-config input[type="number"]');
+  if (sw && parseFloat(sw.value) > 0) surveyAnswers.sandyBet = parseFloat(sw.value);
 }
 
 window.surveyNext = function() {
@@ -752,6 +869,8 @@ window.finishSurvey = function() {
     dropWolfAllowed: surveyAnswers.dropWolfAllowed === true,
     carryoverEnabled: surveyAnswers.carryoverEnabled === true,
     greenieCarryoverEnabled: surveyAnswers.greenieCarryoverEnabled === true,
+    sandysEnabled: surveyAnswers.sandysEnabled === true,
+    sandyBet: surveyAnswers.sandyBet || 2,
   };
   state.courseName = courseNameTemp;
   state.coursePar = [...courseParTemp];
@@ -761,6 +880,20 @@ window.finishSurvey = function() {
   const gwFromDom = gwInput ? parseFloat(gwInput.value) : NaN;
   state.greenieWager = (!isNaN(gwFromDom) && gwFromDom > 0) ? gwFromDom : (surveyAnswers.greenieWager || 2);
   state.par3Holes = surveyAnswers.par3Holes || courseParTemp.map((p,i)=>p===3?i+1:-1).filter(x=>x>0);
+  // Group match config
+  const gwConfigEl = document.getElementById('gm-group-name');
+  if (gwConfigEl && gwConfigEl.value.trim()) surveyAnswers.groupName = gwConfigEl.value.trim();
+  const gwCodeEl = document.getElementById('gm-code-input');
+  if (gwCodeEl && gwCodeEl.value.trim()) surveyAnswers.groupMatchCode = gwCodeEl.value.trim().toUpperCase();
+  state.groupMatch = surveyAnswers.groupMatchEnabled ? {
+    enabled: true,
+    matchCode: surveyAnswers.groupMatchCode || '',
+    groupName: surveyAnswers.groupName || 'Group A',
+    front9Bet: surveyAnswers.gmFront9Bet || 5,
+    back9Bet: surveyAnswers.gmBack9Bet || 5,
+    totalBet: surveyAnswers.gmTotalBet || 5,
+    eggBet: surveyAnswers.gmEggBet || 2,
+  } : { enabled: false };
   showPage('setup');
 }
 
@@ -1187,6 +1320,13 @@ function generateCode() {
 }
 
 function showRoundCode(code) {
+  // Show/hide group match nav tab
+  const gmNav = document.getElementById('nav-groupmatch');
+  if (gmNav) gmNav.style.display = (state.groupMatch && state.groupMatch.enabled) ? 'flex' : 'none';
+  // Subscribe to group match
+  if (state.groupMatch && state.groupMatch.enabled && state.groupMatch.matchCode) {
+    subscribeToGroupMatch(state.groupMatch.matchCode);
+  }
   const sc=document.getElementById('share-round-card');
   const sv=document.getElementById('share-code-value');
   if(sc&&sv){sv.textContent=code;sc.style.display='block';}
@@ -1249,9 +1389,7 @@ window.confirmIdentity = function(name, code, modal) {
   if (name) {
     document.getElementById('viewer-banner').style.display='block';
     document.getElementById('viewer-name-display').textContent = name + ' — ' + code;
-    document.getElementById('my-name-display').textContent = name;
     document.getElementById('my-course-display').textContent = state.courseName || '';
-    document.getElementById('my-score-entry').style.display='block';
     showToast('Joined as ' + name + ' 🎉');
   } else {
     document.getElementById('viewer-banner').style.display='block';
@@ -1276,6 +1414,7 @@ window.showPage = function(name) {
   if(name==='scorecard') renderScorecard();
   if(name==='scoreboard') renderScoreboard();
   if(name==='payments') renderPayments();
+  if(name==='groupmatch') renderGroupMatch();
   if(name==='share') {
     // Code already set by startRound — just display it
     if (state.roundCode) document.getElementById('share-code-display').textContent = state.roundCode;
@@ -1345,7 +1484,7 @@ window.startRound = async function() {
     if (!unsubscribe) subscribeToRound(code);
     saveState();
     if(myName){
-      document.getElementById('my-name-display').textContent=myName;
+      // my-name-display removed — using dropdown selector
       document.getElementById('my-course-display').textContent=state.courseName||'';
       document.getElementById('my-score-entry').style.display='block';
     }
@@ -1550,7 +1689,7 @@ window.updatePayoutNote=function(){
   if(carryNote){
     const wc=computeWolfCarryovers()[state.currentHole]||0;
     carryNote.style.display=wc>0?'block':'none';
-    if(wc>0)carryNote.textContent=`🔄 +$${wc} carryover (paid separately, not multiplied)`;
+    if(wc>0)carryNote.textContent=`🔄 +$${wc} push carryover (base wager only, not multiplied)`;
   }
   if(state.rules.birdiesEagles){
     if(hasEagle){en.style.display='block';document.getElementById('eagle-amt').textContent=e.toFixed(0);bn.style.display='none';}
@@ -1659,6 +1798,38 @@ window.toggleEagle=function(name,chip){
   updatePayoutNote();saveState();
 };
 
+window.toggleSandy = function(name, chip) {
+  const hole = state.currentHole;
+  if (!state.holes[hole]) state.holes[hole] = {};
+  if (!state.holes[hole].sandys) state.holes[hole].sandys = [];
+  const idx = state.holes[hole].sandys.indexOf(name);
+  if (idx > -1) {
+    state.holes[hole].sandys.splice(idx, 1);
+    chip.classList.remove('team');
+  } else {
+    state.holes[hole].sandys.push(name);
+    chip.classList.add('team');
+  }
+  updateSandyNote();
+  saveState();
+};
+
+function updateSandyNote() {
+  const hole = state.currentHole;
+  const hData = state.holes[hole] || {};
+  const sandys = hData.sandys || [];
+  const note = document.getElementById('sandy-note');
+  if (!note) return;
+  if (sandys.length > 0) {
+    const bet = state.rules.sandyBet || 2;
+    const others = state.players.length - 1;
+    note.style.display = 'block';
+    note.textContent = `🏖️ ${sandys.join(', ')} — each collects $${bet} from ${others} player${others===1?'':'s'}`;
+  } else {
+    note.style.display = 'none';
+  }
+}
+
 window.toggleBrownieCheck = function() {
   const hole = state.currentHole;
   if (!state.holes[hole]) state.holes[hole] = {};
@@ -1718,9 +1889,9 @@ function renderScorecard(){
     const wCarries=computeWolfCarryovers(),gCarries=computeGreenieCarryovers();
     const wCarry=wCarries[hole]||0,gCarry=gCarries[hole]||0;
     const parts=[];
-    if(wCarry>0)parts.push(`🔄 Wolf Carryover: +$${wCarry.toFixed(0)}`);
+    if(wCarry>0)parts.push(`🔄 Push Carryover: +$${wCarry.toFixed(0)}`);
     if(gCarry>0)parts.push(`🏆 Greenie Carryover: +$${gCarry.toFixed(0)}`);
-    if(parts.length>0){cb.style.display='flex';cb.innerHTML='⚡ '+parts.join(' &nbsp;|&nbsp; ');}
+    if(parts.length>0){cb.style.display='flex';cb.innerHTML='⚡ '+parts.join('  |  ');}
     else{cb.style.display='none';}
   }
 
@@ -1820,6 +1991,24 @@ function renderScorecard(){
     });
   }
 
+  // Sandy section
+  const sandySection = document.getElementById('sandy-section');
+  if (sandySection) {
+    sandySection.style.display = state.rules.sandysEnabled ? 'block' : 'none';
+    if (state.rules.sandysEnabled) {
+      const sc2 = document.getElementById('sandy-chips');
+      sc2.innerHTML = '';
+      state.players.forEach(p => {
+        const chip = document.createElement('div');
+        chip.className = 'chip' + ((hData.sandys||[]).includes(p) ? ' team' : '');
+        chip.textContent = '🏖️ ' + p;
+        chip.onclick = () => toggleSandy(p, chip);
+        sc2.appendChild(chip);
+      });
+      updateSandyNote();
+    }
+  }
+
   // Greenie section
   const isPar3=state.greeniesEnabled&&state.par3Holes.includes(hole);
   document.getElementById('greenie-section').style.display=isPar3?'block':'none';
@@ -1870,6 +2059,7 @@ window.saveHole=function(){
   state.holes[hole].reDoubled=document.getElementById('redouble-check').checked;
   if(!state.holes[hole].partners)state.holes[hole].partners=[];
   if(state.holes[hole].wolfDropped===undefined)state.holes[hole].wolfDropped=false;
+  if(!state.holes[hole].sandys)state.holes[hole].sandys=[];
   // Clean up __pending placeholders before saving
   state.holes[hole].birdies=(state.holes[hole].birdies||[]).filter(p=>p!=='__pending');
   state.holes[hole].eagles=(state.holes[hole].eagles||[]).filter(p=>p!=='__pending');
@@ -1909,39 +2099,39 @@ window.nextHole=function(){if(state.currentHole<18){state.currentHole++;renderSc
 
 // ── Stroke Scorecard ──
 window.renderScoreTabIdentity = function() {
-  const prompt = document.getElementById('identity-prompt');
+  // Populate player dropdown
+  const sel = document.getElementById('score-player-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— select player —</option>';
+  state.players.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p; opt.textContent = p;
+    if (p === myName) opt.selected = true;
+    sel.appendChild(opt);
+  });
   const entry = document.getElementById('my-score-entry');
-  if (myName) {
-    prompt.style.display = 'none';
+  if (myName && state.players.includes(myName)) {
     entry.style.display = 'block';
-    document.getElementById('my-name-display').textContent = myName;
     document.getElementById('my-course-display').textContent = state.courseName || '';
     renderMyScoreEntry();
-    return;
+  } else {
+    entry.style.display = 'none';
   }
-  // No name set — show picker
-  if (!state.players.length) { prompt.style.display='none'; return; }
-  prompt.style.display = 'block';
-  entry.style.display = 'none';
-  const chips = document.getElementById('score-tab-identity-chips');
-  chips.innerHTML = '';
-  state.players.forEach(p => {
-    const btn = document.createElement('button');
-    btn.style.cssText = "width:100%;padding:12px 16px;border-radius:10px;border:2px solid #e0e0e0;background:white;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;text-align:left;";
-    btn.textContent = p;
-    btn.onclick = () => {
-      myName = p;
-      document.getElementById('my-name-display').textContent = p;
-      document.getElementById('my-course-display').textContent = state.courseName || '';
-      prompt.style.display = 'none';
-      entry.style.display = 'block';
-      renderIdentityChips();
-      renderMyScoreEntry();
-      showToast('Playing as ' + p + ' ✓');
-    };
-    chips.appendChild(btn);
-  });
-}
+};
+
+window.onScorePlayerChange = function() {
+  const sel = document.getElementById('score-player-select');
+  myName = sel.value || null;
+  const entry = document.getElementById('my-score-entry');
+  if (myName) {
+    entry.style.display = 'block';
+    document.getElementById('my-course-display').textContent = state.courseName || '';
+    scCurrentHole = 1;
+    renderMyScoreEntry();
+  } else {
+    entry.style.display = 'none';
+  }
+};
 
 window.showIdentityPrompt = function() {
   myName = null;
@@ -1969,6 +2159,7 @@ window.saveMyScore=function(){
   vp.textContent=diff===0?'E':diff>0?'+'+diff:''+diff;
   vp.style.color=diff<0?'var(--green)':diff>0?'#c62828':'var(--muted)';
   saveState();renderFullScorecard();
+  syncGroupScoresToMatch();
 };
 
 function renderMyScoreEntry(){
@@ -2204,11 +2395,32 @@ function computeWolfTotals(){
         cLosers.forEach(p=>{totals[p]-=carry;});
       } else {
         // Partner: winners each get carry, losers split
-        const carryPot=carry*cWinners.length;
-        cWinners.forEach(p=>{totals[p]+=carry;});
-        cLosers.forEach(p=>{totals[p]-=carryPot/cLosers.length;});
+        // Partner: each loser pays carry. Winners split pot.
+        const carryPot=carry*cLosers.length;
+        cWinners.forEach(p=>{totals[p]+=carryPot/cWinners.length;});
+        cLosers.forEach(p=>{totals[p]-=carry;});
       }
     }
+  });
+  return totals;
+}
+
+function computeSandyTotals(){
+  const players=state.players,totals={};players.forEach(p=>totals[p]=0);
+  if(!state.rules||!state.rules.sandysEnabled)return totals;
+  Object.keys(state.holes).forEach(hNum=>{
+    const h=state.holes[hNum];
+    const sandys=h.sandys||[];
+    if(!sandys.length)return;
+    const bet=state.rules.sandyBet||2;
+    sandys.forEach(winner=>{
+      if(!players.includes(winner))return;
+      // Each other player pays the sandy winner
+      players.forEach(p=>{
+        if(p===winner)totals[p]+=bet*(players.length-1);
+        else totals[p]-=bet;
+      });
+    });
   });
   return totals;
 }
@@ -2216,6 +2428,8 @@ function computeWolfTotals(){
 function computeGreenieTotals(){
   const players=state.players,totals={};players.forEach(p=>totals[p]=0);
   if(!state.greeniesEnabled)return totals;
+  // When group match is active, greenies are cross-group bets tracked separately
+  if(state.groupMatch&&state.groupMatch.enabled)return totals;
   const gCarries=computeGreenieCarryovers();
   Object.keys(state.holes).forEach(hNum=>{
     const h=state.holes[hNum],holeNum=parseInt(hNum);
@@ -2243,7 +2457,7 @@ function computeGreenieTotals(){
 // ── Scoreboard ──
 function renderScoreboard(){
   if(!state.players.length)return;
-  const wt=computeWolfTotals(),gt=computeGreenieTotals();
+  const wt=computeWolfTotals(),gt=computeGreenieTotals(),st=computeSandyTotals();
   const ws=[...state.players].sort((a,b)=>wt[b]-wt[a]);
   const table=document.getElementById('scoreboard-table');
   table.innerHTML=`<div class="score-header" style="grid-template-columns:28px 1fr 76px;"><span>#</span><span>Player</span><span style="text-align:right;">Net</span></div>`;
@@ -2266,6 +2480,24 @@ function renderScoreboard(){
       gt2.appendChild(row);
     });
   }else gw.style.display='none';
+
+  // Sandy board
+  const sw2=document.getElementById('sandy-board-wrap');
+  if(sw2){
+    const hasSandys=Object.values(state.holes).some(h=>h.sandys&&h.sandys.length>0);
+    if(state.rules.sandysEnabled&&hasSandys){
+      sw2.style.display='block';
+      const ss=[...state.players].sort((a,b)=>st[b]-st[a]);
+      const st2=document.getElementById('sandy-board-table');
+      st2.innerHTML=`<div class="score-header" style="grid-template-columns:28px 1fr 76px;"><span>#</span><span>Player</span><span style="text-align:right;">Net</span></div>`;
+      ss.forEach((p,i)=>{
+        const net=st[p],cls=net>0?'amount-pos':net<0?'amount-neg':'amount-zero',sign=net>0?'+':'';
+        const row=document.createElement('div');row.className='score-row';row.style.gridTemplateColumns='28px 1fr 76px';
+        row.innerHTML=`<span style="font-size:11px;color:var(--muted);">${i+1}</span><span style="font-weight:600;font-size:14px;">${p}</span><span class="amount-cell ${cls}" style="text-align:right;">${sign}$${Math.abs(net).toFixed(2)}</span>`;
+        st2.appendChild(row);
+      });
+    }else{sw2.style.display='none';}
+  }
 
   const hist=document.getElementById('hole-history');
   const rows=Object.keys(state.holes).filter(h=>state.holes[h].wolf).sort((a,b)=>+a-+b);
@@ -2293,9 +2525,10 @@ function renderScoreboard(){
 function computeSettlement() {
   const wolf = computeWolfTotals();
   const greenie = computeGreenieTotals();
+  const sandy = computeSandyTotals();
   const players = state.players;
   const net = {};
-  players.forEach(p => { net[p] = (wolf[p]||0) + (greenie[p]||0); });
+  players.forEach(p => { net[p] = (wolf[p]||0) + (greenie[p]||0) + (sandy[p]||0); });
 
   // Split into debtors (owe money) and creditors (owed money)
   const debtors   = players.filter(p => net[p] < -0.01).map(p => ({ name:p, amt: -net[p] })).sort((a,b) => b.amt-a.amt);
@@ -2381,6 +2614,236 @@ function renderPayments() {
   }
 }
 
+// ── Group Match Firebase ──
+let gmUnsubscribe = null;
+
+async function syncGroupScoresToMatch() {
+  const gm = state.groupMatch;
+  if (!gm || !gm.enabled || !gm.matchCode || !state.roundCode) return;
+  // Push this group's best ball scores to the shared match document
+  const bestBall = {};
+  for (let h = 1; h <= 18; h++) {
+    const scores = state.players
+      .map(p => state.strokes && state.strokes[p] && state.strokes[p][h])
+      .filter(s => s > 0);
+    if (scores.length) bestBall[h] = Math.min(...scores);
+  }
+  try {
+    await setDoc(doc(db, 'group_matches', gm.matchCode, 'groups', state.roundCode), {
+      groupName: gm.groupName,
+      roundCode: state.roundCode,
+      bestBall,
+      front9Bet: gm.front9Bet,
+      back9Bet: gm.back9Bet,
+      totalBet: gm.totalBet,
+      eggBet: gm.eggBet,
+      coursePar: state.coursePar,
+      updatedAt: serverTimestamp()
+    });
+  } catch(e) { console.log('Group match sync error:', e); }
+}
+
+function subscribeToGroupMatch(matchCode) {
+  if (gmUnsubscribe) { gmUnsubscribe(); gmUnsubscribe = null; }
+  if (!matchCode) return;
+  // Listen to all groups in this match
+  gmUnsubscribe = onSnapshot(
+    collection(db, 'group_matches', matchCode, 'groups'),
+    snap => {
+      state._gmGroups = {};
+      snap.docs.forEach(d => { state._gmGroups[d.id] = d.data(); });
+      const active = document.querySelector('.page.active');
+      if (active && active.id === 'page-groupmatch') renderGroupMatch();
+    },
+    err => console.log('Group match listen error:', err)
+  );
+}
+
+function renderGroupMatch() {
+  const gm = state.groupMatch;
+  const notEnabled = document.getElementById('gm-not-enabled');
+  const gmContent = document.getElementById('gm-content');
+  if (!gm || !gm.enabled) {
+    notEnabled.style.display = 'block'; gmContent.style.display = 'none'; return;
+  }
+  notEnabled.style.display = 'none'; gmContent.style.display = 'block';
+  document.getElementById('gm-code-display').textContent = 'Code: ' + (gm.matchCode || '');
+
+  const groups = Object.values(state._gmGroups || {});
+  if (!groups.length) {
+    document.getElementById('gm-groups-grid').innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px;">Waiting for groups to join…</div>';
+    document.getElementById('gm-eggs-grid').innerHTML = '';
+    document.getElementById('gm-bets-content').innerHTML = '';
+    return;
+  }
+
+  const par = state.coursePar;
+
+  // ── Groups score grid ──
+  const colW = `36px 28px ${groups.map(()=>'1fr').join(' ')}`;
+  let grid = `<div style="display:grid;grid-template-columns:${colW};font-size:11px;border-radius:8px;overflow:hidden;">`;
+  // Header
+  grid += `<div style="background:var(--green);color:white;padding:6px 4px;text-align:center;font-weight:700;">H</div>`;
+  grid += `<div style="background:var(--green);color:white;padding:6px 2px;text-align:center;font-weight:700;">Par</div>`;
+  groups.forEach(g => {
+    const isUs = g.roundCode === state.roundCode;
+    grid += `<div style="background:${isUs?'var(--gold)':'var(--green)'};color:white;padding:6px 2px;text-align:center;font-weight:700;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(g.groupName||'?').split(' ').slice(0,2).join(' ')}</div>`;
+  });
+  // Hole rows
+  let front9Totals = groups.map(()=>0), back9Totals = groups.map(()=>0);
+  let front9Complete = true, back9Complete = true;
+  for (let h = 1; h <= 18; h++) {
+    const holePar = par[h-1] || 4;
+    const rowBg = h%2===0 ? '#f9faf9' : 'white';
+    // Find egg winner — lowest diff to par across all groups, unique
+    const diffs = groups.map(g => {
+      const s = g.bestBall && g.bestBall[h];
+      return s ? s - holePar : null;
+    });
+    const validDiffs = diffs.filter(d => d !== null);
+    const minDiff = validDiffs.length ? Math.min(...validDiffs) : null;
+    const eggWinnerIdx = (minDiff !== null && validDiffs.filter(d=>d===minDiff).length === 1)
+      ? diffs.indexOf(minDiff) : -1;
+
+    grid += `<div style="background:${rowBg};padding:6px 4px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--green);border-bottom:1px solid #f0f0f0;">${h}</div>`;
+    grid += `<div style="background:${rowBg};padding:6px 2px;text-align:center;font-size:11px;color:var(--muted);border-bottom:1px solid #f0f0f0;">${holePar}</div>`;
+    groups.forEach((g, gi) => {
+      const s = g.bestBall && g.bestBall[h];
+      if (!s) {
+        if (h <= 9) front9Complete = false; else back9Complete = false;
+        grid += `<div style="background:${rowBg};padding:5px 2px;text-align:center;color:var(--muted);border-bottom:1px solid #f0f0f0;font-size:12px;">—</div>`;
+        return;
+      }
+      const diff = s - holePar;
+      const relStr = diff===0?'E':diff>0?'+'+diff:''+diff;
+      const isEgg = gi === eggWinnerIdx;
+      const bg = isEgg ? '#fff8e1' : rowBg;
+      const cls = isEgg ? 'color:#e65100;font-weight:700;' : diff<0?'color:var(--green);font-weight:700;':diff>0?'color:#c62828;':'color:var(--muted);';
+      const label = isEgg ? `🥚${s}` : `${s}`;
+      if (h <= 9) front9Totals[gi] += s; else back9Totals[gi] += s;
+      grid += `<div style="background:${bg};padding:5px 2px;text-align:center;${cls}border-bottom:1px solid #f0f0f0;font-size:12px;">${label}<br><span style="font-size:9px;">${relStr}</span></div>`;
+    });
+  }
+  // Front 9 / Back 9 / Total rows
+  const totalBests = groups.map((g,gi) => front9Totals[gi] + back9Totals[gi]);
+  const front9Par = par.slice(0,9).reduce((a,b)=>a+b,0);
+  const back9Par = par.slice(9).reduce((a,b)=>a+b,0);
+  const totalPar = front9Par + back9Par;
+  [
+    {label:'F9', vals:front9Totals, parVal:front9Par, complete:front9Complete},
+    {label:'B9', vals:back9Totals, parVal:back9Par, complete:back9Complete},
+    {label:'TOT', vals:totalBests, parVal:totalPar, complete:front9Complete&&back9Complete}
+  ].forEach(row => {
+    grid += `<div style="background:var(--green-pale);padding:7px 4px;text-align:center;font-weight:700;font-size:11px;color:var(--green);">${row.label}</div>`;
+    grid += `<div style="background:var(--green-pale);padding:7px 2px;text-align:center;font-size:11px;color:var(--muted);">${row.parVal}</div>`;
+    const minVal = row.complete ? Math.min(...row.vals.filter(v=>v>0)) : null;
+    const winnerCount = minVal ? row.vals.filter(v=>v===minVal).length : 0;
+    groups.forEach((g,gi) => {
+      const v = row.vals[gi];
+      const isWinner = row.complete && v===minVal && winnerCount===1;
+      const diff = row.complete && v ? v - row.parVal : null;
+      const rel = diff===null?'—':diff===0?'E':diff>0?'+'+diff:''+diff;
+      const cls = isWinner?'color:var(--green);font-weight:700;':diff!==null&&diff<0?'color:var(--green);':diff!==null&&diff>0?'color:#c62828;':'color:var(--muted);';
+      grid += `<div style="background:var(--green-pale);padding:7px 2px;text-align:center;${cls}font-size:12px;font-weight:700;">${row.complete&&v?`${isWinner?'🏆':''}${rel}`:'—'}</div>`;
+    });
+  });
+  grid += '</div>';
+  document.getElementById('gm-groups-grid').innerHTML = grid;
+
+  // ── Eggs summary ──
+  let eggCounts = groups.map(()=>0);
+  for (let h = 1; h <= 18; h++) {
+    const holePar = par[h-1]||4;
+    const diffs = groups.map(g => { const s=g.bestBall&&g.bestBall[h]; return s?s-holePar:null; });
+    const validDiffs = diffs.filter(d=>d!==null);
+    if (!validDiffs.length) continue;
+    const minDiff = Math.min(...validDiffs);
+    const eggWinnerIdx = validDiffs.filter(d=>d===minDiff).length===1 ? diffs.indexOf(minDiff) : -1;
+    if (eggWinnerIdx >= 0) eggCounts[eggWinnerIdx]++;
+  }
+  const eggBet = gm.eggBet || 2;
+  const totalEggs = eggCounts.reduce((a,b)=>a+b,0);
+  let eggsHtml = '';
+  if (totalEggs === 0) {
+    eggsHtml = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:8px;">No eggs yet</div>';
+  } else {
+    groups.forEach((g,gi) => {
+      const eggs = eggCounts[gi];
+      const net = eggs * eggBet * (groups.length - 1) - (totalEggs - eggs) * eggBet;
+      const sign = net >= 0 ? '+' : '';
+      const cls = net > 0 ? 'color:var(--green)' : net < 0 ? 'color:#c62828' : 'color:var(--muted)';
+      eggsHtml += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;">
+        <span style="font-weight:600;">${g.groupName||'Group'}</span>
+        <span>🥚 × ${eggs}</span>
+        <span style="${cls};font-family:'Bebas Neue',sans-serif;font-size:18px;">${sign}$${Math.abs(net).toFixed(2)}</span>
+      </div>`;
+    });
+  }
+  document.getElementById('gm-eggs-grid').innerHTML = eggsHtml;
+
+  // ── Cross-group Greenies ──
+  if(state.greeniesEnabled && state.par3Holes && state.par3Holes.length > 0){
+    const gBet = state.greenieWager || 2;
+    let greenieHtml = '';
+    // Build per-hole greenie results across all groups
+    // Each group reports their players' strokes; closest to pin = lowest score on par 3
+    // We use the group's best ball score on each par 3 as their "greenie score"
+    state.par3Holes.forEach(h => {
+      const holePar = par[h-1]||4;
+      const groupScores = groups.map(g => ({
+        name: g.groupName||'Group',
+        score: g.bestBall&&g.bestBall[h] ? g.bestBall[h] : null
+      })).filter(g => g.score !== null);
+      if(!groupScores.length){ greenieHtml+=`<div style="padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:12px;color:var(--muted);">Hole ${h} (par ${holePar}): No scores yet</div>`; return; }
+      const minScore = Math.min(...groupScores.map(g=>g.score));
+      const winners = groupScores.filter(g=>g.score===minScore);
+      const totalPayout = gBet * (groups.length - winners.length);
+      if(winners.length === 1){
+        greenieHtml+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f0f0f0;">
+          <span style="font-size:12px;">🏆 Hole ${h} — <strong>${winners[0].name}</strong></span>
+          <span style="color:var(--green);font-weight:700;font-size:13px;">+$${totalPayout.toFixed(0)}</span>
+        </div>`;
+      } else {
+        greenieHtml+=`<div style="padding:7px 0;border-bottom:1px solid #f0f0f0;font-size:12px;color:var(--muted);">Hole ${h} — Tie (no greenie)</div>`;
+      }
+    });
+    const gmGreenCard = document.getElementById('gm-greenies-card');
+    if(gmGreenCard){
+      gmGreenCard.style.display = 'block';
+      document.getElementById('gm-greenies-content').innerHTML = greenieHtml ||
+        '<div style="color:var(--muted);font-size:13px;text-align:center;padding:8px;">No par 3 scores yet</div>';
+    }
+  }
+
+  // ── Bet results ──
+  const betTypes = [
+    {label:'Front 9', vals:front9Totals, bet:gm.front9Bet||5, complete:front9Complete},
+    {label:'Back 9', vals:back9Totals, bet:gm.back9Bet||5, complete:back9Complete},
+    {label:'Total', vals:totalBests, bet:gm.totalBet||5, complete:front9Complete&&back9Complete},
+  ];
+  let betsHtml = '';
+  betTypes.forEach(bt => {
+    const minVal = bt.complete ? Math.min(...bt.vals.filter(v=>v>0)) : null;
+    const winners = bt.complete ? groups.filter((g,gi)=>bt.vals[gi]===minVal) : [];
+    const tied = winners.length > 1;
+    betsHtml += `<div style="margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px;">${bt.label} — $${bt.bet}/group</div>`;
+    if (!bt.complete) {
+      betsHtml += `<div style="font-size:12px;color:var(--muted);">In progress…</div>`;
+    } else if (tied) {
+      betsHtml += `<div style="font-size:12px;color:var(--muted);">🤝 Tie — no payout</div>`;
+    } else if (winners.length === 1) {
+      const loserBet = bt.bet * (groups.length - 1);
+      betsHtml += `<div style="font-size:13px;">🏆 <strong>${winners[0].groupName}</strong> wins <span style="color:var(--green);font-weight:700;">+$${loserBet}</span></div>`;
+      groups.filter(g=>g!==winners[0]).forEach(g => {
+        betsHtml += `<div style="font-size:12px;color:#c62828;margin-top:2px;">${g.groupName}: -$${bt.bet}</div>`;
+      });
+    }
+    betsHtml += '</div>';
+  });
+  document.getElementById('gm-bets-content').innerHTML = betsHtml || '<div style="color:var(--muted);font-size:13px;">No bets resolved yet.</div>';
+}
+
 window.resetRound=function(){
   if(!confirm('Start a new round? This will clear all current data.'))return;
   clearAllState();
@@ -2403,17 +2866,19 @@ window.clearAllState = function clearAllState(){
       ghostEnabled:false, ghostName:'Ghost',
       greeniesEnabled:false, par3Holes:[], greenieWager:2,
       roundCode:null,
-      rules:{ reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true, dropWolfAllowed:false, carryoverEnabled:false, greenieCarryoverEnabled:false },
+      rules:{ reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true, dropWolfAllowed:false, carryoverEnabled:false, greenieCarryoverEnabled:false, sandysEnabled:false, sandyBet:2 },
       courseName:'', coursePar:Array(18).fill(4),
       strokes:{}
     };
     try{localStorage.removeItem('wolf-v4');}catch(e){}
     myName = null;
-    scCurrentHole = 1; // reset scores tab hole counter
+    scCurrentHole = 1;
+    if (gmUnsubscribe) { gmUnsubscribe(); gmUnsubscribe = null; }
+    state._gmGroups = {}; // reset scores tab hole counter
     // Reset course lookup state
     courseNameTemp = '';
     courseParTemp = Array(18).fill(4);
-    surveyAnswers = { reshuffleOn16:true, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, carryoverEnabled:false, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, bigWolfAllowed:true, lilWolfAllowed:true };
+    surveyAnswers = { groupMatchEnabled:false, reshuffleOn16:true, sandysEnabled:false, sandyBet:2, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, carryoverEnabled:false, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, bigWolfAllowed:true, lilWolfAllowed:true };
     surveyStep = 0;
     const searchEl = document.getElementById('course-search-input'); if(searchEl) searchEl.value = '';
     const lookupResult = document.getElementById('course-lookup-result'); if(lookupResult) lookupResult.innerHTML = '';
@@ -2424,7 +2889,7 @@ window.clearAllState = function clearAllState(){
     if(wrap) wrap.querySelectorAll('.player-row').forEach((row,i)=>{ if(i>=4) row.remove(); });
     const wagerEl = document.getElementById('wager-input'); if(wagerEl) wagerEl.value='';
     const scoreEntry = document.getElementById('my-score-entry'); if(scoreEntry) scoreEntry.style.display='none';
-    const nameEl = document.getElementById('my-name-display'); if(nameEl) nameEl.textContent='—';
+    // my-name-display removed
     const courseEl = document.getElementById('my-course-display'); if(courseEl) courseEl.textContent='';
     const codeEl = document.getElementById('round-code-display'); if(codeEl) codeEl.innerHTML='';
     const sbCode = document.getElementById('scoreboard-code-display'); if(sbCode) sbCode.style.display='none';
@@ -2459,7 +2924,7 @@ async function init(){
     }
     document.querySelectorAll('.player-name').forEach((inp,i)=>{if(state.players[i])inp.value=state.players[i];});
     if(document.getElementById('wager-input'))document.getElementById('wager-input').value=state.wager;
-    if(myName){document.getElementById('my-name-display').textContent=myName;document.getElementById('my-course-display').textContent=state.courseName||'';document.getElementById('my-score-entry').style.display='block';}
+    if(myName){document.getElementById('my-course-display').textContent=state.courseName||'';}
     showPage('scorecard');
   } else if(state.players && state.players.length) {
     // Round exists but not yet started — show setup with chips populated
