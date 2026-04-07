@@ -411,6 +411,11 @@
       <div class="section-label">📋 Full Scorecard</div>
       <div id="full-scorecard-grid"></div>
     </div>
+    <!-- Group best ball summary -->
+    <div class="card" id="group-summary-card" style="padding:16px;display:none;">
+      <div class="section-label">⛳ GROUP BEST BALL</div>
+      <div id="group-summary-content"></div>
+    </div>
   </div>
 
   <!-- PAYMENTS -->
@@ -1983,9 +1988,8 @@ function renderMyScoreEntry(){
 
 function renderFullScorecard(){
   const grid=document.getElementById('full-scorecard-grid');
-  if(!state.players.length){grid.innerHTML='<div class="empty-state"><p>No round in progress.</p></div>';return;}
+  if(!state.players.length){grid.innerHTML='<div class="empty-state"><p>No round in progress.</p></div>';renderGroupSummary();return;}
   const players=state.players;
-  const cols=players.length+1; // hole+par + each player
   let html=`<div style="display:grid;grid-template-columns:36px 28px ${players.map(()=>'1fr').join(' ')};border-radius:8px;overflow:hidden;font-size:11px;">`;
   // Header
   html+=`<div style="background:var(--green);color:white;padding:6px 4px;text-align:center;font-weight:700;">H</div>`;
@@ -1998,18 +2002,30 @@ function renderFullScorecard(){
   let totals={};players.forEach(p=>totals[p]=0);
   for(let h=1;h<=18;h++){
     const par=state.coursePar[h-1]||4;
-    html+=`<div style="background:${h%2===0?'#f9faf9':'white'};padding:7px 4px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--green);border-bottom:1px solid #f0f0f0;">${h}</div>`;
-    html+=`<div style="background:${h%2===0?'#f9faf9':'white'};padding:7px 2px;text-align:center;font-size:11px;color:var(--muted);border-bottom:1px solid #f0f0f0;">${par}</div>`;
+    const rowBg=h%2===0?'#f9faf9':'white';
+    // Find best score this hole — only if exactly one player has it
+    const holeScores=players.map(p=>state.strokes&&state.strokes[p]&&state.strokes[p][h]).filter(s=>s>0);
+    const minScore=holeScores.length?Math.min(...holeScores):null;
+    const bestCount=holeScores.filter(s=>s===minScore).length;
+    const hasSoleBest=bestCount===1; // only highlight if unique best
+    html+=`<div style="background:${rowBg};padding:7px 4px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--green);border-bottom:1px solid #f0f0f0;">${h}</div>`;
+    html+=`<div style="background:${rowBg};padding:7px 2px;text-align:center;font-size:11px;color:var(--muted);border-bottom:1px solid #f0f0f0;">${par}</div>`;
     players.forEach(p=>{
       const strokes=state.strokes&&state.strokes[p]&&state.strokes[p][h];
-      let cellContent='—',cls='color:var(--muted);';
+      let cellContent='—',cls='color:var(--muted);',bg=rowBg;
       if(strokes){
         const diff=strokes-par;totals[p]+=(diff);
         const relStr=diff===0?'E':diff>0?'+'+diff:''+diff;
         cls=diff<0?'color:var(--green);font-weight:700;':diff>0?'color:#c62828;font-weight:700;':'color:var(--muted);';
         cellContent=`${strokes}<br><span style="font-size:9px;">${relStr}</span>`;
+        // Highlight sole best score in gold
+        if(hasSoleBest&&strokes===minScore){
+          bg='#fff8e1';
+          cls='color:#e65100;font-weight:700;';
+          cellContent=`⭐${strokes}<br><span style="font-size:9px;">${relStr}</span>`;
+        }
       }
-      html+=`<div style="background:${h%2===0?'#f9faf9':'white'};padding:5px 2px;text-align:center;${cls}border-bottom:1px solid #f0f0f0;font-size:12px;">${cellContent}</div>`;
+      html+=`<div style="background:${bg};padding:5px 2px;text-align:center;${cls}border-bottom:1px solid #f0f0f0;font-size:12px;">${cellContent}</div>`;
     });
   }
   // Totals row
@@ -2022,6 +2038,61 @@ function renderFullScorecard(){
   });
   html+='</div>';
   grid.innerHTML=html;
+  renderGroupSummary();
+}
+
+function renderGroupSummary(){
+  const card=document.getElementById('group-summary-card');
+  const content=document.getElementById('group-summary-content');
+  if(!card||!content)return;
+  if(!state.players.length||!state.strokes){card.style.display='none';return;}
+  const players=state.players;
+
+  // Compute best ball score per hole
+  let front9Best=0,back9Best=0,front9Par=0,back9Par=0,front9Holes=0,back9Holes=0;
+  for(let h=1;h<=18;h++){
+    const par=state.coursePar[h-1]||4;
+    const scores=players.map(p=>state.strokes&&state.strokes[p]&&state.strokes[p][h]).filter(s=>s>0);
+    if(!scores.length)continue;
+    const best=Math.min(...scores);
+    if(h<=9){front9Best+=best;front9Par+=par;front9Holes++;}
+    else{back9Best+=best;back9Par+=par;back9Holes++;}
+  }
+  const totalHoles=front9Holes+back9Holes;
+  if(totalHoles===0){card.style.display='none';return;}
+
+  card.style.display='block';
+  const totalBest=front9Best+back9Best;
+  const totalPar=front9Par+back9Par;
+
+  function relStr(score,par,holes){
+    if(!holes)return'—';
+    const diff=score-par;
+    const s=diff===0?'E':diff>0?'+'+diff:''+diff;
+    const cls=diff<0?'color:var(--green);font-weight:700':diff>0?'color:#c62828;font-weight:700':'color:var(--muted)';
+    return`<span style="${cls}">${s}</span>`;
+  }
+
+  content.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
+      <div style="background:#f9faf9;border-radius:10px;padding:12px 8px;">
+        <div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:1px;margin-bottom:6px;">FRONT 9</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green);line-height:1;">${front9Holes===9?front9Best:'—'}</div>
+        <div style="font-size:12px;margin-top:2px;">${front9Holes===9?relStr(front9Best,front9Par,front9Holes):'<span style="color:var(--muted)">${front9Holes}/9 holes</span>'}</div>
+      </div>
+      <div style="background:#f9faf9;border-radius:10px;padding:12px 8px;">
+        <div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:1px;margin-bottom:6px;">BACK 9</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green);line-height:1;">${back9Holes===9?back9Best:'—'}</div>
+        <div style="font-size:12px;margin-top:2px;">${back9Holes===9?relStr(back9Best,back9Par,back9Holes):'<span style="color:var(--muted)">${back9Holes}/9 holes</span>'}</div>
+      </div>
+      <div style="background:#f9faf9;border-radius:10px;padding:12px 8px;">
+        <div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:1px;margin-bottom:6px;">TOTAL</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green);line-height:1;">${totalHoles===18?totalBest:'—'}</div>
+        <div style="font-size:12px;margin-top:2px;">${totalHoles===18?relStr(totalBest,totalPar,totalHoles):'<span style="color:var(--muted)">${totalHoles}/18 holes</span>'}</div>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:10px;">⭐ = best score on hole &nbsp;·&nbsp; Best ball uses the lowest score per hole</div>
+  `;
 }
 
 // ── Carryover helpers ──
