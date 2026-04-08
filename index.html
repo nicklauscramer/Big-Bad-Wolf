@@ -1579,10 +1579,18 @@ function getPressureOrder(hole){
       else{rw.forEach(p=>{totals[p]-=e*ro.length;});ro.forEach(p=>{totals[p]+=e;});}
     }else{
       const winners=wolfWon?rw:ro,losers=wolfWon?ro:rw;
-      // Losers each pay e. Winners split the pot equally. Round to 2dp.
-      const winShare=Math.round((e*losers.length)/winners.length*100)/100;
-      winners.forEach(p=>{totals[p]+=winShare;});
-      losers.forEach(p=>{totals[p]-=e;});
+      // Larger team always pays e each. Smaller team splits the pot.
+      // 2W vs 3L: winners(smaller) get (2×3)/2=$3, losers pay $2
+      // 3W vs 2L: winners get $2, losers(smaller) pay (2×3)/2=$3
+      if(winners.length<=losers.length){
+        const wShare=Math.round((e*losers.length)/winners.length*100)/100;
+        winners.forEach(p=>{totals[p]+=wShare;});
+        losers.forEach(p=>{totals[p]-=e;});
+      }else{
+        const lShare=Math.round((e*winners.length)/losers.length*100)/100;
+        winners.forEach(p=>{totals[p]+=e;});
+        losers.forEach(p=>{totals[p]-=lShare;});
+      }
     }
   });
   const players=[...state.players];
@@ -2357,15 +2365,20 @@ function computeWolfTotals(){
       else{rw.forEach(p=>{totals[p]-=e*ro.length;});ro.forEach(p=>{totals[p]+=e;});}
     }else{
       const winners=wolfWon?rw:ro,losers=wolfWon?ro:rw;
-      // Each winner collects e, losers split total equally
-      // Losers each pay e. Winners split the pot equally. Round to 2dp.
-      const winShare=Math.round((e*losers.length)/winners.length*100)/100;
-      winners.forEach(p=>{totals[p]+=winShare;});
-      losers.forEach(p=>{totals[p]-=e;});
+      // Larger team always pays e each. Smaller team splits the pot.
+      if(winners.length<=losers.length){
+        const wShare=Math.round((e*losers.length)/winners.length*100)/100;
+        winners.forEach(p=>{totals[p]+=wShare;});
+        losers.forEach(p=>{totals[p]-=e;});
+      }else{
+        const lShare=Math.round((e*winners.length)/losers.length*100)/100;
+        winners.forEach(p=>{totals[p]+=e;});
+        losers.forEach(p=>{totals[p]-=lShare;});
+      }
     }
     // Apply carryover — same direct-pay model, independent of multipliers
     if(carry>0){
-      const wolfWon2=h.winner==='wolf',dropWon=h.winner==='dropper';
+      const wolfWon2=(h.winner==='wolf'||h.winner==='team'),dropWon=h.winner==='dropper';
       const wolfDropped3=h.wolfDropped||false;
       let cWinners,cLosers;
       if(wolfDropped3&&(h.partners||[]).length>0){
@@ -2388,10 +2401,16 @@ function computeWolfTotals(){
         cLosers.forEach(p=>{totals[p]-=carry;});
       } else {
         // Partner: winners each get carry, losers split
-        // Losers each pay carry. Winners split pot equally. Round to 2dp.
-        const cWinShare=Math.round((carry*cLosers.length)/cWinners.length*100)/100;
-        cWinners.forEach(p=>{totals[p]+=cWinShare;});
-        cLosers.forEach(p=>{totals[p]-=carry;});
+        // Carryover: larger team pays carry, smaller team splits pot
+        if(cWinners.length<=cLosers.length){
+          const cWShare=Math.round((carry*cLosers.length)/cWinners.length*100)/100;
+          cWinners.forEach(p=>{totals[p]+=cWShare;});
+          cLosers.forEach(p=>{totals[p]-=carry;});
+        }else{
+          const cLShare=Math.round((carry*cWinners.length)/cLosers.length*100)/100;
+          cWinners.forEach(p=>{totals[p]+=carry;});
+          cLosers.forEach(p=>{totals[p]-=cLShare;});
+        }
       }
     }
   });
