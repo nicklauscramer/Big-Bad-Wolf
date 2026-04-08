@@ -1295,7 +1295,10 @@ function subscribeToRound(code) {
     const data = snap.data();
     const prevHole = state.currentHole;
     const prevGreenieWager = state.greenieWager;
+    const prevHoles = isScorer ? state.holes : null; // scorer owns hole data
     state = {...state, ...data, currentHole:prevHole};
+    // Scorer's local holes are authoritative — never let Firebase overwrite mid-edit
+    if(isScorer && prevHoles) state.holes = {...data.holes, ...prevHoles};
     // Preserve greenieWager if snapshot fires before first save completes
     if (prevGreenieWager && prevGreenieWager > (state.greenieWager || 0)) {
       state.greenieWager = prevGreenieWager;
@@ -2046,11 +2049,26 @@ function renderScorecard(){
 window.saveHole=function(){
   if(!isScorer){showToast('Only scorer can save holes');return;}
   const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
+
+  // ── Read winner from DOM (authoritative, avoids Firebase race) ──
+  const wolfDroppedNow=document.getElementById('drop-wolf-check')&&document.getElementById('drop-wolf-check').checked;
+  if(wolfDroppedNow){
+    if(document.getElementById('btn-dropper-wins')&&document.getElementById('btn-dropper-wins').classList.contains('wolf-wins'))state.holes[hole].winner='dropper';
+    else if(document.getElementById('btn-dropper-loses')&&document.getElementById('btn-dropper-loses').classList.contains('team-wins'))state.holes[hole].winner='wolf';
+    else if(document.getElementById('btn-drop-push')&&document.getElementById('btn-drop-push').classList.contains('push'))state.holes[hole].winner='push';
+  }else{
+    if(document.getElementById('btn-wolf-wins')&&document.getElementById('btn-wolf-wins').classList.contains('wolf-wins'))state.holes[hole].winner='wolf';
+    else if(document.getElementById('btn-team-wins')&&document.getElementById('btn-team-wins').classList.contains('team-wins'))state.holes[hole].winner='team';
+    else if(document.getElementById('btn-push')&&document.getElementById('btn-push').classList.contains('push'))state.holes[hole].winner='push';
+  }
   if(!state.holes[hole].winner){showToast('Select a result first');return;}
-  // Warn if partner mode but no partner selected
+
+  // ── Read partner chips from DOM (authoritative) ──
+  const selectedChips=[...document.querySelectorAll('#partner-chips .chip.team')].map(c=>c.textContent.trim());
+  if(selectedChips.length>0)state.holes[hole].partners=selectedChips;
   const wolfMode=state.holes[hole].wolfMode||'none';
   const partners=(state.holes[hole].partners||[]).filter(p=>p!=='__pending');
-  if(wolfMode==='none' && partners.length===0 && (state.holes[hole].winner==='wolf'||state.holes[hole].winner==='team')){
+  if(wolfMode==='none'&&partners.length===0&&!wolfDroppedNow&&(state.holes[hole].winner==='wolf'||state.holes[hole].winner==='team')){
     if(!confirm('No partner selected — save anyway?')){return;}
   }
   state.holes[hole].money=parseFloat(document.getElementById('hole-money').value)||state.wager;
