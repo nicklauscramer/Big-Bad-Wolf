@@ -1579,8 +1579,9 @@ function getPressureOrder(hole){
       else{rw.forEach(p=>{totals[p]-=e*ro.length;});ro.forEach(p=>{totals[p]+=e;});}
     }else{
       const winners=wolfWon?rw:ro,losers=wolfWon?ro:rw;
-      // Losers each pay e. Winners split the pot equally.
-      winners.forEach(p=>{totals[p]+=(e*losers.length)/winners.length;});
+      // Losers each pay e. Winners split the pot equally. Round to 2dp.
+      const winShare=Math.round((e*losers.length)/winners.length*100)/100;
+      winners.forEach(p=>{totals[p]+=winShare;});
       losers.forEach(p=>{totals[p]-=e;});
     }
   });
@@ -1895,7 +1896,7 @@ function renderScorecard(){
     document.getElementById('pressure-order').innerHTML=order.map((p,i)=>{
       const net=totals[p]||0,sign=net>=0?'+':'';
       const color=net>0?'#4caf50':net<0?'#ef5350':'#f0d080';
-      return`<span>${p}${i===0?' 🐺 <strong>WOLF</strong>':` — ${i+1}${i===1?'nd':i===2?'rd':'th'}`} <span style="color:${color};">${sign}$${Math.abs(net).toFixed(2)}</span></span>`;
+      return`<span>${p}${i===0?' 🐺 <strong>WOLF</strong>':` — ${i+1}${i===1?'nd':i===2?'rd':'th'}`} <span style="color:${color};">${sign}$${Math.abs(net).toFixed(0)}</span></span>`;
     }).join('<br>');
   }else pb.style.display='none';
 
@@ -2357,8 +2358,9 @@ function computeWolfTotals(){
     }else{
       const winners=wolfWon?rw:ro,losers=wolfWon?ro:rw;
       // Each winner collects e, losers split total equally
-      // Losers each pay e. Winners split the pot equally.
-      winners.forEach(p=>{totals[p]+=(e*losers.length)/winners.length;});
+      // Losers each pay e. Winners split the pot equally. Round to 2dp.
+      const winShare=Math.round((e*losers.length)/winners.length*100)/100;
+      winners.forEach(p=>{totals[p]+=winShare;});
       losers.forEach(p=>{totals[p]-=e;});
     }
     // Apply carryover — same direct-pay model, independent of multipliers
@@ -2386,8 +2388,9 @@ function computeWolfTotals(){
         cLosers.forEach(p=>{totals[p]-=carry;});
       } else {
         // Partner: winners each get carry, losers split
-        // Losers each pay carry. Winners split pot equally.
-        cWinners.forEach(p=>{totals[p]+=(carry*cLosers.length)/cWinners.length;});
+        // Losers each pay carry. Winners split pot equally. Round to 2dp.
+        const cWinShare=Math.round((carry*cLosers.length)/cWinners.length*100)/100;
+        cWinners.forEach(p=>{totals[p]+=cWinShare;});
         cLosers.forEach(p=>{totals[p]-=carry;});
       }
     }
@@ -2454,7 +2457,7 @@ function renderScoreboard(){
   ws.forEach((p,i)=>{
     const net=wt[p],cls=net>0?'amount-pos':net<0?'amount-neg':'amount-zero',sign=net>0?'+':'';
     const row=document.createElement('div');row.className='score-row';row.style.gridTemplateColumns='28px 1fr 76px';
-    row.innerHTML=`<span style="font-size:11px;color:var(--muted);">${i+1}</span><span style="font-weight:600;font-size:14px;">${p}</span><span class="amount-cell ${cls}" style="text-align:right;">${sign}$${Math.abs(net).toFixed(2)}</span>`;
+    row.innerHTML=`<span style="font-size:11px;color:var(--muted);">${i+1}</span><span style="font-weight:600;font-size:14px;">${p}</span><span class="amount-cell ${cls}" style="text-align:right;">${sign}$${Math.abs(net).toFixed(0)}</span>`;
     table.appendChild(row);
   });
   const gw=document.getElementById('greenie-board-wrap');
@@ -2466,7 +2469,7 @@ function renderScoreboard(){
     gs.forEach((p,i)=>{
       const net=gt[p],cls=net>0?'amount-pos':net<0?'amount-neg':'amount-zero',sign=net>0?'+':'';
       const row=document.createElement('div');row.className='score-row';row.style.gridTemplateColumns='28px 1fr 76px';
-      row.innerHTML=`<span style="font-size:11px;color:var(--muted);">${i+1}</span><span style="font-weight:600;font-size:14px;">${p}</span><span class="amount-cell ${cls}" style="text-align:right;">${sign}$${Math.abs(net).toFixed(2)}</span>`;
+      row.innerHTML=`<span style="font-size:11px;color:var(--muted);">${i+1}</span><span style="font-weight:600;font-size:14px;">${p}</span><span class="amount-cell ${cls}" style="text-align:right;">${sign}$${Math.abs(net).toFixed(0)}</span>`;
       gt2.appendChild(row);
     });
   }else gw.style.display='none';
@@ -2483,7 +2486,7 @@ function renderScoreboard(){
       ss.forEach((p,i)=>{
         const net=st[p],cls=net>0?'amount-pos':net<0?'amount-neg':'amount-zero',sign=net>0?'+':'';
         const row=document.createElement('div');row.className='score-row';row.style.gridTemplateColumns='28px 1fr 76px';
-        row.innerHTML=`<span style="font-size:11px;color:var(--muted);">${i+1}</span><span style="font-weight:600;font-size:14px;">${p}</span><span class="amount-cell ${cls}" style="text-align:right;">${sign}$${Math.abs(net).toFixed(2)}</span>`;
+        row.innerHTML=`<span style="font-size:11px;color:var(--muted);">${i+1}</span><span style="font-weight:600;font-size:14px;">${p}</span><span class="amount-cell ${cls}" style="text-align:right;">${sign}$${Math.abs(net).toFixed(0)}</span>`;
         st2.appendChild(row);
       });
     }else{sw2.style.display='none';}
@@ -2569,7 +2572,7 @@ function renderPayments() {
         <div style="font-size:15px;font-weight:700;text-align:left;">${t.from}</div>
         <div style="text-align:center;padding:0 12px;">
           <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;">pays</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--green);line-height:1;">$${t.amt.toFixed(2)}</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--green);line-height:1;">$${t.amt.toFixed(0)}</div>
         </div>
         <div style="font-size:15px;font-weight:700;text-align:right;">${t.to}</div>
       `;
@@ -2592,7 +2595,7 @@ function renderPayments() {
         <span style="font-size:11px;color:var(--muted);width:18px;">${i+1}</span>
         <span style="font-weight:600;font-size:15px;">${p}</span>
       </div>
-      <span class="amount-cell ${cls}">${sign}$${Math.abs(n).toFixed(2)}</span>
+      <span class="amount-cell ${cls}">${sign}$${Math.abs(n).toFixed(0)}</span>
     `;
     standings.appendChild(row);
   });
@@ -2765,7 +2768,7 @@ function renderGroupMatch() {
       eggsHtml += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;">
         <span style="font-weight:600;">${g.groupName||'Group'}</span>
         <span>🥚 × ${eggs}</span>
-        <span style="${cls};font-family:'Bebas Neue',sans-serif;font-size:18px;">${sign}$${Math.abs(net).toFixed(2)}</span>
+        <span style="${cls};font-family:'Bebas Neue',sans-serif;font-size:18px;">${sign}$${Math.abs(net).toFixed(0)}</span>
       </div>`;
     });
   }
