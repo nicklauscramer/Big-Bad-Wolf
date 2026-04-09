@@ -216,7 +216,11 @@
         <div class="player-row"><div class="player-num">3</div><input type="text" class="player-name" placeholder="Player 3"></div>
         <div class="player-row"><div class="player-num">4</div><input type="text" class="player-name" placeholder="Player 4"></div>
       </div>
-      <button class="btn btn-secondary" onclick="addPlayer()" style="margin-top:10px;">+ Add Player</button>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn btn-secondary" onclick="addPlayer()" style="flex:1;">+ Add Player</button>
+        <button class="btn btn-secondary" onclick="randomizeWolfOrder()" style="flex:1;">🔀 Randomize Order</button>
+      </div>
+      <div id="wolf-order-preview" style="display:none;margin-top:10px;padding:10px;background:var(--green-pale);border-radius:10px;font-size:12px;color:var(--green);font-weight:600;"></div>
     </div>
     <div class="card">
       <div class="section-label">💰 Wager Per Hole</div>
@@ -374,6 +378,7 @@
         <div class="player-chips" id="sandy-chips"></div>
         <div id="sandy-note" style="display:none;margin-top:8px;font-size:11px;color:#b45309;font-weight:600;padding:7px 10px;background:#fef3c7;border-radius:8px;border:1px solid #b45309;"></div>
       </div>
+      <div id="hole-payout-snapshot" style="display:none;padding:8px 12px;background:#f0f7f0;border-radius:10px;margin-bottom:8px;font-size:12px;font-weight:600;line-height:1.6;overflow-x:auto;white-space:nowrap;"></div>
       <button class="btn btn-primary" id="save-hole-btn" onclick="saveHole()">Save Hole ✓</button>
       <button class="btn btn-primary" id="finish-round-btn" onclick="finishRound()" style="display:none;background:var(--gold);border-color:var(--gold);">🏁 Finish Round</button>
     </div>
@@ -546,33 +551,27 @@ const surveySteps = [
     render: renderCourseStep, validate: () => true
   },
   {
+    id:'wolfmodes', title:'Allow Solo Wolf Modes?',
+    sub:'Big Wolf is 4× the base bet. Lil Wolf is 2× the base bet. Drop wolf and style options below.',
+    options:[{v:true,label:'Yes — allow solo wolf',sub:'Big Wolf (4×) and/or Lil Wolf (2×)'},{v:false,label:'No — partner only',sub:'Wolf must always pick a partner'}],
+    key:'wolfModesEnabled'
+  },
+  {
     id:'reshuffle', title:'🔀 Reshuffle Wolf Order?',
     sub:'Wolf order reshuffled based on standings starting at the selected hole.',
     options:[{v:true,label:'Yes — reshuffle',sub:'Most behind becomes wolf'},{v:false,label:'No — keep original order',sub:'Wolf rotation stays fixed'}],
     key:'reshuffleOn16'
   },
   {
-    id:'birdies', title:'🐦 Birdies & Eagles?',
-    options:[{v:true,label:'Yes',sub:'Birdie doubles, Eagle triples the hole'},{v:false,label:'No',sub:'Birdies and eagles have no effect'}],
-    key:'birdiesEagles'
-  },
-  {
-    id:'doubles', title:'🔴 Allow Doubles & Re-Doubles?',
-    options:[{v:true,label:'Yes',sub:'Non-wolf can double, wolf can re-double'},{v:false,label:'No',sub:'No doubling'}],
-    key:'doubles'
-  },
-  {
-    id:'dropwolf', title:'💧 Allow Dropping the Wolf?',
-    sub:'The picked partner can reject and go solo against everyone.',
-    options:[{v:true,label:'Yes — allow drop wolf',sub:'Partner goes solo, wolf joins the other team'},{v:false,label:'No — partner must accept',sub:'No dropping allowed'}],
-    key:'dropWolfAllowed'
+    id:'multipliers', title:'🎯 Multipliers?',
+    sub:'Select which betting multipliers are in play.',
+    render: renderMultipliersStep, validate: () => true
   },
   {
     id:'greenies', title:'🏆 Play Greenies on Par 3s?',
     options:[{v:true,label:'Yes',sub:'Closest to pin wins'},{v:false,label:'No',sub:'Skip greenies'}],
     key:'greenies'
   },
-
   {
     id:'sandys', title:'🏖️ Play Sandies?',
     sub:'A sandie is when a player makes par or better from a bunker.',
@@ -580,28 +579,15 @@ const surveySteps = [
     key:'sandysEnabled'
   },
   {
-    id:'carryover', title:'🔄 Push Carryover?',
-    sub:'If a hole pushes, the base wager carries over to the next hole.',
-    options:[{v:true,label:'Yes — Carryover',sub:'Pushed holes stack until someone wins.'},{v:false,label:'No Carryover',sub:'Pushes stay as pushes.'}],
-    key:'carryoverEnabled'
-  },
-  {
-    id:'greeniecarryover', title:'🏆 Greenie Carryover?',
-    sub:'If no greenie winner, the pot carries over to the next par 3.',
-    options:[{v:true,label:'Yes — Carryover',sub:'Unclaimed greenies stack to the next par 3.'},{v:false,label:'No Carryover',sub:'Unclaimed greenies are lost.'}],
-    key:'greenieCarryoverEnabled'
+    id:'carryover', title:'🔄 Carryovers?',
+    sub:'Carried amounts stack until someone wins.',
+    render: renderCarryoverStep, validate: () => true
   },
   {
     id:'groupmatch', title:'🏆 Join a Group Match?',
     sub:'Track best ball, eggs, and group bets across multiple groups.',
     options:[{v:true,label:'Yes — join or create a group match',sub:'Link with other groups playing today'},{v:false,label:'No',sub:'Single group only'}],
     key:'groupMatchEnabled'
-  },
-  {
-    id:'wolfmodes', title:'Allow Solo Wolf Modes?',
-    sub:'Big Wolf is 4× the base bet. Lil Wolf is 2× the base bet.',
-    options:[{v:true,label:'Yes — allow solo wolf',sub:'Big Wolf (4×) and/or Lil Wolf (2×)'},{v:false,label:'No — partner only',sub:'Wolf must always pick a partner'}],
-    key:'wolfModesEnabled'
   }
 ];
 let surveyStep = 0;
@@ -643,6 +629,65 @@ window.renderSurvey = function() {
   if (step.id === 'greenies' && surveyAnswers.greenies) renderGreeniesConfig(steps);
   if (step.id === 'reshuffle' && surveyAnswers.reshuffleOn16) renderReshuffleHolePicker(steps);
   if (step.id === 'brownies' && surveyAnswers.brownies) renderBrowniesConfig(steps);
+  // Wolf style + drop wolf — show inline when wolfmodes step renders
+  if (step.id === 'wolfmodes') {
+    if (surveyAnswers.wolfModesEnabled !== false)
+      setTimeout(() => renderWolfStyleConfig(document.getElementById('survey-steps')), 50);
+    if (surveyAnswers.dropWolfAllowed)
+      setTimeout(() => renderDropWolfBetConfig(document.getElementById('survey-steps')), 80);
+  }
+  // Sandy config
+  if (step.id === 'sandys' && surveyAnswers.sandysEnabled)
+    setTimeout(() => renderSandyConfig(document.getElementById('survey-steps')), 50);
+  // Group match config
+  if (step.id === 'groupmatch' && surveyAnswers.groupMatchEnabled)
+    setTimeout(() => renderGroupMatchConfig(document.getElementById('survey-steps')), 50);
+}
+
+function renderMultipliersStep(container) {
+  container.innerHTML = '';
+  const div = document.createElement('div');
+  function render() {
+    const be = surveyAnswers.birdiesEagles !== false;
+    const db = surveyAnswers.doubles !== false;
+    div.innerHTML = `
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Toggle each multiplier on or off.</div>
+      <div class="rule-option ${be?'selected':''}" id="mul-birdie" style="margin-bottom:8px;">
+        <div><div class="rule-option-label">🐦 Birdies & Eagles</div><div class="rule-option-sub">Birdie doubles, Eagle triples the hole</div></div>
+        <div class="rule-check">${be?'✓':''}</div>
+      </div>
+      <div class="rule-option ${db?'selected':''}" id="mul-double">
+        <div><div class="rule-option-label">🔴 Doubles & Re-Doubles</div><div class="rule-option-sub">Non-wolf can double, wolf can re-double</div></div>
+        <div class="rule-check">${db?'✓':''}</div>
+      </div>`;
+    div.querySelector('#mul-birdie').onclick=()=>{surveyAnswers.birdiesEagles=!be;render();};
+    div.querySelector('#mul-double').onclick=()=>{surveyAnswers.doubles=!db;render();};
+  }
+  render();
+  container.appendChild(div);
+}
+
+function renderCarryoverStep(container) {
+  container.innerHTML = '';
+  const div = document.createElement('div');
+  function render() {
+    const wc = surveyAnswers.carryoverEnabled === true;
+    const gc = surveyAnswers.greenieCarryoverEnabled === true;
+    div.innerHTML = `
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Toggle each carryover on or off.</div>
+      <div class="rule-option ${wc?'selected':''}" id="car-wolf" style="margin-bottom:8px;">
+        <div><div class="rule-option-label">🔄 Push Carryover</div><div class="rule-option-sub">If a hole pushes, the base wager carries to the next hole.</div></div>
+        <div class="rule-check">${wc?'✓':''}</div>
+      </div>
+      <div class="rule-option ${gc?'selected':''}" id="car-greenie">
+        <div><div class="rule-option-label">🏆 Greenie Carryover</div><div class="rule-option-sub">If no greenie winner, the pot carries to the next par 3.</div></div>
+        <div class="rule-check">${gc?'✓':''}</div>
+      </div>`;
+    div.querySelector('#car-wolf').onclick=()=>{surveyAnswers.carryoverEnabled=!wc;render();};
+    div.querySelector('#car-greenie').onclick=()=>{surveyAnswers.greenieCarryoverEnabled=!gc;render();};
+  }
+  render();
+  container.appendChild(div);
 }
 
 function renderCourseStep(container) {
@@ -673,19 +718,8 @@ function renderGreeniesConfig(container) {
     </div>
     <div style="font-size:13px;font-weight:600;margin-bottom:6px;">Which holes are Par 3s?</div>
     <div class="par3-grid" id="survey-par3-grid"></div>
-    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #f0f0f0;">
-      <div style="font-size:14px;font-weight:700;margin-bottom:4px;">💩 Play brownies?</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">A brownie occurs when the greenie winner three-putts — greenie is cancelled and they pay everyone instead.</div>
-      <div class="rule-option ${surveyAnswers.brownies?'selected':''}" id="brownies-yes-opt" onclick="setBrowniesAnswer(true,this)">
-        <div><div class="rule-option-label">💩 Yes — play brownies</div><div class="rule-option-sub">Three-putt cancels greenie, triggers penalty</div></div>
-        <div class="rule-check">${surveyAnswers.brownies?'✓':''}</div>
-      </div>
-      <div class="rule-option ${!surveyAnswers.brownies?'selected':''}" id="brownies-no-opt" onclick="setBrowniesAnswer(false,this)">
-        <div><div class="rule-option-label">No brownies</div><div class="rule-option-sub">Greenie winner always keeps it</div></div>
-        <div class="rule-check">${!surveyAnswers.brownies?'✓':''}</div>
-      </div>
-
-    </div>`;
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #f0f0f0;" id="brownie-inline-section"></div>`;
+  renderBrownieInline(div.querySelector('#brownie-inline-section'));
   container.appendChild(div);
   const grid = div.querySelector('#survey-par3-grid');
   for (let i=1;i<=18;i++) {
@@ -721,6 +755,29 @@ function renderWolfStyleConfig(container) {
     wrap.querySelector('#ws-before').onclick=()=>{surveyAnswers.wolfStyle='before';render();};
     wrap.querySelector('#ws-after').onclick=()=>{surveyAnswers.wolfStyle='after';render();};
     wrap.querySelector('#ws-option').onclick=()=>{surveyAnswers.wolfStyle='option';render();};
+    // Drop wolf toggle inline
+    const dropRow=document.createElement('div');
+    dropRow.style.marginTop='14px';
+    const dw=surveyAnswers.dropWolfAllowed;
+    dropRow.innerHTML=`<div class="rule-option ${dw?'selected':''}" id="ws-dropwolf">
+      <div><div class="rule-option-label">💧 Allow Dropping the Wolf?</div><div class="rule-option-sub">Picked partner can reject and go solo against everyone.</div></div>
+      <div class="rule-check">${dw?'✓':''}</div></div>
+      <div id="drop-wolf-bet-inline" style="${dw?'':'display:none;'}margin-top:10px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px;">$ per player when wolf is dropped</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;font-weight:600;color:#1565c0;">$</span>
+          <input type="number" min="1" value="${surveyAnswers.dropWolfBet||2}" style="max-width:90px;"
+            oninput="if(this.value)surveyAnswers.dropWolfBet=parseFloat(this.value)||2;">
+        </div>
+      </div>`;
+    dropRow.querySelector('#ws-dropwolf').onclick=()=>{
+      surveyAnswers.dropWolfAllowed=!surveyAnswers.dropWolfAllowed;
+      const inp=dropRow.querySelector('#drop-wolf-bet-inline');
+      inp.style.display=surveyAnswers.dropWolfAllowed?'block':'none';
+      dropRow.querySelector('#ws-dropwolf').className='rule-option'+(surveyAnswers.dropWolfAllowed?' selected':'');
+      dropRow.querySelector('#ws-dropwolf .rule-check').textContent=surveyAnswers.dropWolfAllowed?'✓':'';
+    };
+    wrap.appendChild(dropRow);
   }
   render();
 }
@@ -822,6 +879,30 @@ function renderReshuffleHolePicker(container) {
   });
 }
 
+function renderBrownieInline(container) {
+  if (!container) return;
+  const bm = surveyAnswers.brownieMode||'nothing';
+  container.innerHTML = '<div style="font-size:14px;font-weight:700;margin-bottom:4px;">💩 What happens when the greenie winner three-putts?</div>' +
+    '<div class="rule-option '+(bm==='pay'?'selected':'')+'" id="bm-pay">' +
+      '<div><div class="rule-option-label">Brownie — they pay everyone</div><div class="rule-option-sub">Greenie cancelled, three-putt loser pays each player.</div></div>' +
+      '<div class="rule-check">'+(bm==='pay'?'✓':'')+'</div></div>' +
+    '<div class="rule-option '+(bm==='carry'?'selected':'')+'" id="bm-carry">' +
+      '<div><div class="rule-option-label">Carryover — greenie carries to next par 3</div><div class="rule-option-sub">Greenie cancelled, no penalty — pot carries to next par 3.</div></div>' +
+      '<div class="rule-check">'+(bm==='carry'?'✓':'')+'</div></div>' +
+    '<div class="rule-option '+(bm==='nothing'?'selected':'')+'" id="bm-nothing">' +
+      '<div><div class="rule-option-label">Nothing — greenie still stands</div><div class="rule-option-sub">Three-putt has no effect, greenie winner keeps it.</div></div>' +
+      '<div class="rule-check">'+(bm==='nothing'?'✓':'')+'</div></div>' +
+    '<div id="brownie-pay-config" style="'+(bm==='pay'?'':'display:none;')+'margin-top:12px;">' +
+      '<div style="font-size:13px;font-weight:600;margin-bottom:8px;">$ per brownie (paid to each player)</div>' +
+      '<div style="display:flex;align-items:center;gap:10px;">' +
+      '<span style="font-size:18px;font-weight:600;color:#795548;">$</span>' +
+      '<input type="number" id="brownies-wager-survey" value="'+(surveyAnswers.browniesWager||5)+'" min="1" step="1" style="max-width:100px;" oninput="surveyAnswers.browniesWager=parseFloat(this.value)||5;">' +
+      '<span style="color:var(--muted);font-size:13px;">per player</span></div></div>';
+  container.querySelector('#bm-pay').onclick=()=>{surveyAnswers.brownieMode='pay';surveyAnswers.brownies=true;renderBrownieInline(container);};
+  container.querySelector('#bm-carry').onclick=()=>{surveyAnswers.brownieMode='carry';surveyAnswers.brownies=false;renderBrownieInline(container);};
+  container.querySelector('#bm-nothing').onclick=()=>{surveyAnswers.brownieMode='nothing';surveyAnswers.brownies=false;renderBrownieInline(container);};
+}
+
 function renderBrowniesConfig(container) {
   let wrap = container.querySelector('#brownies-config-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'brownies-config-wrap'; wrap.style.marginTop = '14px'; container.appendChild(wrap); }
@@ -858,7 +939,10 @@ window.setSurveyAnswer = function(key, val, el) {
   if (key==='wolfModesEnabled') {
     const existing = stepsEl.querySelector('#wolf-style-config');
     if (val && !existing) renderWolfStyleConfig(stepsEl);
-    if (!val) { const d=stepsEl.querySelector('#wolf-style-config'); if(d) d.remove(); }
+    if (!val) {
+      const d=stepsEl.querySelector('#wolf-style-config'); if(d) d.remove();
+      const d2=stepsEl.querySelector('#drop-wolf-bet-config'); if(d2) d2.remove();
+    }
   }
   if (key==='greenies') {
     const existing = stepsEl.querySelector('#greenie-wager-survey');
@@ -1506,6 +1590,28 @@ function renderIdentityChips(){
   // Identity is now handled via modal popup in startRound — this is a safe no-op
 }
 
+window.randomizeWolfOrder = function() {
+  const names = getPlayerNames();
+  if (names.length < 2) { showToast('Enter at least 2 players first'); return; }
+  // Fisher-Yates shuffle
+  for (let i = names.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [names[i], names[j]] = [names[j], names[i]];
+  }
+  // Write shuffled names back to inputs
+  const inputs = document.querySelectorAll('.player-name');
+  names.forEach((n, i) => { if (inputs[i]) inputs[i].value = n; });
+  // Show preview
+  const preview = document.getElementById('wolf-order-preview');
+  if (preview) {
+    preview.style.display = 'block';
+    preview.innerHTML = '🔀 Wolf order: ' + names.map((n,i) => `<strong>${n}</strong>`).join(' → ');
+  }
+  renderWolfOrder();
+  updateGhostCard();
+  showToast('Wolf order randomized! 🔀');
+};
+
 window.renderWolfOrder = function(){
   const names=getPlayerNames(),container=document.getElementById('wolf-order');
   if(!container) return;
@@ -1753,7 +1859,66 @@ window.updatePayoutNote=function(){
     else if(hasBirdie){bn.style.display='block';document.getElementById('birdie-amt').textContent=e.toFixed(0);en.style.display='none';}
     else{bn.style.display='none';en.style.display='none';}
   }
+  updateHoleSnapshot();
 };
+
+function updateHoleSnapshot(){
+  const snap=document.getElementById('hole-payout-snapshot');
+  if(!snap)return;
+  const hole=state.currentHole;
+  const hData=state.holes[hole]||{};
+  if(!hData.winner||hData.winner==='push'){snap.style.display='none';return;}
+  const players=state.players;if(!players.length){snap.style.display='none';return;}
+  const base=parseFloat(document.getElementById('hole-money').value)||state.wager;
+  const bigWolf=hData.bigWolf||false,lilWolf=hData.lilWolf||false;
+  const isSolo=bigWolf||lilWolf||(hData.loneWolf&&!hData.wolfMode);
+  const wolfDropped=hData.wolfDropped||false;
+  const hasBirdie=(hData.birdies||[]).filter(p=>p!=='__pending').length>0;
+  const hasEagle=(hData.eagles||[]).filter(p=>p!=='__pending').length>0;
+  const doubled=document.getElementById('double-check')&&document.getElementById('double-check').checked;
+  const reDoubled=document.getElementById('redouble-check')&&document.getElementById('redouble-check').checked;
+  let e=base;
+  if(bigWolf)e*=4;if(lilWolf)e*=2;if(doubled)e*=2;if(reDoubled)e*=2;
+  if(hasEagle)e*=3;else if(hasBirdie)e*=2;
+  const wolfName=getWolfForHole(hole);
+  const partners=[...document.querySelectorAll('#partner-chips .chip.team')].map(c=>c.textContent.trim());
+  const wolfWon=hData.winner==='wolf';
+  const ghost=state.ghostEnabled?state.ghostName:null;
+  const allP=ghost?[...players,ghost]:[...players];
+  const nets={};players.forEach(p=>nets[p]=0);
+  if(wolfDropped&&partners.length>0){
+    const dropper=partners[0];
+    const dE=state.rules.dropWolfBet||e;
+    const dropWon=hData.winner==='dropper';
+    const ro2=allP.filter(p=>p!==dropper&&players.includes(p));
+    players.filter(p=>p===dropper).forEach(p=>nets[p]+=(dropWon?1:-1)*dE*ro2.length);
+    ro2.forEach(p=>nets[p]+=(dropWon?-1:1)*dE);
+  }else if(isSolo){
+    const ro=allP.filter(p=>p!==wolfName&&players.includes(p));
+    if(players.includes(wolfName)){nets[wolfName]+=(wolfWon?1:-1)*e*ro.length;}
+    ro.forEach(p=>nets[p]+=(wolfWon?-1:1)*e);
+  }else{
+    const wt=[wolfName,...partners].filter(p=>players.includes(p));
+    const ot=players.filter(p=>!wt.includes(p));
+    const winners=wolfWon?wt:ot,losers=wolfWon?ot:wt;
+    if(winners.length>0&&losers.length>0){
+      if(winners.length<=losers.length){
+        const ws=Math.round((e*losers.length)/winners.length*100)/100;
+        winners.forEach(p=>nets[p]+=ws);losers.forEach(p=>nets[p]-=e);
+      }else{
+        const ls=Math.round((e*winners.length)/losers.length*100)/100;
+        winners.forEach(p=>nets[p]+=e);losers.forEach(p=>nets[p]-=ls);
+      }
+    }
+  }
+  const parts=players.map(p=>{
+    const n=Math.round(nets[p]);
+    const col=n>0?'#2d5a27':n<0?'#c62828':'#888';
+    return`<span style="color:${col};font-weight:700;">${p.split(' ')[0]} ${n>=0?'+':''}$${n}</span>`;
+  });
+  snap.style.display='block';
+  snap.innerHTML=parts.join('<span style="color:#ccc;"> · </span>');
+}
 
 window.setWolfMode=function(mode){
   const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
@@ -1770,6 +1935,7 @@ window.setWolfMode=function(mode){
 window.setWinner=function(w){
   const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
   state.holes[hole].winner=w;
+  updateHoleSnapshot();
   // Normal result buttons
   document.getElementById('btn-wolf-wins').className='winner-btn'+(w==='wolf'?' wolf-wins':'');
   document.getElementById('btn-team-wins').className='winner-btn'+(w==='team'?' team-wins':'');
