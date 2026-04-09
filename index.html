@@ -634,18 +634,17 @@ window.renderSurvey = function() {
 
   // If greenies selected yes, show greenie wager + par3 picker
   if (step.id === 'greenies' && surveyAnswers.greenies) renderGreeniesConfig(steps);
-  if (step.id === 'reshuffle' && surveyAnswers.reshuffleOn16) renderReshuffleHolePicker(steps);
+  // Reshuffle hole picker — guard prevents duplicate on back/next
+  if (step.id === 'reshuffle' && surveyAnswers.reshuffleOn16 && !steps.querySelector('#reshuffle-hole-wrap')) renderReshuffleHolePicker(steps);
   if (step.id === 'brownies' && surveyAnswers.brownies) renderBrowniesConfig(steps);
-  // Wolf style + drop wolf — show inline when wolfmodes step renders
-  if (step.id === 'wolfmodes') {
-    if (surveyAnswers.wolfModesEnabled !== false)
-      setTimeout(() => renderWolfStyleConfig(document.getElementById('survey-steps')), 50);
-    if (surveyAnswers.dropWolfAllowed)
-      setTimeout(() => renderDropWolfBetConfig(document.getElementById('survey-steps')), 80);
+  // Wolf style — drop wolf is rendered inside renderWolfStyleConfig, not separately
+  if (step.id === 'wolfmodes' && surveyAnswers.wolfModesEnabled !== false) {
+    setTimeout(() => { const s=document.getElementById('survey-steps'); if(s && !s.querySelector('#wolf-style-config')) renderWolfStyleConfig(s); }, 50);
   }
-  // Sandy config
-  if (step.id === 'sandys' && surveyAnswers.sandysEnabled)
-    setTimeout(() => renderSandyConfig(document.getElementById('survey-steps')), 50);
+  // Sandy config — guard prevents duplicate on back/next
+  if (step.id === 'sandys' && surveyAnswers.sandysEnabled) {
+    setTimeout(() => { const s=document.getElementById('survey-steps'); if(s && !s.querySelector('#sandy-config')) renderSandyConfig(s); }, 50);
+  }
   // Group match config
   if (step.id === 'groupmatch' && surveyAnswers.groupMatchEnabled)
     setTimeout(() => renderGroupMatchConfig(document.getElementById('survey-steps')), 50);
