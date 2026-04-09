@@ -634,16 +634,16 @@ window.renderSurvey = function() {
 
   // If greenies selected yes, show greenie wager + par3 picker
   if (step.id === 'greenies' && surveyAnswers.greenies) renderGreeniesConfig(steps);
-  // Reshuffle hole picker — guard prevents duplicate on back/next
-  if (step.id === 'reshuffle' && surveyAnswers.reshuffleOn16 && !steps.querySelector('#reshuffle-hole-wrap')) renderReshuffleHolePicker(steps);
+  // Reshuffle hole picker shown by setSurveyAnswer on click; also restore on navigation
+  if (step.id === 'reshuffle' && surveyAnswers.reshuffleOn16) setTimeout(() => { const s=document.getElementById('survey-steps'); if(s && !s.querySelector('#reshuffle-hole-wrap')) renderReshuffleHolePicker(s); }, 50);
   if (step.id === 'brownies' && surveyAnswers.brownies) renderBrowniesConfig(steps);
   // Wolf style — drop wolf is rendered inside renderWolfStyleConfig, not separately
   if (step.id === 'wolfmodes' && surveyAnswers.wolfModesEnabled !== false) {
     setTimeout(() => { const s=document.getElementById('survey-steps'); if(s && !s.querySelector('#wolf-style-config')) renderWolfStyleConfig(s); }, 50);
   }
-  // Sandy config — guard prevents duplicate on back/next
+  // Sandy config — setTimeout so setSurveyAnswer fires first; guard prevents duplicate
   if (step.id === 'sandys' && surveyAnswers.sandysEnabled) {
-    setTimeout(() => { const s=document.getElementById('survey-steps'); if(s && !s.querySelector('#sandy-config')) renderSandyConfig(s); }, 50);
+    setTimeout(() => { const s=document.getElementById('survey-steps'); if(s && !s.querySelector('#sandy-config')) renderSandyConfig(s); }, 100);
   }
   // Group match config
   if (step.id === 'groupmatch' && surveyAnswers.groupMatchEnabled)
@@ -959,6 +959,11 @@ window.setSurveyAnswer = function(key, val, el) {
     const existing = stepsEl.querySelector('#sandy-config');
     if (val && !existing) renderSandyConfig(stepsEl);
     if (!val) { const d=stepsEl.querySelector('#sandy-config'); if(d) d.remove(); }
+  }
+  if (key==='reshuffleOn16') {
+    const existing = stepsEl.querySelector('#reshuffle-hole-wrap');
+    if (val && !existing) renderReshuffleHolePicker(stepsEl);
+    if (!val) { const d=stepsEl.querySelector('#reshuffle-hole-wrap'); if(d) d.remove(); }
   }
   if (key==='wolfModesEnabled') {
     const existing = stepsEl.querySelector('#wolf-style-config');
