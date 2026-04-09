@@ -634,16 +634,13 @@ window.renderSurvey = function() {
 
   // If greenies selected yes, show greenie wager + par3 picker
   if (step.id === 'greenies' && surveyAnswers.greenies) renderGreeniesConfig(steps);
-  // Reshuffle hole picker shown by setSurveyAnswer on click; also restore on navigation
-  if (step.id === 'reshuffle' && surveyAnswers.reshuffleOn16) setTimeout(() => { const s=document.getElementById('survey-steps'); if(s && !s.querySelector('#reshuffle-hole-wrap')) renderReshuffleHolePicker(s); }, 50);
+  // Reshuffle and Sandy: render synchronously AFTER innerHTML wipe, only if answer is Yes
+  if (step.id === 'reshuffle' && surveyAnswers.reshuffleOn16) renderReshuffleHolePicker(steps);
+  if (step.id === 'sandys' && surveyAnswers.sandysEnabled) renderSandyConfig(steps);
   if (step.id === 'brownies' && surveyAnswers.brownies) renderBrowniesConfig(steps);
   // Wolf style — drop wolf is rendered inside renderWolfStyleConfig, not separately
   if (step.id === 'wolfmodes' && surveyAnswers.wolfModesEnabled !== false) {
     setTimeout(() => { const s=document.getElementById('survey-steps'); if(s && !s.querySelector('#wolf-style-config')) renderWolfStyleConfig(s); }, 50);
-  }
-  // Sandy config — setTimeout so setSurveyAnswer fires first; guard prevents duplicate
-  if (step.id === 'sandys' && surveyAnswers.sandysEnabled) {
-    setTimeout(() => { const s=document.getElementById('survey-steps'); if(s && !s.querySelector('#sandy-config')) renderSandyConfig(s); }, 100);
   }
   // Group match config
   if (step.id === 'groupmatch' && surveyAnswers.groupMatchEnabled)
@@ -830,6 +827,7 @@ function renderDropWolfBetConfig(container) {
 }
 
 function renderSandyConfig(container) {
+  console.log("renderSandyConfig called", new Error().stack.split("\n")[1]);
   let wrap = container.querySelector('#sandy-config');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'sandy-config'; wrap.style.marginTop = '14px'; container.appendChild(wrap); }
   wrap.innerHTML = `
@@ -895,6 +893,7 @@ window.setBrowniesAnswer = function(val, el) {
 };
 
 function renderReshuffleHolePicker(container) {
+  console.log("renderReshuffleHolePicker called", new Error().stack.split("\n")[1]);
   let wrap = container.querySelector('#reshuffle-hole-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'reshuffle-hole-wrap'; wrap.style.marginTop = '14px'; container.appendChild(wrap); }
   wrap.innerHTML = '<div style="font-size:13px;font-weight:600;margin-bottom:10px;">Which hole does the reshuffle start on?</div>';
