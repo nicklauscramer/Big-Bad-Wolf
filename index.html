@@ -529,7 +529,7 @@ let state = {
   greeniesEnabled:false, par3Holes:[], greenieWager:2,
   roundCode:null,
   // rule flags (from survey)
-  rules:{ reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true, wolfStyle:'before', dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, greenieCarryoverEnabled:false, sandysEnabled:false, sandyBet:2 },
+  rules:{ reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true, wolfStyle:'before', bigWolfMult:4, lilWolfMult:2, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, greenieCarryoverEnabled:false, sandysEnabled:false, sandyBet:2 },
   // course data
   courseName:'', coursePar:Array(18).fill(4), // par per hole 1-18
   // stroke scores: { playerName: { 1: strokes, 2: strokes, ... } }
@@ -591,7 +591,7 @@ const surveySteps = [
   }
 ];
 let surveyStep = 0;
-let surveyAnswers = { groupMatchEnabled:false, reshuffleOn16:true, sandysEnabled:false, sandyBet:2, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, wolfModesEnabled:true, wolfStyle:'before', bigWolfAllowed:true, lilWolfAllowed:true };
+let surveyAnswers = { groupMatchEnabled:false, reshuffleOn16:true, sandysEnabled:false, sandyBet:2, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, wolfModesEnabled:true, wolfStyle:'before', bigWolfMult:4, lilWolfMult:2, bigWolfAllowed:true, lilWolfAllowed:true };
 let courseParTemp = Array(18).fill(4);
 let courseNameTemp = '';
 
@@ -736,20 +736,45 @@ function renderGreeniesConfig(container) {
 function renderWolfStyleConfig(container) {
   let wrap = container.querySelector('#wolf-style-config');
   if (!wrap) { wrap = document.createElement('div'); wrap.id='wolf-style-config'; wrap.style.marginTop='14px'; container.appendChild(wrap); }
+  // Init defaults if not set
+  if (!surveyAnswers.bigWolfMult) surveyAnswers.bigWolfMult = 4;
+  if (!surveyAnswers.lilWolfMult) surveyAnswers.lilWolfMult = 2;
   function render() {
     const style = surveyAnswers.wolfStyle||'before';
+    const bwm = surveyAnswers.bigWolfMult||4;
+    const lwm = surveyAnswers.lilWolfMult||2;
     wrap.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div style="background:#f9faf9;border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;">BIG WOLF MULTIPLIER</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
+            <input type="number" min="1" max="20" value="${bwm}" id="bw-mult-input"
+              style="width:60px;text-align:center;font-size:18px;font-weight:700;border:2px solid var(--green);border-radius:8px;padding:4px;"
+              oninput="surveyAnswers.bigWolfMult=parseFloat(this.value)||4">
+            <span style="font-size:16px;font-weight:700;color:var(--green);">×</span>
+          </div>
+        </div>
+        <div style="background:#f9faf9;border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;">LIL WOLF MULTIPLIER</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
+            <input type="number" min="1" max="20" value="${lwm}" id="lw-mult-input"
+              style="width:60px;text-align:center;font-size:18px;font-weight:700;border:2px solid var(--green);border-radius:8px;padding:4px;"
+              oninput="surveyAnswers.lilWolfMult=parseFloat(this.value)||2">
+            <span style="font-size:16px;font-weight:700;color:var(--green);">×</span>
+          </div>
+        </div>
+      </div>
       <div style="font-size:13px;font-weight:600;margin-bottom:10px;">How do you play solo wolf?</div>
       <div class="rule-option ${style==='before'?'selected':''}" id="ws-before">
-        <div><div class="rule-option-label">Big Wolf before tee shots</div><div class="rule-option-sub">Must declare before anyone hits (4×). Lil Wolf called after seeing tee shots (2×).</div></div>
+        <div><div class="rule-option-label">Big Wolf before tee shots</div><div class="rule-option-sub">Must declare before anyone hits (${bwm}×). Lil Wolf called after seeing tee shots (${lwm}×).</div></div>
         <div class="rule-check">${style==='before'?'✓':''}</div>
       </div>
       <div class="rule-option ${style==='after'?'selected':''}" id="ws-after">
-        <div><div class="rule-option-label">Decide after all tee shots</div><div class="rule-option-sub">Watch everyone hit, then choose Big Wolf (4×) or Lil Wolf (2×).</div></div>
+        <div><div class="rule-option-label">Decide after all tee shots</div><div class="rule-option-sub">Watch everyone hit, then choose Big Wolf (${bwm}×) or Lil Wolf (${lwm}×).</div></div>
         <div class="rule-check">${style==='after'?'✓':''}</div>
       </div>
       <div class="rule-option ${style==='option'?'selected':''}" id="ws-option">
-        <div><div class="rule-option-label">Option — walk the course first</div><div class="rule-option-sub">Wolf walks to see each ball's lie before deciding Big Wolf (4×) or Lil Wolf (2×).</div></div>
+        <div><div class="rule-option-label">Option — walk the course first</div><div class="rule-option-sub">Wolf walks to see each ball's lie before deciding Big Wolf (${bwm}×) or Lil Wolf (${lwm}×).</div></div>
         <div class="rule-check">${style==='option'?'✓':''}</div>
       </div>`;
     wrap.querySelector('#ws-before').onclick=()=>{surveyAnswers.wolfStyle='before';render();};
@@ -931,11 +956,6 @@ window.setSurveyAnswer = function(key, val, el) {
     if (val && !existing) renderSandyConfig(stepsEl);
     if (!val) { const d=stepsEl.querySelector('#sandy-config'); if(d) d.remove(); }
   }
-  if (key==='dropWolfAllowed') {
-    const existing = stepsEl.querySelector('#drop-wolf-bet-config');
-    if (val && !existing) renderDropWolfBetConfig(stepsEl);
-    if (!val) { const d=stepsEl.querySelector('#drop-wolf-bet-config'); if(d) d.remove(); }
-  }
   if (key==='wolfModesEnabled') {
     const existing = stepsEl.querySelector('#wolf-style-config');
     if (val && !existing) renderWolfStyleConfig(stepsEl);
@@ -949,11 +969,7 @@ window.setSurveyAnswer = function(key, val, el) {
     if (val && !existing) renderGreeniesConfig(stepsEl);
     if (!val) { const d=stepsEl.querySelector('#greenie-config-wrap'); if(d) d.remove(); }
   }
-  if (key==='reshuffleOn16') {
-    const existing = stepsEl.querySelector('#reshuffle-hole-wrap');
-    if (val && !existing) renderReshuffleHolePicker(stepsEl);
-    if (!val) { const d=stepsEl.querySelector('#reshuffle-hole-wrap'); if(d) d.remove(); }
-  }
+
   if (key==='brownies') {
     const existing = stepsEl.querySelector('#brownies-config-wrap');
     if (val && !existing) renderBrowniesConfig(stepsEl);
@@ -1002,6 +1018,8 @@ window.finishSurvey = function() {
     bigWolfAllowed: surveyAnswers.wolfModesEnabled !== false,
     lilWolfAllowed: surveyAnswers.wolfModesEnabled !== false,
     wolfStyle: surveyAnswers.wolfStyle || 'before',
+    bigWolfMult: surveyAnswers.bigWolfMult || 4,
+    lilWolfMult: surveyAnswers.lilWolfMult || 2,
     dropWolfAllowed: surveyAnswers.dropWolfAllowed === true,
     dropWolfBet: surveyAnswers.dropWolfBet || 2,
     carryoverEnabled: surveyAnswers.carryoverEnabled === true,
@@ -1717,7 +1735,7 @@ function getPressureOrder(hole){
     const hasBirdie=(h.birdies||[]).filter(p=>p!=='__pending').length>0;
     const hasEagle=(h.eagles||[]).filter(p=>p!=='__pending').length>0;
     const doubled=h.doubled||false,reDoubled=h.reDoubled||false;
-    let e=base;if(bigWolf)e*=4;if(lilWolf)e*=2;if(doubled)e*=2;if(reDoubled)e*=2;
+    let e=base;if(bigWolf)e*=(state.rules.bigWolfMult||4);if(lilWolf)e*=(state.rules.lilWolfMult||2);if(doubled)e*=2;if(reDoubled)e*=2;
     if(hasEagle)e*=3;else if(hasBirdie)e*=2;
     const wolfName=h.wolf,partners=h.partners||[],wolfWon=h.winner==='wolf';
     const ghost=state.ghostEnabled?state.ghostName:null;
@@ -1827,7 +1845,7 @@ window.updatePayoutNote=function(){
   const base=parseFloat(document.getElementById('hole-money').value)||state.wager;
   const holeCarry=(computeWolfCarryovers()[state.currentHole]||0);
   let e=base;
-  if(bigWolf)e*=4;if(lilWolf)e*=2;if(doubled)e*=2;if(reDoubled)e*=2;
+  if(bigWolf)e*=(state.rules.bigWolfMult||4);if(lilWolf)e*=(state.rules.lilWolfMult||2);if(doubled)e*=2;if(reDoubled)e*=2;
   if(hasEagle)e*=3;else if(hasBirdie)e*=2;
   const numOpps=state.players.length-1+(state.ghostEnabled?1:0);
   const bwn=document.getElementById('blind-wolf-note'),lwn=document.getElementById('big-wolf-note');
@@ -1878,7 +1896,7 @@ function updateHoleSnapshot(){
   const doubled=document.getElementById('double-check')&&document.getElementById('double-check').checked;
   const reDoubled=document.getElementById('redouble-check')&&document.getElementById('redouble-check').checked;
   let e=base;
-  if(bigWolf)e*=4;if(lilWolf)e*=2;if(doubled)e*=2;if(reDoubled)e*=2;
+  if(bigWolf)e*=(state.rules.bigWolfMult||4);if(lilWolf)e*=(state.rules.lilWolfMult||2);if(doubled)e*=2;if(reDoubled)e*=2;
   if(hasEagle)e*=3;else if(hasBirdie)e*=2;
   const wolfName=getWolfForHole(hole);
   const partners=[...document.querySelectorAll('#partner-chips .chip.team')].map(c=>c.textContent.trim());
@@ -2134,6 +2152,11 @@ function renderScorecard(){
   // Wolf mode buttons (show/hide Big Wolf and Lil Wolf based on rules)
   document.getElementById('btn-blind-wolf').style.display=state.rules.bigWolfAllowed?'block':'none';
   document.getElementById('btn-big-wolf').style.display=state.rules.lilWolfAllowed?'block':'none';
+  // Update multiplier labels dynamically
+  const bwBtn=document.getElementById('btn-blind-wolf');
+  const lwBtn=document.getElementById('btn-big-wolf');
+  if(bwBtn){const sm=bwBtn.querySelector('span');if(sm)sm.textContent='Solo·'+(state.rules.bigWolfMult||4)+'×';}
+  if(lwBtn){const sm=lwBtn.querySelector('span');if(sm)sm.textContent='Solo·'+(state.rules.lilWolfMult||2)+'×';}
   const wolfMode=hData.wolfMode||'none';
   document.getElementById('team-section').style.display=wolfMode==='none'?'block':'none';
   ['btn-blind-wolf','btn-big-wolf','btn-no-wolf-mode'].forEach(id=>{const b=document.getElementById(id);b.style.border='2px solid #ddd';b.style.background='white';b.style.color='var(--muted)';});
@@ -2575,7 +2598,7 @@ function computeWolfTotals(){
     const isSolo=bigWolf||lilWolf||(h.loneWolf&&!h.wolfMode);
     const hasBirdie=(h.birdies||[]).filter(p=>p!=="__pending").length>0,hasEagle=(h.eagles||[]).filter(p=>p!=="__pending").length>0;
     const doubled=h.doubled||false,reDoubled=h.reDoubled||false;
-    let e=base;if(bigWolf)e*=4;if(lilWolf)e*=2;if(doubled)e*=2;if(reDoubled)e*=2;
+    let e=base;if(bigWolf)e*=(state.rules.bigWolfMult||4);if(lilWolf)e*=(state.rules.lilWolfMult||2);if(doubled)e*=2;if(reDoubled)e*=2;
     if(hasEagle)e*=3;else if(hasBirdie)e*=2;
     const carry=wolfCarries[parseInt(hNum)]||0;
     const wolfName=h.wolf,partners=h.partners||[],wolfWon=h.winner==='wolf';
@@ -3122,7 +3145,7 @@ window.clearAllState = function clearAllState(){
       ghostEnabled:false, ghostName:'Ghost',
       greeniesEnabled:false, par3Holes:[], greenieWager:2,
       roundCode:null,
-      rules:{ reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true, wolfStyle:'before', dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, greenieCarryoverEnabled:false, sandysEnabled:false, sandyBet:2 },
+      rules:{ reshuffleOn16:true, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true, wolfStyle:'before', bigWolfMult:4, lilWolfMult:2, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, greenieCarryoverEnabled:false, sandysEnabled:false, sandyBet:2 },
       courseName:'', coursePar:Array(18).fill(4),
       strokes:{}
     };
@@ -3134,7 +3157,7 @@ window.clearAllState = function clearAllState(){
     // Reset course lookup state
     courseNameTemp = '';
     courseParTemp = Array(18).fill(4);
-    surveyAnswers = { groupMatchEnabled:false, reshuffleOn16:true, sandysEnabled:false, sandyBet:2, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, wolfModesEnabled:true, wolfStyle:'before', bigWolfAllowed:true, lilWolfAllowed:true };
+    surveyAnswers = { groupMatchEnabled:false, reshuffleOn16:true, sandysEnabled:false, sandyBet:2, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, wolfModesEnabled:true, wolfStyle:'before', bigWolfMult:4, lilWolfMult:2, bigWolfAllowed:true, lilWolfAllowed:true };
     surveyStep = 0;
     const searchEl = document.getElementById('course-search-input'); if(searchEl) searchEl.value = '';
     const lookupResult = document.getElementById('course-lookup-result'); if(lookupResult) lookupResult.innerHTML = '';
