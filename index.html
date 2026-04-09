@@ -173,6 +173,13 @@
         <button onclick="joinRound()" style="padding:11px 16px;border-radius:10px;border:none;background:var(--gold);color:white;font-weight:700;font-size:15px;cursor:pointer;white-space:nowrap;">Join →</button>
       </div>
     </div>
+    <div id="recent-rounds-card" class="card" style="display:none;padding:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);">📋 RECENT ROUNDS</div>
+        <button onclick="clearRoundHistory()" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;padding:2px 6px;">Clear</button>
+      </div>
+      <div id="recent-rounds-list"></div>
+    </div>
     <div style="text-align:center;padding:16px 0 4px;font-size:11px;color:var(--muted);letter-spacing:0.5px;">Created and designed by Nick Cramer</div>
     <div style="text-align:center;padding:4px 0 16px;font-size:11px;color:var(--muted);">To show support, <a href="https://venmo.com/u/nicklauspoul13" target="_blank" style="color:var(--gold);font-weight:600;text-decoration:none;">buy me a beer 🍺</a></div>
   </div>
@@ -780,31 +787,34 @@ function renderWolfStyleConfig(container) {
     wrap.querySelector('#ws-before').onclick=()=>{surveyAnswers.wolfStyle='before';render();};
     wrap.querySelector('#ws-after').onclick=()=>{surveyAnswers.wolfStyle='after';render();};
     wrap.querySelector('#ws-option').onclick=()=>{surveyAnswers.wolfStyle='option';render();};
-    // Drop wolf toggle inline
-    const dropRow=document.createElement('div');
-    dropRow.style.marginTop='14px';
-    const dw=surveyAnswers.dropWolfAllowed;
-    dropRow.innerHTML=`<div class="rule-option ${dw?'selected':''}" id="ws-dropwolf">
-      <div><div class="rule-option-label">💧 Allow Dropping the Wolf?</div><div class="rule-option-sub">Picked partner can reject and go solo against everyone.</div></div>
-      <div class="rule-check">${dw?'✓':''}</div></div>
-      <div id="drop-wolf-bet-inline" style="${dw?'':'display:none;'}margin-top:10px;">
-        <div style="font-size:13px;font-weight:600;margin-bottom:6px;">$ per player when wolf is dropped</div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:16px;font-weight:600;color:#1565c0;">$</span>
-          <input type="number" min="1" value="${surveyAnswers.dropWolfBet||2}" style="max-width:90px;"
-            oninput="if(this.value)surveyAnswers.dropWolfBet=parseFloat(this.value)||2;">
-        </div>
-      </div>`;
-    dropRow.querySelector('#ws-dropwolf').onclick=()=>{
-      surveyAnswers.dropWolfAllowed=!surveyAnswers.dropWolfAllowed;
-      const inp=dropRow.querySelector('#drop-wolf-bet-inline');
-      inp.style.display=surveyAnswers.dropWolfAllowed?'block':'none';
-      dropRow.querySelector('#ws-dropwolf').className='rule-option'+(surveyAnswers.dropWolfAllowed?' selected':'');
-      dropRow.querySelector('#ws-dropwolf .rule-check').textContent=surveyAnswers.dropWolfAllowed?'✓':'';
-    };
-    wrap.appendChild(dropRow);
   }
   render();
+  // Drop wolf toggle — appended ONCE outside render() to prevent duplication on re-render
+  if (!wrap.querySelector('#ws-dropwolf-row')) {
+    const dropRow=document.createElement('div');
+    dropRow.id='ws-dropwolf-row';
+    dropRow.style.marginTop='14px';
+    function renderDropRow() {
+      const dw=surveyAnswers.dropWolfAllowed;
+      dropRow.innerHTML=`<div class="rule-option ${dw?'selected':''}" id="ws-dropwolf">
+        <div><div class="rule-option-label">💧 Allow Dropping the Wolf?</div><div class="rule-option-sub">Picked partner can reject and go solo against everyone.</div></div>
+        <div class="rule-check">${dw?'✓':''}</div></div>
+        <div id="drop-wolf-bet-inline" style="${dw?'':'display:none;'}margin-top:10px;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:6px;">$ per player when wolf is dropped</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:16px;font-weight:600;color:#1565c0;">$</span>
+            <input type="number" min="1" value="${surveyAnswers.dropWolfBet||2}" style="max-width:90px;"
+              oninput="if(this.value)surveyAnswers.dropWolfBet=parseFloat(this.value)||2;">
+          </div>
+        </div>`;
+      dropRow.querySelector('#ws-dropwolf').onclick=()=>{
+        surveyAnswers.dropWolfAllowed=!surveyAnswers.dropWolfAllowed;
+        renderDropRow();
+      };
+    }
+    renderDropRow();
+    wrap.appendChild(dropRow);
+  }
 }
 
 function renderDropWolfBetConfig(container) {
@@ -1573,6 +1583,7 @@ window.showPage = function(name) {
   if(name==='scoreboard') renderScoreboard();
   if(name==='payments') renderPayments();
   if(name==='groupmatch') renderGroupMatch();
+  if(name==='lobby') renderRecentRounds();
   if(name==='share') {
     // Code already set by startRound — just display it
     if (state.roundCode) document.getElementById('share-code-display').textContent = state.roundCode;
@@ -2352,6 +2363,7 @@ window.finishRound = function() {
     const proceed = confirm(`⚠️ ${incomplete.length} hole${incomplete.length>1?'s haven\'t':' hasn\'t'} been saved (${incomplete.join(', ')}). Finish anyway?`);
     if (!proceed) return;
   }
+  saveRoundToHistory();
   showPage('payments');
 };
 
@@ -2552,8 +2564,11 @@ function computeWolfCarryovers() {
   // Returns { holeNum: carryAmount } for each hole that has a carry into it
   const carries = {};
   if (!state.rules.carryoverEnabled) return carries;
+  const reshuffleHole = (state.rules.reshuffleOn16 && state.rules.reshuffleHole) || 99;
   let pending = 0;
   for (let h = 1; h <= 18; h++) {
+    // Carryover resets when pressure holes begin
+    if (h === reshuffleHole) { pending = 0; }
     const hole = state.holes[h];
     if (pending > 0) carries[h] = pending;
     if (!hole || !hole.winner) break; // hole not played yet
@@ -3122,6 +3137,86 @@ function renderGroupMatch() {
   });
   document.getElementById('gm-bets-content').innerHTML = betsHtml || '<div style="color:var(--muted);font-size:13px;">No bets resolved yet.</div>';
 }
+
+// ── Round History ──
+function saveRoundToHistory() {
+  try {
+    const wt=computeWolfTotals(),gt=computeGreenieTotals(),st=computeSandyTotals();
+    const net={};
+    state.players.forEach(p=>{net[p]=Math.round(((wt[p]||0)+(gt[p]||0)+(st[p]||0))*100)/100;});
+    const sorted=[...state.players].sort((a,b)=>net[b]-net[a]);
+    const holesPlayed=Object.keys(state.holes).filter(h=>state.holes[h].winner&&state.holes[h].winner!=='push').length;
+    const record={
+      code:state.roundCode,
+      date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+      course:state.courseName||'Unknown Course',
+      players:state.players,
+      wager:state.wager,
+      holesPlayed,
+      standings:sorted.map(p=>({name:p,net:net[p]})),
+      savedAt:Date.now()
+    };
+    let history=[];
+    try{history=JSON.parse(localStorage.getItem('wolf-history')||'[]');}catch(e){}
+    history=history.filter(r=>r.code!==record.code);
+    history.unshift(record);
+    history=history.slice(0,10);
+    localStorage.setItem('wolf-history',JSON.stringify(history));
+  }catch(e){console.log('History save error:',e);}
+}
+
+function renderRecentRounds() {
+  let history=[];
+  try{history=JSON.parse(localStorage.getItem('wolf-history')||'[]');}catch(e){}
+  const card=document.getElementById('recent-rounds-card');
+  const list=document.getElementById('recent-rounds-list');
+  if(!card||!list)return;
+  if(!history.length){card.style.display='none';return;}
+  card.style.display='block';
+  list.innerHTML=history.map(r=>{
+    const winner=r.standings[0];
+    const loser=r.standings[r.standings.length-1];
+    const fmt=n=>n>=0?`+$${Math.abs(n)}`:`-$${Math.abs(n)}`;
+    const winCls=winner.net>=0?'color:var(--green)':'color:#c62828';
+    const loseCls=loser.net>=0?'color:var(--green)':'color:#c62828';
+    return `<div style="border:1.5px solid #f0f0f0;border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer;" onclick="viewHistoryRound('${r.code}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+        <div>
+          <div style="font-weight:700;font-size:14px;">${r.course}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${r.date} · $${r.wager}/hole · ${r.holesPlayed} holes</div>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;color:var(--muted);letter-spacing:1px;">${r.code}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+        <span>🏆 <strong>${winner.name}</strong> <span style="${winCls};font-weight:700;">${fmt(winner.net)}</span></span>
+        <span>📉 <strong>${loser.name}</strong> <span style="${loseCls};font-weight:700;">${fmt(loser.net)}</span></span>
+      </div>
+      <div style="font-size:11px;color:var(--muted);">${r.players.join(' · ')}</div>
+    </div>`;
+  }).join('');
+}
+
+window.viewHistoryRound = async function(code) {
+  if(!code)return;
+  showToast('Loading round...');
+  try{
+    const snap=await getDoc(doc(db,'rounds',code));
+    if(!snap.exists()){showToast('Round not found');return;}
+    const data=snap.data();
+    state={...state,...data,currentHole:Object.keys(data.holes||{}).length||18};
+    isScorer=false;
+    renderPayments();
+    showPage('payments');
+  }catch(e){showToast('Could not load round');}
+};
+
+window.clearRoundHistory = function() {
+  if(confirm('Clear all round history?')){
+    localStorage.removeItem('wolf-history');
+    renderRecentRounds();
+    showToast('History cleared');
+  }
+};
 
 window.resetRound=function(){
   if(!confirm('Start a new round? This will clear all current data.'))return;
