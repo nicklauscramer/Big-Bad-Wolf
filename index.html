@@ -927,12 +927,7 @@ function renderBrownieInline(container) {
     '<div class="rule-option '+(bm==='nothing'?'selected':'')+'" id="bm-nothing">' +
       '<div><div class="rule-option-label">Nothing — greenie still stands</div><div class="rule-option-sub">Three-putt has no effect, greenie winner keeps it.</div></div>' +
       '<div class="rule-check">'+(bm==='nothing'?'✓':'')+'</div></div>' +
-    '<div id="brownie-pay-config" style="'+(bm==='pay'?'':'display:none;')+'margin-top:12px;">' +
-      '<div style="font-size:13px;font-weight:600;margin-bottom:8px;">$ per brownie (paid to each player)</div>' +
-      '<div style="display:flex;align-items:center;gap:10px;">' +
-      '<span style="font-size:18px;font-weight:600;color:#795548;">$</span>' +
-      '<input type="number" id="brownies-wager-survey" value="'+(surveyAnswers.browniesWager||5)+'" min="1" step="1" style="max-width:100px;" oninput="surveyAnswers.browniesWager=parseFloat(this.value)||5;">' +
-      '<span style="color:var(--muted);font-size:13px;">per player</span></div></div>';
+    (bm==='pay' ? '<div style="margin-top:12px;padding:10px;background:#efebe9;border-radius:10px;font-size:13px;color:#795548;font-weight:600;">💩 Brownie penalty uses the greenie amount — $'+(surveyAnswers.greenieWager||2)+' per player</div>' : '');
   container.querySelector('#bm-pay').onclick=()=>{surveyAnswers.brownieMode='pay';surveyAnswers.brownies=true;renderBrownieInline(container);};
   container.querySelector('#bm-carry').onclick=()=>{surveyAnswers.brownieMode='carry';surveyAnswers.brownies=false;renderBrownieInline(container);};
   container.querySelector('#bm-nothing').onclick=()=>{surveyAnswers.brownieMode='nothing';surveyAnswers.brownies=false;renderBrownieInline(container);};
