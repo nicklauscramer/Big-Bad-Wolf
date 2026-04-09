@@ -2943,6 +2943,7 @@ async function init(){
       else { localStorage.removeItem('wolf-v4'); }
     }
   }catch(e){}
+  renderRecentRounds();
   if(state.roundCode&&state.players.length){
     isScorer=true;showRoundCode(state.roundCode);subscribeToRound(state.roundCode);
     // Restore player inputs
