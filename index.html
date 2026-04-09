@@ -615,6 +615,12 @@ window.renderSurvey = function() {
   let html = `<div style="font-size:16px;font-weight:700;margin-bottom:6px;">${step.title}</div>`;
   if (step.sub) html += `<div style="font-size:12px;color:var(--muted);margin-bottom:14px;">${step.sub}</div>`;
 
+  if (step.render) {
+    steps.innerHTML = html;
+    step.render(steps);
+    return;
+  }
+
   if (step.multi) {
     step.options.forEach(opt => {
       const sel = surveyAnswers[opt.v + 'Allowed'] !== false;
@@ -648,7 +654,6 @@ window.renderSurvey = function() {
 }
 
 function renderMultipliersStep(container) {
-  container.innerHTML = '';
   const div = document.createElement('div');
   function render() {
     const be = surveyAnswers.birdiesEagles !== false;
@@ -671,7 +676,6 @@ function renderMultipliersStep(container) {
 }
 
 function renderCarryoverStep(container) {
-  container.innerHTML = '';
   const div = document.createElement('div');
   function render() {
     const wc = surveyAnswers.carryoverEnabled === true;
@@ -827,7 +831,6 @@ function renderDropWolfBetConfig(container) {
 }
 
 function renderSandyConfig(container) {
-  console.log("renderSandyConfig called", new Error().stack.split("\n")[1]);
   let wrap = container.querySelector('#sandy-config');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'sandy-config'; wrap.style.marginTop = '14px'; container.appendChild(wrap); }
   wrap.innerHTML = `
@@ -893,7 +896,6 @@ window.setBrowniesAnswer = function(val, el) {
 };
 
 function renderReshuffleHolePicker(container) {
-  console.log("renderReshuffleHolePicker called", new Error().stack.split("\n")[1]);
   let wrap = container.querySelector('#reshuffle-hole-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'reshuffle-hole-wrap'; wrap.style.marginTop = '14px'; container.appendChild(wrap); }
   wrap.innerHTML = '<div style="font-size:13px;font-weight:600;margin-bottom:10px;">Which hole does the reshuffle start on?</div>';
