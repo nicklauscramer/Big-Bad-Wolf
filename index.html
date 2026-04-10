@@ -1523,8 +1523,12 @@ window.joinRound = async function() {
     const snap = await getDoc(doc(db,'rounds',code));
     if (!snap.exists()) {
       // Check if it's a group match code — guide user to set up their own round
-      const gmSnap = await getDoc(doc(db,'group_matches',code));
-      if (gmSnap.exists()) {
+      let isGroupMatch = false;
+      try {
+        const gmSnap = await getDoc(doc(db,'group_matches',code));
+        isGroupMatch = gmSnap.exists();
+      } catch(gmErr) {}
+      if (isGroupMatch) {
         showToast('Group Match found! Setting up your round…');
         surveyAnswers.groupMatchEnabled = true;
         surveyAnswers.groupMatchCode = code;
