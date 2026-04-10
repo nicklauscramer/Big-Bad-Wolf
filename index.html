@@ -1577,8 +1577,12 @@ window.joinRound = async function() {
       return;
     }
     // Not a round code — check if it's a group match code
-    const gmSnap = await getDoc(doc(db,'group_matches',code));
-    if (gmSnap.exists()) {
+    let isGroupMatch = false;
+    try {
+      const gmSnap = await getDoc(doc(db,'group_matches',code));
+      if (gmSnap.exists()) isGroupMatch = true;
+    } catch(e) { /* permissions or network — treat as not found */ }
+    if (isGroupMatch) {
       showToast('Group match found! Setting up your round…');
       clearAllState();
       surveyAnswers.groupMatchEnabled = true;
