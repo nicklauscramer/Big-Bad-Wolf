@@ -2885,8 +2885,8 @@ function renderScoreboard(){
     const h=state.holes[hNum],isSoloH=h.bigWolf||h.lilWolf||h.loneWolf;
     const wolfTeam=isSoloH?[h.wolf]:[h.wolf,...(h.partners||[])];
     const others=getAllRotationPlayers().filter(p=>!wolfTeam.includes(p));
-    const resClass=h.winner==='wolf'?'wolf-wins':h.winner==='team'?'team-wins':'push';
-    const resLabel=h.winner==='wolf'?'🐺 Wolf':h.winner==='team'?'🤝 Team':'↔ Push';
+    const resClass=h.winner==='wolf'?'wolf-wins':h.winner==='team'?'team-wins':h.winner==='dropper'?'wolf-wins':'push';
+    const resLabel=h.winner==='wolf'?'🐺 Wolf':h.winner==='team'?'🤝 Team':h.winner==='dropper'?'💧 Dropper':'↔ Push';
     const bwm=state.rules.bigWolfMult||4,lwm=state.rules.lilWolfMult||2;const mTag=h.bigWolf?' <span style="background:#fff3e0;color:#e65100;padding:1px 5px;border-radius:6px;font-size:9px;">BIG ×'+bwm+'</span>':h.lilWolf?' <span style="background:#fce4ec;color:#880e4f;padding:1px 5px;border-radius:6px;font-size:9px;">LIL ×'+lwm+'</span>':'';
     const dTag=h.doubled?' <span style="background:#f3e5f5;color:#6a1b9a;padding:1px 5px;border-radius:6px;font-size:9px;">🔴×2</span>':'';
     const rdTag=h.reDoubled?' <span style="background:#e8f5e3;color:var(--green);padding:1px 5px;border-radius:6px;font-size:9px;">🟢×4</span>':'';
