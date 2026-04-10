@@ -666,17 +666,30 @@ function renderMultipliersStep(container) {
     const be = surveyAnswers.birdiesEagles !== false;
     const db = surveyAnswers.doubles !== false;
     div.innerHTML = `
-      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Toggle each multiplier on or off.</div>
-      <div class="rule-option ${be?'selected':''}" id="mul-birdie" style="margin-bottom:8px;">
-        <div><div class="rule-option-label">🐦 Birdies & Eagles</div><div class="rule-option-sub">Birdie doubles, Eagle triples the hole</div></div>
-        <div class="rule-check">${be?'✓':''}</div>
+      <div class="toggle-row" id="mul-birdie">
+        <div>
+          <div style="font-size:15px;font-weight:600;">🐦 Birdies & Eagles</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Birdie doubles, Eagle triples the hole.</div>
+        </div>
+        <div class="toggle-switch">
+          <input type="checkbox" id="mul-birdie-chk" ${be?'checked':''} onclick="event.stopPropagation()">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </div>
       </div>
-      <div class="rule-option ${db?'selected':''}" id="mul-double">
-        <div><div class="rule-option-label">🔴 Doubles & Re-Doubles</div><div class="rule-option-sub">Non-wolf can double, wolf can re-double</div></div>
-        <div class="rule-check">${db?'✓':''}</div>
+      <div class="toggle-row" id="mul-double">
+        <div>
+          <div style="font-size:15px;font-weight:600;">🔴 Doubles & Re-Doubles</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Non-wolf can double, wolf can re-double.</div>
+        </div>
+        <div class="toggle-switch">
+          <input type="checkbox" id="mul-double-chk" ${db?'checked':''} onclick="event.stopPropagation()">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </div>
       </div>`;
-    div.querySelector('#mul-birdie').onclick=()=>{surveyAnswers.birdiesEagles=!be;render();};
-    div.querySelector('#mul-double').onclick=()=>{surveyAnswers.doubles=!db;render();};
+    div.querySelector('#mul-birdie').onclick=()=>{surveyAnswers.birdiesEagles=!surveyAnswers.birdiesEagles;render();};
+    div.querySelector('#mul-double').onclick=()=>{surveyAnswers.doubles=!surveyAnswers.doubles;render();};
   }
   render();
   container.appendChild(div);
@@ -688,17 +701,30 @@ function renderCarryoverStep(container) {
     const wc = surveyAnswers.carryoverEnabled === true;
     const gc = surveyAnswers.greenieCarryoverEnabled === true;
     div.innerHTML = `
-      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Toggle each carryover on or off.</div>
-      <div class="rule-option ${wc?'selected':''}" id="car-wolf" style="margin-bottom:8px;">
-        <div><div class="rule-option-label">🔄 Push Carryover</div><div class="rule-option-sub">If a hole pushes, the base wager carries to the next hole.</div></div>
-        <div class="rule-check">${wc?'✓':''}</div>
+      <div class="toggle-row" id="car-wolf">
+        <div>
+          <div style="font-size:15px;font-weight:600;">🔄 Push Carryover</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Pushed holes stack until someone wins.</div>
+        </div>
+        <div class="toggle-switch">
+          <input type="checkbox" id="car-wolf-chk" ${wc?'checked':''} onclick="event.stopPropagation()">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </div>
       </div>
-      <div class="rule-option ${gc?'selected':''}" id="car-greenie">
-        <div><div class="rule-option-label">🏆 Greenie Carryover</div><div class="rule-option-sub">If no greenie winner, the pot carries to the next par 3.</div></div>
-        <div class="rule-check">${gc?'✓':''}</div>
+      <div class="toggle-row" id="car-greenie">
+        <div>
+          <div style="font-size:15px;font-weight:600;">🏆 Greenie Carryover</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Unclaimed greenies carry to the next par 3.</div>
+        </div>
+        <div class="toggle-switch">
+          <input type="checkbox" id="car-greenie-chk" ${gc?'checked':''} onclick="event.stopPropagation()">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </div>
       </div>`;
-    div.querySelector('#car-wolf').onclick=()=>{surveyAnswers.carryoverEnabled=!wc;render();};
-    div.querySelector('#car-greenie').onclick=()=>{surveyAnswers.greenieCarryoverEnabled=!gc;render();};
+    div.querySelector('#car-wolf').onclick=()=>{surveyAnswers.carryoverEnabled=!surveyAnswers.carryoverEnabled;render();};
+    div.querySelector('#car-greenie').onclick=()=>{surveyAnswers.greenieCarryoverEnabled=!surveyAnswers.greenieCarryoverEnabled;render();};
   }
   render();
   container.appendChild(div);
@@ -750,13 +776,19 @@ function renderGreeniesConfig(container) {
 function renderWolfStyleConfig(container) {
   let wrap = container.querySelector('#wolf-style-config');
   if (!wrap) { wrap = document.createElement('div'); wrap.id='wolf-style-config'; wrap.style.marginTop='14px'; container.appendChild(wrap); }
-  // Init defaults if not set
   if (!surveyAnswers.bigWolfMult) surveyAnswers.bigWolfMult = 4;
   if (!surveyAnswers.lilWolfMult) surveyAnswers.lilWolfMult = 2;
   function render() {
     const style = surveyAnswers.wolfStyle||'before';
     const bwm = surveyAnswers.bigWolfMult||4;
     const lwm = surveyAnswers.lilWolfMult||2;
+    const dw = surveyAnswers.dropWolfAllowed;
+    // Help text per style option — shown via info icon tap
+    const helpText = {
+      before: `Declare Big Wolf (${bwm}×) before anyone hits. After tee shots, wolf can call Lil Wolf (${lwm}×).`,
+      after: `After all tee shots, wolf chooses Big Wolf (${bwm}×) or Lil Wolf (${lwm}×).`,
+      option: `Wolf walks to see each ball's lie, then decides Big Wolf (${bwm}×) or Lil Wolf (${lwm}×).`
+    };
     wrap.innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
         <div style="background:#f9faf9;border-radius:10px;padding:10px;text-align:center;">
@@ -780,32 +812,34 @@ function renderWolfStyleConfig(container) {
       </div>
       <div style="font-size:13px;font-weight:600;margin-bottom:10px;">How do you play solo wolf?</div>
       <div class="rule-option ${style==='before'?'selected':''}" id="ws-before">
-        <div><div class="rule-option-label">Big Wolf before tee shots</div><div class="rule-option-sub">Must declare before anyone hits (${bwm}×). Lil Wolf called after seeing tee shots (${lwm}×).</div></div>
-        <div class="rule-check">${style==='before'?'✓':''}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+          <div class="rule-option-label">Big Wolf before tee shots</div>
+          <span id="ws-info-before" style="font-size:16px;cursor:pointer;padding:2px 6px;color:var(--muted);" onclick="event.stopPropagation();document.getElementById('ws-help-before').style.display=document.getElementById('ws-help-before').style.display==='none'?'block':'none'">ℹ️</span>
+        </div>
+        <div id="ws-help-before" style="display:none;font-size:11px;color:var(--muted);margin-top:4px;padding:6px;background:#f5f5f5;border-radius:6px;">${helpText.before}</div>
+        <div class="rule-check" style="position:absolute;right:14px;">${style==='before'?'✓':''}</div>
       </div>
-      <div class="rule-option ${style==='after'?'selected':''}" id="ws-after">
-        <div><div class="rule-option-label">Decide after all tee shots</div><div class="rule-option-sub">Watch everyone hit, then choose Big Wolf (${bwm}×) or Lil Wolf (${lwm}×).</div></div>
-        <div class="rule-check">${style==='after'?'✓':''}</div>
+      <div class="rule-option ${style==='after'?'selected':''}" id="ws-after" style="position:relative;">
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+          <div class="rule-option-label">Decide after all tee shots</div>
+          <span style="font-size:16px;cursor:pointer;padding:2px 6px;color:var(--muted);" onclick="event.stopPropagation();document.getElementById('ws-help-after').style.display=document.getElementById('ws-help-after').style.display==='none'?'block':'none'">ℹ️</span>
+        </div>
+        <div id="ws-help-after" style="display:none;font-size:11px;color:var(--muted);margin-top:4px;padding:6px;background:#f5f5f5;border-radius:6px;">${helpText.after}</div>
+        <div class="rule-check" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);">${style==='after'?'✓':''}</div>
       </div>
-      <div class="rule-option ${style==='option'?'selected':''}" id="ws-option">
-        <div><div class="rule-option-label">Option — walk the course first</div><div class="rule-option-sub">Wolf walks to see each ball's lie before deciding Big Wolf (${bwm}×) or Lil Wolf (${lwm}×).</div></div>
-        <div class="rule-check">${style==='option'?'✓':''}</div>
-      </div>`;
-    wrap.querySelector('#ws-before').onclick=()=>{surveyAnswers.wolfStyle='before';render();};
-    wrap.querySelector('#ws-after').onclick=()=>{surveyAnswers.wolfStyle='after';render();};
-    wrap.querySelector('#ws-option').onclick=()=>{surveyAnswers.wolfStyle='option';render();};
-  }
-  render();
-  // Drop wolf toggle — appended ONCE outside render() to prevent duplication on re-render
-  if (!wrap.querySelector('#ws-dropwolf-row')) {
-    const dropRow=document.createElement('div');
-    dropRow.id='ws-dropwolf-row';
-    dropRow.style.marginTop='14px';
-    function renderDropRow() {
-      const dw=surveyAnswers.dropWolfAllowed;
-      dropRow.innerHTML=`<div class="rule-option ${dw?'selected':''}" id="ws-dropwolf">
-        <div><div class="rule-option-label">💧 Allow Dropping the Wolf?</div><div class="rule-option-sub">Picked partner can reject and go solo against everyone.</div></div>
-        <div class="rule-check">${dw?'✓':''}</div></div>
+      <div class="rule-option ${style==='option'?'selected':''}" id="ws-option" style="position:relative;">
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+          <div class="rule-option-label">Option — walk the course first</div>
+          <span style="font-size:16px;cursor:pointer;padding:2px 6px;color:var(--muted);" onclick="event.stopPropagation();document.getElementById('ws-help-option').style.display=document.getElementById('ws-help-option').style.display==='none'?'block':'none'">ℹ️</span>
+        </div>
+        <div id="ws-help-option" style="display:none;font-size:11px;color:var(--muted);margin-top:4px;padding:6px;background:#f5f5f5;border-radius:6px;">${helpText.option}</div>
+        <div class="rule-check" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);">${style==='option'?'✓':''}</div>
+      </div>
+      <div style="margin-top:14px;">
+        <div class="rule-option ${dw?'selected':''}" id="ws-dropwolf">
+          <div><div class="rule-option-label">💧 Allow Dropping the Wolf?</div></div>
+          <div class="rule-check">${dw?'✓':''}</div>
+        </div>
         <div id="drop-wolf-bet-inline" style="${dw?'':'display:none;'}margin-top:10px;">
           <div style="font-size:13px;font-weight:600;margin-bottom:6px;">$ per player when wolf is dropped</div>
           <div style="display:flex;align-items:center;gap:8px;">
@@ -813,15 +847,14 @@ function renderWolfStyleConfig(container) {
             <input type="number" min="1" value="${surveyAnswers.dropWolfBet||2}" style="max-width:90px;"
               oninput="if(this.value)surveyAnswers.dropWolfBet=parseFloat(this.value)||2;">
           </div>
-        </div>`;
-      dropRow.querySelector('#ws-dropwolf').onclick=()=>{
-        surveyAnswers.dropWolfAllowed=!surveyAnswers.dropWolfAllowed;
-        renderDropRow();
-      };
-    }
-    renderDropRow();
-    wrap.appendChild(dropRow);
+        </div>
+      </div>`;
+    wrap.querySelector('#ws-before').onclick=()=>{surveyAnswers.wolfStyle='before';render();};
+    wrap.querySelector('#ws-after').onclick=()=>{surveyAnswers.wolfStyle='after';render();};
+    wrap.querySelector('#ws-option').onclick=()=>{surveyAnswers.wolfStyle='option';render();};
+    wrap.querySelector('#ws-dropwolf').onclick=()=>{surveyAnswers.dropWolfAllowed=!surveyAnswers.dropWolfAllowed;render();};
   }
+  render();
 }
 
 function renderDropWolfBetConfig(container) {
