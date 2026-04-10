@@ -1521,7 +1521,21 @@ window.joinRound = async function() {
   showToast('Connecting…');
   try {
     const snap = await getDoc(doc(db,'rounds',code));
-    if (!snap.exists()) { showToast('Round not found'); return; }
+    if (!snap.exists()) {
+      // Check if it's a group match code — guide user to set up their own round
+      const gmSnap = await getDoc(doc(db,'group_matches',code));
+      if (gmSnap.exists()) {
+        showToast('Group Match found! Setting up your round…');
+        surveyAnswers.groupMatchEnabled = true;
+        surveyAnswers.groupMatchCode = code;
+        surveyStep = 0;
+        showPage('survey');
+        renderSurvey();
+      } else {
+        showToast('Round not found');
+      }
+      return;
+    }
     const data = snap.data();
     state = {...state,...data,currentHole:1,roundCode:code,myName:null};
     isScorer = false;
@@ -1671,6 +1685,10 @@ window.startRound = async function() {
   isScorer=true;
   showRoundCode(code);
   if (!unsubscribe) subscribeToRound(code);
+  // Register group match in Firebase so others can look it up by code
+  if (state.groupMatch && state.groupMatch.enabled && state.groupMatch.matchCode) {
+    setDoc(doc(db,'group_matches',state.groupMatch.matchCode), { createdAt: serverTimestamp() }, { merge: true }).catch(()=>{});
+  }
   saveState();
   document.getElementById('share-code-display').textContent = code;
   showPage('share');
