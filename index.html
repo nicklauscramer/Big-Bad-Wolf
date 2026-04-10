@@ -63,6 +63,17 @@
   .winner-btn{flex:1;padding:10px;border-radius:10px;border:1.5px solid #e0e0e0;background:white;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);}
   .winner-btn.wolf-wins{background:var(--green);color:white;border-color:var(--green);}
   .winner-btn.team-wins{background:#1565c0;color:white;border-color:#1565c0;}
+  /* Toggle switch */
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:white;border-radius:12px;border:1.5px solid #e8e8e8;margin-bottom:10px;cursor:pointer;user-select:none;}
+  .toggle-row:active{background:#f5f5f5;}
+  .toggle-label{font-size:15px;font-weight:600;color:var(--text);}
+  .toggle-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .toggle-switch{position:relative;width:46px;height:26px;flex-shrink:0;margin-left:12px;}
+  .toggle-switch input{opacity:0;width:0;height:0;position:absolute;}
+  .toggle-track{position:absolute;inset:0;background:#ccc;border-radius:26px;transition:background .2s;}
+  .toggle-thumb{position:absolute;top:3px;left:3px;width:20px;height:20px;background:white;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+  .toggle-switch input:checked + .toggle-track{background:var(--green);}
+  .toggle-switch input:checked + .toggle-track + .toggle-thumb{transform:translateX(20px);}
   .winner-btn.push{background:#607d8b;color:white;border-color:#607d8b;}
   .money-row{display:flex;align-items:center;gap:10px;background:#fffbf0;border:1.5px solid var(--gold);border-radius:10px;padding:12px;margin-bottom:14px;}
   .money-input-wrap{display:flex;align-items:center;gap:4px;}
@@ -615,12 +626,6 @@ window.renderSurvey = function() {
   let html = `<div style="font-size:16px;font-weight:700;margin-bottom:6px;">${step.title}</div>`;
   if (step.sub) html += `<div style="font-size:12px;color:var(--muted);margin-bottom:14px;">${step.sub}</div>`;
 
-  if (step.render) {
-    steps.innerHTML = html;
-    step.render(steps);
-    return;
-  }
-
   if (step.multi) {
     step.options.forEach(opt => {
       const sel = surveyAnswers[opt.v + 'Allowed'] !== false;
@@ -653,45 +658,47 @@ window.renderSurvey = function() {
     setTimeout(() => renderGroupMatchConfig(document.getElementById('survey-steps')), 50);
 }
 
+
+function toggleHtml(id, checked, label, sub) {
+  return `<div class="toggle-row" onclick="document.getElementById('${id}').click()">
+    <div>
+      <div class="toggle-label">${label}</div>
+      ${sub ? `<div class="toggle-sub">${sub}</div>` : ''}
+    </div>
+    <div class="toggle-switch">
+      <input type="checkbox" id="${id}" ${checked?'checked':''} onclick="event.stopPropagation()">
+      <div class="toggle-track"></div>
+      <div class="toggle-thumb"></div>
+    </div>
+  </div>`;
+}
 function renderMultipliersStep(container) {
+  container.innerHTML = '';
   const div = document.createElement('div');
   function render() {
-    const be = surveyAnswers.birdiesEagles !== false;
-    const db = surveyAnswers.doubles !== false;
-    div.innerHTML = `
-      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Toggle each multiplier on or off.</div>
-      <div class="rule-option ${be?'selected':''}" id="mul-birdie" style="margin-bottom:8px;">
-        <div><div class="rule-option-label">🐦 Birdies & Eagles</div><div class="rule-option-sub">Birdie doubles, Eagle triples the hole</div></div>
-        <div class="rule-check">${be?'✓':''}</div>
-      </div>
-      <div class="rule-option ${db?'selected':''}" id="mul-double">
-        <div><div class="rule-option-label">🔴 Doubles & Re-Doubles</div><div class="rule-option-sub">Non-wolf can double, wolf can re-double</div></div>
-        <div class="rule-check">${db?'✓':''}</div>
-      </div>`;
-    div.querySelector('#mul-birdie').onclick=()=>{surveyAnswers.birdiesEagles=!be;render();};
-    div.querySelector('#mul-double').onclick=()=>{surveyAnswers.doubles=!db;render();};
+    const be = surveyAnswers.birdiesEagles === true;
+    const db = surveyAnswers.doubles === true;
+    div.innerHTML =
+      toggleHtml('mul-birdie', be, '🐦 Birdies & Eagles', 'Birdie doubles, Eagle triples the hole') +
+      toggleHtml('mul-double', db, '🔴 Doubles & Re-Doubles', 'Non-wolf can double, wolf can re-double');
+    div.querySelector('#mul-birdie').onchange=e=>{surveyAnswers.birdiesEagles=e.target.checked;};
+    div.querySelector('#mul-double').onchange=e=>{surveyAnswers.doubles=e.target.checked;};
   }
   render();
   container.appendChild(div);
 }
 
 function renderCarryoverStep(container) {
+  container.innerHTML = '';
   const div = document.createElement('div');
   function render() {
     const wc = surveyAnswers.carryoverEnabled === true;
     const gc = surveyAnswers.greenieCarryoverEnabled === true;
-    div.innerHTML = `
-      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Toggle each carryover on or off.</div>
-      <div class="rule-option ${wc?'selected':''}" id="car-wolf" style="margin-bottom:8px;">
-        <div><div class="rule-option-label">🔄 Push Carryover</div><div class="rule-option-sub">If a hole pushes, the base wager carries to the next hole.</div></div>
-        <div class="rule-check">${wc?'✓':''}</div>
-      </div>
-      <div class="rule-option ${gc?'selected':''}" id="car-greenie">
-        <div><div class="rule-option-label">🏆 Greenie Carryover</div><div class="rule-option-sub">If no greenie winner, the pot carries to the next par 3.</div></div>
-        <div class="rule-check">${gc?'✓':''}</div>
-      </div>`;
-    div.querySelector('#car-wolf').onclick=()=>{surveyAnswers.carryoverEnabled=!wc;render();};
-    div.querySelector('#car-greenie').onclick=()=>{surveyAnswers.greenieCarryoverEnabled=!gc;render();};
+    div.innerHTML =
+      toggleHtml('car-wolf', wc, '🔄 Push Carryover', 'If a hole pushes, the base wager carries to the next hole.') +
+      toggleHtml('car-greenie', gc, '🏆 Greenie Carryover', 'If no greenie winner, the pot carries to the next par 3.');
+    div.querySelector('#car-wolf').onchange=e=>{surveyAnswers.carryoverEnabled=e.target.checked;};
+    div.querySelector('#car-greenie').onchange=e=>{surveyAnswers.greenieCarryoverEnabled=e.target.checked;};
   }
   render();
   container.appendChild(div);
@@ -750,6 +757,7 @@ function renderWolfStyleConfig(container) {
     const style = surveyAnswers.wolfStyle||'before';
     const bwm = surveyAnswers.bigWolfMult||4;
     const lwm = surveyAnswers.lilWolfMult||2;
+    const dw = surveyAnswers.dropWolfAllowed;
     wrap.innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
         <div style="background:#f9faf9;border-radius:10px;padding:10px;text-align:center;">
@@ -773,32 +781,22 @@ function renderWolfStyleConfig(container) {
       </div>
       <div style="font-size:13px;font-weight:600;margin-bottom:10px;">How do you play solo wolf?</div>
       <div class="rule-option ${style==='before'?'selected':''}" id="ws-before">
-        <div><div class="rule-option-label">Big Wolf before tee shots</div><div class="rule-option-sub">Must declare before anyone hits (${bwm}×). Lil Wolf called after seeing tee shots (${lwm}×).</div></div>
+        <div><div class="rule-option-label">Big Wolf before tee shots</div></div>
         <div class="rule-check">${style==='before'?'✓':''}</div>
       </div>
       <div class="rule-option ${style==='after'?'selected':''}" id="ws-after">
-        <div><div class="rule-option-label">Decide after all tee shots</div><div class="rule-option-sub">Watch everyone hit, then choose Big Wolf (${bwm}×) or Lil Wolf (${lwm}×).</div></div>
+        <div><div class="rule-option-label">Decide after all tee shots</div></div>
         <div class="rule-check">${style==='after'?'✓':''}</div>
       </div>
       <div class="rule-option ${style==='option'?'selected':''}" id="ws-option">
-        <div><div class="rule-option-label">Option — walk the course first</div><div class="rule-option-sub">Wolf walks to see each ball's lie before deciding Big Wolf (${bwm}×) or Lil Wolf (${lwm}×).</div></div>
+        <div><div class="rule-option-label">Option — walk the course first</div></div>
         <div class="rule-check">${style==='option'?'✓':''}</div>
-      </div>`;
-    wrap.querySelector('#ws-before').onclick=()=>{surveyAnswers.wolfStyle='before';render();};
-    wrap.querySelector('#ws-after').onclick=()=>{surveyAnswers.wolfStyle='after';render();};
-    wrap.querySelector('#ws-option').onclick=()=>{surveyAnswers.wolfStyle='option';render();};
-  }
-  render();
-  // Drop wolf toggle — appended ONCE outside render() to prevent duplication on re-render
-  if (!wrap.querySelector('#ws-dropwolf-row')) {
-    const dropRow=document.createElement('div');
-    dropRow.id='ws-dropwolf-row';
-    dropRow.style.marginTop='14px';
-    function renderDropRow() {
-      const dw=surveyAnswers.dropWolfAllowed;
-      dropRow.innerHTML=`<div class="rule-option ${dw?'selected':''}" id="ws-dropwolf">
-        <div><div class="rule-option-label">💧 Allow Dropping the Wolf?</div><div class="rule-option-sub">Picked partner can reject and go solo against everyone.</div></div>
-        <div class="rule-check">${dw?'✓':''}</div></div>
+      </div>
+      <div style="margin-top:14px;">
+        <div class="rule-option ${dw?'selected':''}" id="ws-dropwolf">
+          <div><div class="rule-option-label">💧 Allow Dropping the Wolf?</div><div class="rule-option-sub">Picked partner can reject and go solo against everyone.</div></div>
+          <div class="rule-check">${dw?'✓':''}</div>
+        </div>
         <div id="drop-wolf-bet-inline" style="${dw?'':'display:none;'}margin-top:10px;">
           <div style="font-size:13px;font-weight:600;margin-bottom:6px;">$ per player when wolf is dropped</div>
           <div style="display:flex;align-items:center;gap:8px;">
@@ -806,15 +804,17 @@ function renderWolfStyleConfig(container) {
             <input type="number" min="1" value="${surveyAnswers.dropWolfBet||2}" style="max-width:90px;"
               oninput="if(this.value)surveyAnswers.dropWolfBet=parseFloat(this.value)||2;">
           </div>
-        </div>`;
-      dropRow.querySelector('#ws-dropwolf').onclick=()=>{
-        surveyAnswers.dropWolfAllowed=!surveyAnswers.dropWolfAllowed;
-        renderDropRow();
-      };
-    }
-    renderDropRow();
-    wrap.appendChild(dropRow);
+        </div>
+      </div>`;
+    wrap.querySelector('#ws-before').onclick=()=>{surveyAnswers.wolfStyle='before';render();};
+    wrap.querySelector('#ws-after').onclick=()=>{surveyAnswers.wolfStyle='after';render();};
+    wrap.querySelector('#ws-option').onclick=()=>{surveyAnswers.wolfStyle='option';render();};
+    wrap.querySelector('#ws-dropwolf').onclick=()=>{
+      surveyAnswers.dropWolfAllowed=!surveyAnswers.dropWolfAllowed;
+      render();
+    };
   }
+  render();
 }
 
 function renderDropWolfBetConfig(container) {
@@ -2658,7 +2658,7 @@ function computeWolfTotals(){
     }
     // Apply carryover — same direct-pay model, independent of multipliers
     if(carry>0){
-      const wolfWon2=(h.winner==='wolf'||h.winner==='team'),dropWon=h.winner==='dropper';
+      const wolfWon2=h.winner==='wolf',dropWon=h.winner==='dropper';
       const wolfDropped3=h.wolfDropped||false;
       let cWinners,cLosers;
       if(wolfDropped3&&(h.partners||[]).length>0){
@@ -2803,7 +2803,7 @@ function renderScoreboard(){
     const others=getAllRotationPlayers().filter(p=>!wolfTeam.includes(p));
     const resClass=h.winner==='wolf'?'wolf-wins':h.winner==='team'?'team-wins':'push';
     const resLabel=h.winner==='wolf'?'🐺 Wolf':h.winner==='team'?'🤝 Team':'↔ Push';
-    const mTag=h.bigWolf?' <span style="background:#fff3e0;color:#e65100;padding:1px 5px;border-radius:6px;font-size:9px;">BLIND ×2</span>':h.lilWolf?' <span style="background:#fce4ec;color:#880e4f;padding:1px 5px;border-radius:6px;font-size:9px;">LIL ×2</span>':'';
+    const bwm=state.rules.bigWolfMult||4,lwm=state.rules.lilWolfMult||2;const mTag=h.bigWolf?' <span style="background:#fff3e0;color:#e65100;padding:1px 5px;border-radius:6px;font-size:9px;">BIG ×'+bwm+'</span>':h.lilWolf?' <span style="background:#fce4ec;color:#880e4f;padding:1px 5px;border-radius:6px;font-size:9px;">LIL ×'+lwm+'</span>':'';
     const dTag=h.doubled?' <span style="background:#f3e5f5;color:#6a1b9a;padding:1px 5px;border-radius:6px;font-size:9px;">🔴×2</span>':'';
     const rdTag=h.reDoubled?' <span style="background:#e8f5e3;color:var(--green);padding:1px 5px;border-radius:6px;font-size:9px;">🟢×4</span>':'';
     const bTag=(h.birdies&&h.birdies.length>0)?' <span style="background:#e8f5e3;color:var(--green);padding:1px 5px;border-radius:6px;font-size:9px;">🐦×2</span>':'';
@@ -2916,17 +2916,24 @@ async function syncGroupScoresToMatch() {
   if (!gm || !gm.enabled || !gm.matchCode || !state.roundCode) return;
   // Push this group's best ball scores to the shared match document
   const bestBall = {};
+  const bestBallPlayer = {}; // track who made each best ball score
   for (let h = 1; h <= 18; h++) {
     const scores = state.players
-      .map(p => state.strokes && state.strokes[p] && state.strokes[p][h])
-      .filter(s => s > 0);
-    if (scores.length) bestBall[h] = Math.min(...scores);
+      .map(p => ({ p, s: state.strokes && state.strokes[p] && state.strokes[p][h] }))
+      .filter(x => x.s > 0);
+    if (scores.length) {
+      const best = scores.reduce((a,b) => b.s < a.s ? b : a);
+      bestBall[h] = best.s;
+      // Only record if unique best
+      if (scores.filter(x => x.s === best.s).length === 1) bestBallPlayer[h] = best.p;
+    }
   }
   try {
     await setDoc(doc(db, 'group_matches', gm.matchCode, 'groups', state.roundCode), {
       groupName: gm.groupName,
       roundCode: state.roundCode,
       bestBall,
+      bestBallPlayer,
       front9Bet: gm.front9Bet,
       back9Bet: gm.back9Bet,
       totalBet: gm.totalBet,
@@ -3013,7 +3020,8 @@ function renderGroupMatch() {
       const isEgg = gi === eggWinnerIdx;
       const bg = isEgg ? '#fff8e1' : rowBg;
       const cls = isEgg ? 'color:#e65100;font-weight:700;' : diff<0?'color:var(--green);font-weight:700;':diff>0?'color:#c62828;':'color:var(--muted);';
-      const label = isEgg ? `🥚${s}` : `${s}`;
+      const eggPlayer = isEgg && g.bestBallPlayer && g.bestBallPlayer[h] ? '<br><span style="font-size:9px;">'+g.bestBallPlayer[h].split(' ')[0]+'</span>' : '';
+      const label = isEgg ? `🥚${s}${eggPlayer}` : `${s}`;
       if (h <= 9) front9Totals[gi] += s; else back9Totals[gi] += s;
       grid += `<div style="background:${bg};padding:5px 2px;text-align:center;${cls}border-bottom:1px solid #f0f0f0;font-size:12px;">${label}<br><span style="font-size:9px;">${relStr}</span></div>`;
     });
@@ -3045,7 +3053,10 @@ function renderGroupMatch() {
   document.getElementById('gm-groups-grid').innerHTML = grid;
 
   // ── Eggs summary ──
+  // ── Eggs — hole by hole with individual player name ──
+  let eggsHtml = '';
   let eggCounts = groups.map(()=>0);
+  const eggBet = gm.eggBet || 2;
   for (let h = 1; h <= 18; h++) {
     const holePar = par[h-1]||4;
     const diffs = groups.map(g => { const s=g.bestBall&&g.bestBall[h]; return s?s-holePar:null; });
@@ -3053,25 +3064,41 @@ function renderGroupMatch() {
     if (!validDiffs.length) continue;
     const minDiff = Math.min(...validDiffs);
     const eggWinnerIdx = validDiffs.filter(d=>d===minDiff).length===1 ? diffs.indexOf(minDiff) : -1;
-    if (eggWinnerIdx >= 0) eggCounts[eggWinnerIdx]++;
+    if (eggWinnerIdx < 0) continue; // tie — no egg
+    eggCounts[eggWinnerIdx]++;
+    const winnerGroup = groups[eggWinnerIdx];
+    // Show individual player who made the shot if available
+    const playerName = winnerGroup.bestBallPlayer && winnerGroup.bestBallPlayer[h]
+      ? winnerGroup.bestBallPlayer[h]
+      : winnerGroup.groupName || 'Group';
+    const score = winnerGroup.bestBall[h];
+    const diff = score - holePar;
+    const relStr = diff===0?'E':diff>0?'+'+diff:''+diff;
+    eggsHtml += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;">
+      <span style="font-size:13px;color:var(--muted);">Hole ${h}</span>
+      <span style="font-weight:700;">🥚 ${playerName}</span>
+      <span style="font-size:12px;color:var(--green);font-weight:600;">${score} (${relStr})</span>
+    </div>`;
   }
-  const eggBet = gm.eggBet || 2;
+  if (!eggsHtml) eggsHtml = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:8px;">No eggs yet</div>';
+
+  // Add egg totals per group at bottom
   const totalEggs = eggCounts.reduce((a,b)=>a+b,0);
-  let eggsHtml = '';
-  if (totalEggs === 0) {
-    eggsHtml = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:8px;">No eggs yet</div>';
-  } else {
+  if (totalEggs > 0) {
+    eggsHtml += '<div style="margin-top:10px;padding-top:10px;border-top:2px solid #f0f0f0;">';
     groups.forEach((g,gi) => {
       const eggs = eggCounts[gi];
+      if (!eggs) return;
       const net = eggs * eggBet * (groups.length - 1) - (totalEggs - eggs) * eggBet;
       const sign = net >= 0 ? '+' : '';
       const cls = net > 0 ? 'color:var(--green)' : net < 0 ? 'color:#c62828' : 'color:var(--muted)';
-      eggsHtml += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;">
+      eggsHtml += `<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px;">
         <span style="font-weight:600;">${g.groupName||'Group'}</span>
         <span>🥚 × ${eggs}</span>
-        <span style="${cls};font-family:'Bebas Neue',sans-serif;font-size:18px;">${sign}$${Math.abs(net).toFixed(0)}</span>
+        <span style="${cls};font-weight:700;">${sign}$${Math.abs(net)}</span>
       </div>`;
     });
+    eggsHtml += '</div>';
   }
   document.getElementById('gm-eggs-grid').innerHTML = eggsHtml;
 
@@ -3288,6 +3315,25 @@ async function init(){
     }
   }catch(e){}
   renderRecentRounds();
+  // Handle ?join=CODE or ?gm=CODE from shared links
+  const urlParams = new URLSearchParams(window.location.search);
+  const joinCode = urlParams.get('join');
+  const gmCode = urlParams.get('gm');
+  if (joinCode) {
+    // Auto-fill join code and trigger join
+    const inp = document.getElementById('join-code-input');
+    if (inp) { inp.value = joinCode.toUpperCase(); joinRound(); }
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+    return;
+  }
+  if (gmCode) {
+    // Join via group match code — show join input pre-filled
+    const inp = document.getElementById('join-code-input');
+    if (inp) { inp.value = gmCode.toUpperCase(); joinRound(); }
+    window.history.replaceState({}, '', window.location.pathname);
+    return;
+  }
   if(state.roundCode&&state.players.length){
     isScorer=true;showRoundCode(state.roundCode);subscribeToRound(state.roundCode);
     // Restore player inputs
