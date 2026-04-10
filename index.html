@@ -967,7 +967,7 @@ function renderBrownieInline(container) {
     '<div class="rule-option '+(bm==='nothing'?'selected':'')+'" id="bm-nothing">' +
       '<div><div class="rule-option-label">Nothing — greenie still stands</div><div class="rule-option-sub">Three-putt has no effect, greenie winner keeps it.</div></div>' +
       '<div class="rule-check">'+(bm==='nothing'?'✓':'')+'</div></div>' +
-    (bm==='pay' ? '<div style="margin-top:12px;padding:10px;background:#efebe9;border-radius:10px;font-size:13px;color:#795548;font-weight:600;">💩 Brownie penalty uses the greenie amount — $'+(surveyAnswers.greenieWager||2)+' per player</div>' : '');
+    (bm==='pay' ? '<div style="margin-top:12px;padding:10px;background:#efebe9;border-radius:10px;font-size:13px;color:#795548;font-weight:600;">💩 Brownie penalty = pay others the greenie amount</div>' : '');
   container.querySelector('#bm-pay').onclick=()=>{surveyAnswers.brownieMode='pay';surveyAnswers.brownies=true;renderBrownieInline(container);};
   container.querySelector('#bm-carry').onclick=()=>{surveyAnswers.brownieMode='carry';surveyAnswers.brownies=false;renderBrownieInline(container);};
   container.querySelector('#bm-nothing').onclick=()=>{surveyAnswers.brownieMode='nothing';surveyAnswers.brownies=false;renderBrownieInline(container);};
@@ -1986,7 +1986,8 @@ function updateHoleSnapshot(){
   if(bigWolf)e*=(state.rules.bigWolfMult||4);if(lilWolf)e*=(state.rules.lilWolfMult||2);if(doubled)e*=2;if(reDoubled)e*=2;
   if(hasEagle)e*=3;else if(hasBirdie)e*=2;
   const wolfName=getWolfForHole(hole);
-  const partners=[...document.querySelectorAll('#partner-chips .chip.team')].map(c=>c.textContent.trim());
+  // Read partners from saved state (not DOM) so navigating back shows correct amounts
+  const partners=(hData.partners||[]).filter(p=>p!=='__pending');
   const wolfWon=hData.winner==='wolf';
   const ghost=state.ghostEnabled?state.ghostName:null;
   const allP=ghost?[...players,ghost]:[...players];
@@ -2710,6 +2711,13 @@ function computeWolfTotals(){
       if(dropperWon){rd.forEach(p=>{totals[p]+=dE*ro2.length;});ro2.forEach(p=>{totals[p]-=dE;});}
       else if(h.winner==='push'){} // no money moves
       else{rd.forEach(p=>{totals[p]-=dE*ro2.length;});ro2.forEach(p=>{totals[p]+=dE;});}
+      // Apply carryover for drop wolf — dropper is solo vs everyone
+      if(carry>0 && h.winner!=='push'){
+        const cWinners=dropperWon?rd:ro2;
+        const cLosers=dropperWon?ro2:rd;
+        cWinners.forEach(p=>{totals[p]+=carry*cLosers.length;});
+        cLosers.forEach(p=>{totals[p]-=carry;});
+      }
       return; // handled
     }
     let wolfTeam,oppTeam;
