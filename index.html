@@ -812,28 +812,28 @@ function renderWolfStyleConfig(container) {
       </div>
       <div style="font-size:13px;font-weight:600;margin-bottom:10px;">How do you play solo wolf?</div>
       <div class="rule-option ${style==='before'?'selected':''}" id="ws-before">
-        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+        <div style="flex:1;">
           <div class="rule-option-label">Big Wolf before tee shots</div>
-          <span id="ws-info-before" style="font-size:16px;cursor:pointer;padding:2px 6px;color:var(--muted);" onclick="event.stopPropagation();document.getElementById('ws-help-before').style.display=document.getElementById('ws-help-before').style.display==='none'?'block':'none'">ℹ️</span>
+          <div id="ws-help-before" style="display:none;font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;">${helpText.before}</div>
         </div>
-        <div id="ws-help-before" style="display:none;font-size:11px;color:var(--muted);margin-top:4px;padding:6px;background:#f5f5f5;border-radius:6px;">${helpText.before}</div>
-        <div class="rule-check" style="position:absolute;right:14px;">${style==='before'?'✓':''}</div>
+        <span style="font-size:13px;cursor:pointer;padding:3px 7px;color:var(--muted);background:#f0f0f0;border-radius:6px;margin:0 8px;flex-shrink:0;" onclick="event.stopPropagation();const el=document.getElementById('ws-help-before');el.style.display=el.style.display==='none'?'block':'none'">ℹ</span>
+        <div class="rule-check">${style==='before'?'✓':''}</div>
       </div>
-      <div class="rule-option ${style==='after'?'selected':''}" id="ws-after" style="position:relative;">
-        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+      <div class="rule-option ${style==='after'?'selected':''}" id="ws-after">
+        <div style="flex:1;">
           <div class="rule-option-label">Decide after all tee shots</div>
-          <span style="font-size:16px;cursor:pointer;padding:2px 6px;color:var(--muted);" onclick="event.stopPropagation();document.getElementById('ws-help-after').style.display=document.getElementById('ws-help-after').style.display==='none'?'block':'none'">ℹ️</span>
+          <div id="ws-help-after" style="display:none;font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;">${helpText.after}</div>
         </div>
-        <div id="ws-help-after" style="display:none;font-size:11px;color:var(--muted);margin-top:4px;padding:6px;background:#f5f5f5;border-radius:6px;">${helpText.after}</div>
-        <div class="rule-check" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);">${style==='after'?'✓':''}</div>
+        <span style="font-size:13px;cursor:pointer;padding:3px 7px;color:var(--muted);background:#f0f0f0;border-radius:6px;margin:0 8px;flex-shrink:0;" onclick="event.stopPropagation();const el=document.getElementById('ws-help-after');el.style.display=el.style.display==='none'?'block':'none'">ℹ</span>
+        <div class="rule-check">${style==='after'?'✓':''}</div>
       </div>
-      <div class="rule-option ${style==='option'?'selected':''}" id="ws-option" style="position:relative;">
-        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+      <div class="rule-option ${style==='option'?'selected':''}" id="ws-option">
+        <div style="flex:1;">
           <div class="rule-option-label">Option — walk the course first</div>
-          <span style="font-size:16px;cursor:pointer;padding:2px 6px;color:var(--muted);" onclick="event.stopPropagation();document.getElementById('ws-help-option').style.display=document.getElementById('ws-help-option').style.display==='none'?'block':'none'">ℹ️</span>
+          <div id="ws-help-option" style="display:none;font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;">${helpText.option}</div>
         </div>
-        <div id="ws-help-option" style="display:none;font-size:11px;color:var(--muted);margin-top:4px;padding:6px;background:#f5f5f5;border-radius:6px;">${helpText.option}</div>
-        <div class="rule-check" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);">${style==='option'?'✓':''}</div>
+        <span style="font-size:13px;cursor:pointer;padding:3px 7px;color:var(--muted);background:#f0f0f0;border-radius:6px;margin:0 8px;flex-shrink:0;" onclick="event.stopPropagation();const el=document.getElementById('ws-help-option');el.style.display=el.style.display==='none'?'block':'none'">ℹ</span>
+        <div class="rule-check">${style==='option'?'✓':''}</div>
       </div>
       <div style="margin-top:14px;">
         <div class="rule-option ${dw?'selected':''}" id="ws-dropwolf">
@@ -1560,13 +1560,27 @@ window.joinRound = async function() {
   if (code.length!==6) { showToast('Enter a 6-digit code'); return; }
   showToast('Connecting…');
   try {
-    const snap = await getDoc(doc(db,'rounds',code));
-    if (!snap.exists()) { showToast('Round not found'); return; }
-    const data = snap.data();
-    state = {...state,...data,currentHole:1,roundCode:code,myName:null};
-    isScorer = false;
-    subscribeToRound(code);
-    showIdentityPicker(code);
+    // First check rounds collection (player joining a live round)
+    const roundSnap = await getDoc(doc(db,'rounds',code));
+    if (roundSnap.exists()) {
+      const data = roundSnap.data();
+      state = {...state,...data,currentHole:1,roundCode:code,myName:null};
+      isScorer = false;
+      subscribeToRound(code);
+      showIdentityPicker(code);
+      return;
+    }
+    // Not a round code — check if it's a group match code
+    const gmSnap = await getDoc(doc(db,'group_matches',code));
+    if (gmSnap.exists()) {
+      showToast('Group match found! Setting up your round…');
+      clearAllState();
+      surveyAnswers.groupMatchEnabled = true;
+      surveyAnswers.groupMatchCode = code;
+      showPage('survey');
+      return;
+    }
+    showToast('Code not found — check and try again');
   } catch(e) { showToast('Connection failed'); }
 };
 
@@ -1712,6 +1726,16 @@ window.startRound = async function() {
   showRoundCode(code);
   if (!unsubscribe) subscribeToRound(code);
   saveState();
+  // Register group match parent doc so other groups can look it up by code
+  if (state.groupMatch && state.groupMatch.enabled && state.groupMatch.matchCode) {
+    try {
+      await setDoc(doc(db, 'group_matches', state.groupMatch.matchCode), {
+        createdAt: serverTimestamp(),
+        createdBy: code,
+        matchCode: state.groupMatch.matchCode
+      }, { merge: true });
+    } catch(e) { console.log('Group match register error:', e); }
+  }
   document.getElementById('share-code-display').textContent = code;
   showPage('share');
 };
@@ -1905,7 +1929,8 @@ window.updatePayoutNote=function(){
   const dwn=document.getElementById('drop-wolf-payout-note');
   const dropper=(hData.partners||[])[0]||'';
   if(wolfDropped&&dropper){
-    if(dwn){dwn.style.display='block';document.getElementById('dw-total').textContent=(e*numOpps).toFixed(0);document.getElementById('dw-each').textContent=e.toFixed(0);}
+    const dwBet=state.rules.dropWolfBet||e;
+    if(dwn){dwn.style.display='block';document.getElementById('dw-total').textContent=(dwBet*numOpps).toFixed(0);document.getElementById('dw-each').textContent=dwBet.toFixed(0);}
     bwn.style.display='none';lwn.style.display='none';
   }else{
     if(dwn)dwn.style.display='none';
@@ -1957,7 +1982,7 @@ function updateHoleSnapshot(){
   const nets={};players.forEach(p=>nets[p]=0);
   if(wolfDropped&&partners.length>0){
     const dropper=partners[0];
-    const dE=state.rules.dropWolfBet||e;
+    const dE=state.rules.dropWolfBet||state.wager;
     const dropWon=hData.winner==='dropper';
     const ro2=allP.filter(p=>p!==dropper&&players.includes(p));
     players.filter(p=>p===dropper).forEach(p=>nets[p]+=(dropWon?1:-1)*dE*ro2.length);
