@@ -845,7 +845,7 @@ function renderWolfStyleConfig(container) {
           <div style="display:flex;align-items:center;gap:8px;">
             <span style="font-size:16px;font-weight:600;color:#1565c0;">$</span>
             <input type="number" min="1" value="${surveyAnswers.dropWolfBet||2}" style="max-width:90px;"
-              oninput="if(this.value)surveyAnswers.dropWolfBet=parseFloat(this.value)||2;">
+              oninput="surveyAnswers.dropWolfBet=parseFloat(this.value)||surveyAnswers.dropWolfBet||2;">
           </div>
         </div>
       </div>`;
@@ -865,7 +865,7 @@ function renderDropWolfBetConfig(container) {
     <div style="display:flex;align-items:center;gap:10px;">
       <span style="font-size:18px;font-weight:600;color:#1565c0;">$</span>
       <input type="number" min="1" value="${surveyAnswers.dropWolfBet||2}" style="max-width:100px;"
-        oninput="if(this.value)surveyAnswers.dropWolfBet=parseFloat(this.value)||2;">
+        oninput="surveyAnswers.dropWolfBet=parseFloat(this.value)||surveyAnswers.dropWolfBet||2;">
       <span style="color:var(--muted);font-size:13px;">per player</span>
     </div>`;
 }
@@ -1041,7 +1041,8 @@ function captureCurrentSurveyInputs() {
   if (bw && parseFloat(bw.value) > 0) surveyAnswers.browniesWager = parseFloat(bw.value);
   const sw = document.querySelector('#sandy-config input[type="number"]');
   if (sw && parseFloat(sw.value) > 0) surveyAnswers.sandyBet = parseFloat(sw.value);
-  const dw = document.querySelector('#drop-wolf-bet-config input[type="number"]');
+  const dw = document.querySelector('#drop-wolf-bet-config input[type="number"]') ||
+              document.querySelector('#drop-wolf-bet-inline input[type="number"]');
   if (dw && parseFloat(dw.value) > 0) surveyAnswers.dropWolfBet = parseFloat(dw.value);
 }
 
@@ -1071,7 +1072,12 @@ window.finishSurvey = function() {
     bigWolfMult: surveyAnswers.bigWolfMult || 4,
     lilWolfMult: surveyAnswers.lilWolfMult || 2,
     dropWolfAllowed: surveyAnswers.dropWolfAllowed === true,
-    dropWolfBet: surveyAnswers.dropWolfBet || 2,
+    dropWolfBet: (() => {
+      const dwInput = document.querySelector('#drop-wolf-bet-inline input[type="number"]') ||
+                      document.querySelector('#drop-wolf-bet-config input[type="number"]');
+      const fromDom = dwInput ? parseFloat(dwInput.value) : NaN;
+      return (!isNaN(fromDom) && fromDom > 0) ? fromDom : (surveyAnswers.dropWolfBet || 2);
+    })(),
     carryoverEnabled: surveyAnswers.carryoverEnabled === true,
     greenieCarryoverEnabled: surveyAnswers.greenieCarryoverEnabled === true,
     sandysEnabled: surveyAnswers.sandysEnabled === true,
@@ -1818,10 +1824,11 @@ function getPressureOrder(hole){
     const wolfDropped2=h.wolfDropped||false;
     if(wolfDropped2 && partners.length>0){
       const dropper=partners[0];const dropperWon=h.winner==='dropper';
+      const dBet=state.rules.dropWolfBet||e;
       const rd=state.players.filter(p=>p===dropper);
       const ro2=allP.filter(p=>p!==dropper).filter(p=>state.players.includes(p));
-      if(dropperWon){rd.forEach(p=>{totals[p]+=e*ro2.length;});ro2.forEach(p=>{totals[p]-=e;});}
-      else if(h.winner!=='push'){rd.forEach(p=>{totals[p]-=e*ro2.length;});ro2.forEach(p=>{totals[p]+=e;});}
+      if(dropperWon){rd.forEach(p=>{totals[p]+=dBet*ro2.length;});ro2.forEach(p=>{totals[p]-=dBet;});}
+      else if(h.winner!=='push'){rd.forEach(p=>{totals[p]-=dBet*ro2.length;});ro2.forEach(p=>{totals[p]+=dBet;});}
       return;
     }
     let wolfTeam,oppTeam;
