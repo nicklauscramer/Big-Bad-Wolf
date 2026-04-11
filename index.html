@@ -1943,7 +1943,6 @@ window.updatePayoutNote=function(){
   const dropper=(hData.partners||[])[0]||'';
   if(wolfDropped&&dropper){
     const isPressureHole=(state.rules.reshuffleOn16!==false)&&state.currentHole>=(state.rules.reshuffleHole||16);
-    console.log('DROP WOLF NOTE: hole='+state.currentHole+' reshuffleOn16='+state.rules.reshuffleOn16+' reshuffleHole='+state.rules.reshuffleHole+' isPressure='+isPressureHole+' base='+base+' dropWolfBet='+state.rules.dropWolfBet);
     const dwBet=isPressureHole?base:(state.rules.dropWolfBet||base);
     if(dwn){dwn.style.display='block';document.getElementById('dw-total').textContent=(dwBet*numOpps).toFixed(0);document.getElementById('dw-each').textContent=dwBet.toFixed(0);}
     bwn.style.display='none';lwn.style.display='none';
