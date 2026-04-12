@@ -1910,60 +1910,23 @@ function getWolfForHole(hole){
 }
 
 function getPressureOrder(hole){
-  // Only use holes completed BEFORE this hole to determine standings
-  // Avoids circular dependency where hole 17 result affects who's wolf on hole 17
-  const totals={};state.players.forEach(p=>totals[p]=0);
-  Object.keys(state.holes).forEach(hNum=>{
-    if(parseInt(hNum)>=hole)return; // exclude current and future holes
-    const h=state.holes[hNum];if(!h.winner||h.winner==='push')return;
-    const base=h.money||state.wager,bigWolf=h.bigWolf||false,lilWolf=h.lilWolf||false;
-    const isSolo=bigWolf||lilWolf||(h.loneWolf&&!h.wolfMode);
-    const hasBirdie=(h.birdies||[]).filter(p=>p!=='__pending').length>0;
-    const hasEagle=(h.eagles||[]).filter(p=>p!=='__pending').length>0;
-    const doubled=h.doubled||false,reDoubled=h.reDoubled||false;
-    let e=base;if(bigWolf)e*=(state.rules.bigWolfMult||4);if(lilWolf)e*=(state.rules.lilWolfMult||2);if(doubled)e*=2;if(reDoubled)e*=2;
-    if(hasEagle)e*=3;else if(hasBirdie)e*=2;
-    const wolfName=h.wolf,partners=h.partners||[],wolfWon=h.winner==='wolf';
-    const ghost=state.ghostEnabled?state.ghostName:null;
-    const allP=ghost?[...state.players,ghost]:[...state.players];
-    const wolfDropped2=h.wolfDropped||false;
-    if(wolfDropped2 && partners.length>0){
-      const dropper=partners[0];const dropperWon=h.winner==='dropper';
-      const isPressureDW=(state.rules.reshuffleOn16!==false)&&parseInt(hNum)>=(state.rules.reshuffleHole||16);
-      const dBet=isPressureDW?(h.money||state.wager):(state.rules.dropWolfBet||(h.money||state.wager));
-      const rd=state.players.filter(p=>p===dropper);
-      const ro2=allP.filter(p=>p!==dropper).filter(p=>state.players.includes(p));
-      if(dropperWon){rd.forEach(p=>{totals[p]+=dBet*ro2.length;});ro2.forEach(p=>{totals[p]-=dBet;});}
-      else if(h.winner!=='push'){rd.forEach(p=>{totals[p]-=dBet*ro2.length;});ro2.forEach(p=>{totals[p]+=dBet;});}
-      return;
-    }
-    let wolfTeam,oppTeam;
-    if(isSolo){wolfTeam=[wolfName];oppTeam=allP.filter(p=>p!==wolfName);}
-    else{wolfTeam=[wolfName,...partners];oppTeam=allP.filter(p=>!wolfTeam.includes(p));}
-    const rw=wolfTeam.filter(p=>state.players.includes(p));
-    const ro=oppTeam.filter(p=>state.players.includes(p));
-    if(isSolo){
-      if(wolfWon){rw.forEach(p=>{totals[p]+=e*ro.length;});ro.forEach(p=>{totals[p]-=e;});}
-      else{rw.forEach(p=>{totals[p]-=e*ro.length;});ro.forEach(p=>{totals[p]+=e;});}
-    }else{
-      const winners=wolfWon?rw:ro,losers=wolfWon?ro:rw;
-      // Larger team always pays e each. Smaller team splits the pot.
-      // 2W vs 3L: winners(smaller) get (2×3)/2=$3, losers pay $2
-      // 3W vs 2L: winners get $2, losers(smaller) pay (2×3)/2=$3
-      if(winners.length<=losers.length){
-        const wShare=Math.round((e*losers.length)/winners.length*100)/100;
-        winners.forEach(p=>{totals[p]+=wShare;});
-        losers.forEach(p=>{totals[p]-=e;});
-      }else{
-        const lShare=Math.round((e*winners.length)/losers.length*100)/100;
-        winners.forEach(p=>{totals[p]+=e;});
-        losers.forEach(p=>{totals[p]-=lShare;});
-      }
-    }
+  // Compute standings using only holes completed BEFORE this hole
+  // Temporarily hide future holes, run computeWolfTotals, restore
+  const savedHoles = state.holes;
+  const filteredHoles = {};
+  Object.keys(savedHoles).forEach(h => {
+    if (parseInt(h) < hole) filteredHoles[h] = savedHoles[h];
   });
-  const players=[...state.players];
-  const seed=hole*7919,rnd=i=>((seed*(i+1)*2654435761)>>>0)/4294967296;
-  players.sort((a,b)=>{const d=(totals[a]||0)-(totals[b]||0);return d!==0?d:rnd(state.players.indexOf(a))-rnd(state.players.indexOf(b));});
+  state.holes = filteredHoles;
+  const totals = computeWolfTotals();
+  state.holes = savedHoles;
+
+  const players = [...state.players];
+  const seed = hole*7919, rnd = i => ((seed*(i+1)*2654435761)>>>0)/4294967296;
+  players.sort((a,b) => {
+    const d = (totals[a]||0) - (totals[b]||0);
+    return d !== 0 ? d : rnd(state.players.indexOf(a)) - rnd(state.players.indexOf(b));
+  });
   return players;
 }
 
