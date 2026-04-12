@@ -571,6 +571,15 @@ const surveySteps = [
     key:'wolfModesEnabled'
   },
   {
+    id:'startinghole', title:'🚀 What hole are you starting on?',
+    sub:'Shotgun starts or back-nine rounds begin on a different hole.',
+    render: renderStartingHoleStep, validate: () => true
+  },
+  {
+    id:'roundlength', title:'⛳ How many holes are you playing?',
+    render: renderRoundLengthStep, validate: () => true
+  },
+  {
     id:'reshuffle', title:'🔀 Reshuffle Wolf Order?',
     sub:'Wolf order reshuffled based on standings starting at the selected hole.',
     options:[{v:true,label:'Yes — reshuffle',sub:'Most behind becomes wolf'},{v:false,label:'No — keep original order',sub:'Wolf rotation stays fixed'}],
@@ -605,7 +614,7 @@ const surveySteps = [
   }
 ];
 let surveyStep = 0;
-let surveyAnswers = { groupMatchEnabled:false, reshuffleOn16:true, sandysEnabled:false, sandyBet:2, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, wolfModesEnabled:true, wolfStyle:'before', bigWolfMult:4, lilWolfMult:2, bigWolfAllowed:true, lilWolfAllowed:true };
+let surveyAnswers = { groupMatchEnabled:false, reshuffleOn16:true, sandysEnabled:false, sandyBet:2, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, wolfModesEnabled:true, wolfStyle:'before', bigWolfMult:4, lilWolfMult:2, bigWolfAllowed:true, lilWolfAllowed:true, startingHole:1, roundHoles:18 };
 let courseParTemp = Array(18).fill(4);
 let courseNameTemp = '';
 
@@ -935,23 +944,108 @@ window.setBrowniesAnswer = function(val, el) {
 
 };
 
+function renderRoundLengthStep(container) {
+  const div = document.createElement('div');
+  function render() {
+    const rh = surveyAnswers.roundHoles || 18;
+    const choice = surveyAnswers.nineHoleChoice || 'front';
+    div.innerHTML = `
+      <div class="rule-option ${rh===18?'selected':''}" id="rl-18" style="margin-bottom:8px;">
+        <div><div class="rule-option-label">18 Holes</div><div class="rule-option-sub">Full round</div></div>
+        <div class="rule-check">${rh===18?'✓':''}</div>
+      </div>
+      <div class="rule-option ${rh===9?'selected':''}" id="rl-9" style="margin-bottom:8px;">
+        <div><div class="rule-option-label">9 Holes</div><div class="rule-option-sub">Front 9 (1–9) or Back 9 (10–18)</div></div>
+        <div class="rule-check">${rh===9?'✓':''}</div>
+      </div>
+      ${rh===9?`<div style="display:flex;gap:8px;margin-top:4px;">
+        <div class="rule-option ${choice==='front'?'selected':''}" id="rl-front" style="flex:1;margin-bottom:0;">
+          <div><div class="rule-option-label">Front 9</div><div class="rule-option-sub">Holes 1–9</div></div>
+          <div class="rule-check">${choice==='front'?'✓':''}</div>
+        </div>
+        <div class="rule-option ${choice==='back'?'selected':''}" id="rl-back" style="flex:1;margin-bottom:0;">
+          <div><div class="rule-option-label">Back 9</div><div class="rule-option-sub">Holes 10–18</div></div>
+          <div class="rule-check">${choice==='back'?'✓':''}</div>
+        </div>
+      </div>`:''}`;
+    div.querySelector('#rl-18').onclick=()=>{surveyAnswers.roundHoles=18;surveyAnswers.nineHoleChoice=null;surveyAnswers.startingHole=1;render();};
+    div.querySelector('#rl-9').onclick=()=>{surveyAnswers.roundHoles=9;if(!surveyAnswers.nineHoleChoice)surveyAnswers.nineHoleChoice='front';surveyAnswers.startingHole=surveyAnswers.nineHoleChoice==='back'?10:1;render();};
+    if(rh===9){
+      div.querySelector('#rl-front').onclick=()=>{surveyAnswers.nineHoleChoice='front';surveyAnswers.startingHole=1;render();};
+      div.querySelector('#rl-back').onclick=()=>{surveyAnswers.nineHoleChoice='back';surveyAnswers.startingHole=10;render();};
+    }
+  }
+  render();
+  container.appendChild(div);
+}
+
+function renderStartingHoleStep(container) {
+  const div = document.createElement('div');
+  function render() {
+    const sh = surveyAnswers.startingHole || 1;
+    div.innerHTML = '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px;" id="starting-hole-grid"></div>';
+    const grid = div.querySelector('#starting-hole-grid');
+    for (let h = 1; h <= 18; h++) {
+      const btn = document.createElement('button');
+      btn.style.cssText = `aspect-ratio:1;border-radius:10px;border:2px solid ${h===sh?'var(--green)':'#e0e0e0'};background:${h===sh?'var(--green)':'white'};color:${h===sh?'white':'var(--text)'};font-weight:700;font-size:14px;cursor:pointer;`;
+      btn.textContent = h;
+      btn.onclick = () => {
+        surveyAnswers.startingHole = h;
+        // Recalculate reshuffleHole based on starting hole and round length
+        const rh = surveyAnswers.roundHoles || 18;
+        // Pressure starts at last 3 holes of round by default
+        // Last 3 holes = starting at position (rh-2) in the sequence
+        const pressurePos = rh - 2; // 3 pressure holes = positions 16,17,18 in 18-hole round
+        surveyAnswers.reshuffleHole = ((h - 1 + pressurePos - 1) % 18) + 1;
+        render();
+      };
+      grid.appendChild(btn);
+    }
+    if (sh !== 1) {
+      const seq = [];
+      for (let i = 0; i < (surveyAnswers.roundHoles||18); i++) seq.push(((sh-1+i)%18)+1);
+      div.innerHTML += `<div style="margin-top:8px;padding:10px;background:var(--green-pale);border-radius:10px;font-size:12px;color:var(--green);font-weight:600;">Round order: ${seq.join(' → ')}</div>`;
+    }
+  }
+  render();
+  container.appendChild(div);
+}
+
 function renderReshuffleHolePicker(container) {
   let wrap = container.querySelector('#reshuffle-hole-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'reshuffle-hole-wrap'; wrap.style.marginTop = '14px'; container.appendChild(wrap); }
-  wrap.innerHTML = '<div style="font-size:13px;font-weight:600;margin-bottom:10px;">Which hole does the reshuffle start on?</div>';
-  [14,15,16].forEach(h => {
+  // Compute the last 3, 4, 5 holes of the round sequence
+  const sh = surveyAnswers.startingHole || 1;
+  const rh = surveyAnswers.roundHoles || 18;
+  // Build full round sequence
+  const seq = [];
+  for (let i = 0; i < rh; i++) seq.push(((sh-1+i)%18)+1);
+  // Pressure options: last 3, last 4, last 5 holes
+  const pressureOptions = [
+    { label: 'Last 3 holes', holes: seq.slice(-3), startIdx: rh-3 },
+    { label: 'Last 4 holes', holes: seq.slice(-4), startIdx: rh-4 },
+    { label: 'Last 5 holes', holes: seq.slice(-5), startIdx: rh-5 },
+  ];
+  wrap.innerHTML = '<div style="font-size:13px;font-weight:600;margin-bottom:10px;">How many pressure holes?</div>';
+  pressureOptions.forEach(opt => {
+    const firstHole = seq[opt.startIdx]; // actual course hole where reshuffle begins
+    const sel = surveyAnswers.reshuffleHole === firstHole;
     const btn = document.createElement('div');
-    const sel = surveyAnswers.reshuffleHole === h;
     btn.className = 'rule-option' + (sel ? ' selected' : '');
-    btn.innerHTML = '<div><div class="rule-option-label">Hole ' + h + '</div></div><div class="rule-check">' + (sel?'checkmark':'') + '</div>';
-    btn.querySelector('.rule-check').textContent = sel ? '✓' : '';
+    btn.innerHTML = '<div><div class="rule-option-label">' + opt.label + '</div><div class="rule-option-sub">Holes ' + opt.holes.join(', ') + '</div></div><div class="rule-check">' + (sel?'✓':'') + '</div>';
     btn.onclick = () => {
-      surveyAnswers.reshuffleHole = h;
+      surveyAnswers.reshuffleHole = firstHole;
       wrap.querySelectorAll('.rule-option').forEach(e => { e.classList.remove('selected'); e.querySelector('.rule-check').textContent=''; });
       btn.classList.add('selected'); btn.querySelector('.rule-check').textContent='✓';
     };
     wrap.appendChild(btn);
   });
+  // Default to last 3 if not set
+  if (!surveyAnswers.reshuffleHole) {
+    surveyAnswers.reshuffleHole = seq[rh-3];
+    wrap.querySelectorAll('.rule-option')[0].classList.add('selected');
+    wrap.querySelectorAll('.rule-check')[0].textContent='✓';
+  }
 }
 
 function renderBrownieInline(container) {
@@ -1072,6 +1166,9 @@ window.finishSurvey = function() {
     bigWolfMult: surveyAnswers.bigWolfMult || 4,
     lilWolfMult: surveyAnswers.lilWolfMult || 2,
     dropWolfAllowed: surveyAnswers.dropWolfAllowed === true,
+    startingHole: surveyAnswers.startingHole || 1,
+    roundHoles: surveyAnswers.roundHoles || 18,
+    nineHoleChoice: surveyAnswers.nineHoleChoice || null,
     dropWolfBet: (() => {
       const dwInput = document.querySelector('#drop-wolf-bet-inline input[type="number"]') ||
                       document.querySelector('#drop-wolf-bet-config input[type="number"]');
@@ -1083,6 +1180,8 @@ window.finishSurvey = function() {
     sandysEnabled: surveyAnswers.sandysEnabled === true,
     sandyBet: surveyAnswers.sandyBet || 2,
   };
+  state.startingHole = surveyAnswers.startingHole || 1;
+  state.roundHoles = surveyAnswers.roundHoles || 18;
   state.courseName = courseNameTemp;
   state.coursePar = [...courseParTemp];
   state.greeniesEnabled = surveyAnswers.greenies;
@@ -1726,7 +1825,7 @@ window.startRound = async function() {
   state.players=players;
   state.wager=parseFloat(document.getElementById('wager-input').value)||5;
   state.wolfOrder=[...players];
-  state.currentHole=1;state.holes={};
+  state.currentHole=state.startingHole||1;state.holes={};
   state.ghostEnabled=document.getElementById('ghost-check').checked&&players.length===3;
   state.ghostName=document.getElementById('ghost-name-input').value.trim()||'Ghost';
   state.strokes={};
@@ -1801,12 +1900,13 @@ function isGhost(n){return state.ghostEnabled&&n===state.ghostName;}
 
 function getWolfForHole(hole){
   const rfFrom = state.rules.reshuffleHole || 16;
-  // Use !== false so missing/undefined reshuffleOn16 defaults to ON
   if((state.rules.reshuffleOn16 !== false) && hole>=rfFrom && state.players.length>0) return getPressureOrder(hole)[0];
-  // Use saved wolfOrder from state (not DOM) so viewers see correct wolf
   const all = (state.wolfOrder && state.wolfOrder.length) ? state.wolfOrder : getAllRotationPlayers();
   if(!all.length) return '—';
-  return all[(hole-1)%all.length];
+  // Adjust for starting hole: find position in round sequence
+  const startHole = state.startingHole || 1;
+  const pos = ((hole - startHole + 18) % 18); // 0-based position in round
+  return all[pos % all.length];
 }
 
 function getPressureOrder(hole){
@@ -2087,14 +2187,28 @@ window.togglePartner=function(name,chip){
   const hole=state.currentHole;if(!state.holes[hole])state.holes[hole]={};
   if(!state.holes[hole].partners)state.holes[hole].partners=[];
   const idx=state.holes[hole].partners.indexOf(name);
-  document.querySelectorAll('#partner-chips .chip').forEach(c=>c.classList.remove('team'));
+  const maxPartners = state.players.length === 6 ? 2 : 1;
   if(idx>-1){
-    state.holes[hole].partners=[];
-    state.holes[hole].wolfDropped=false;
+    // Deselect this partner
+    state.holes[hole].partners.splice(idx,1);
+    chip.classList.remove('team');
+    if(state.holes[hole].partners.length===0) state.holes[hole].wolfDropped=false;
   } else {
-    state.holes[hole].partners=[name];
-    chip.classList.add('team');
+    if(state.holes[hole].partners.length < maxPartners){
+      state.holes[hole].partners.push(name);
+      chip.classList.add('team');
+    } else {
+      // Replace the first partner if at max
+      const oldPartner = state.holes[hole].partners[0];
+      state.holes[hole].partners = [name];
+      document.querySelectorAll('#partner-chips .chip').forEach(c=>c.classList.remove('team'));
+      chip.classList.add('team');
+    }
   }
+  // Re-highlight all selected partners
+  document.querySelectorAll('#partner-chips .chip').forEach(c=>{
+    if(state.holes[hole].partners.includes(c.textContent.trim())) c.classList.add('team');
+  });
   // Show drop wolf checkbox once a partner is selected
   const dwSection=document.getElementById('drop-wolf-section');
   const hasPartner=(state.holes[hole].partners||[]).length>0;
@@ -2196,15 +2310,25 @@ function updateGreenieNote(){
   else note.style.display='none';
 }
 
+function getRoundSequence() {
+  const startH = state.startingHole || 1;
+  const roundH = state.roundHoles || 18;
+  const seq = [];
+  for (let i = 0; i < roundH; i++) seq.push(((startH - 1 + i) % 18) + 1);
+  return seq;
+}
+function getLastHole() { const s=getRoundSequence(); return s[s.length-1]; }
+
 function renderDots(){
   const container=document.getElementById('hole-dots');container.innerHTML='';
-  for(let i=1;i<=18;i++){
+  const seq=getRoundSequence();
+  seq.forEach(i=>{
     const d=document.createElement('div'),h=state.holes[i]||{};
     const hasMyScore=myName&&state.strokes[myName]&&state.strokes[myName][i];
-    d.className='hole-dot'+(i===state.currentHole?' current':'')+(h.winner==='wolf'?' wolf-won':h.winner==='team'?' team-won':h.winner==='push'?' pushed':hasMyScore?' scored':'');
+    d.className='hole-dot'+(i===state.currentHole?' current':'')+(h.winner==='wolf'?' wolf-won':h.winner==='team'?' team-won':h.winner==='dropper'?' wolf-won':h.winner==='push'?' pushed':hasMyScore?' scored':'');
     d.textContent=i;d.onclick=()=>{state.currentHole=i;renderScorecard();};
     container.appendChild(d);
-  }
+  });
 }
 
 function renderScorecard(){
@@ -2212,10 +2336,11 @@ function renderScorecard(){
   const hole=state.currentHole,hData=state.holes[hole]||{};
   const wolfName=getWolfForHole(hole);
 
-  document.getElementById('hole-num-display').innerHTML=`${hole} <span>of 18</span>`;
+  document.getElementById('hole-num-display').innerHTML=`${hole} <span>of ${state.roundHoles||18}</span>`;
   document.getElementById('wolf-display').textContent=wolfName;
-  document.getElementById('prev-btn').disabled=hole<=1;
-  document.getElementById('next-btn').disabled=hole>=18;
+  const _seq=getRoundSequence(),_hi=_seq.indexOf(hole);
+  document.getElementById('prev-btn').disabled=_hi<=0;
+  document.getElementById('next-btn').disabled=_hi>=_seq.length-1;
 
   // Carryover banners
   const cb=document.getElementById('carryover-banner');
@@ -2375,7 +2500,11 @@ function renderScorecard(){
 
   // Viewer lock
   const canEdit=isScorer;
-  const isLastHole = state.currentHole === 18;
+  // Last hole depends on starting hole and round length
+  const startH = state.startingHole || 1;
+  const roundH = state.roundHoles || 18;
+  const lastHole = ((startH - 1 + roundH - 1) % 18) + 1;
+  const isLastHole = state.currentHole === lastHole;
   document.getElementById('save-hole-btn').style.display = (canEdit && !isLastHole) ? 'block' : 'none';
   document.getElementById('finish-round-btn').style.display = (canEdit && isLastHole) ? 'block' : 'none';
 
@@ -2418,8 +2547,9 @@ window.saveHole=function(){
   state.holes[hole].birdies=(state.holes[hole].birdies||[]).filter(p=>p!=='__pending');
   state.holes[hole].eagles=(state.holes[hole].eagles||[]).filter(p=>p!=='__pending');
   saveState();renderDots();showToast(`Hole ${hole} saved! ✓`);
-  if(hole<18)setTimeout(()=>{state.currentHole=hole+1;renderScorecard();},600);
-  else renderScorecard(); // refresh to show Finish Round button
+  const _advS=getRoundSequence(),_advI=_advS.indexOf(hole);
+  if(_advI<_advS.length-1)setTimeout(()=>{state.currentHole=_advS[_advI+1];renderScorecard();},600);
+  else renderScorecard();
 };
 
 window.finishRound = function() {
@@ -2437,10 +2567,12 @@ window.finishRound = function() {
   renderDots();
   showToast('Round complete! 🏁');
   // Check for incomplete holes
-  const incomplete = [];
-  for (let h = 1; h <= 17; h++) { // hole 18 just saved above
-    if (!state.holes[h] || !state.holes[h].winner) incomplete.push(h);
-  }
+  // Check all holes in the round sequence except the last (just saved)
+  const startH2 = state.startingHole || 1;
+  const roundH2 = state.roundHoles || 18;
+  const roundSeq = [];
+  for (let i = 0; i < roundH2 - 1; i++) roundSeq.push(((startH2-1+i)%18)+1);
+  const incomplete = roundSeq.filter(h => !state.holes[h] || !state.holes[h].winner);
   if (incomplete.length > 0) {
     const proceed = confirm(`⚠️ ${incomplete.length} hole${incomplete.length>1?'s haven\'t':' hasn\'t'} been saved (${incomplete.join(', ')}). Finish anyway?`);
     if (!proceed) return;
@@ -2449,8 +2581,8 @@ window.finishRound = function() {
   showPage('payments');
 };
 
-window.prevHole=function(){if(state.currentHole>1){state.currentHole--;renderScorecard();}};
-window.nextHole=function(){if(state.currentHole<18){state.currentHole++;renderScorecard();}};
+window.prevHole=function(){const s=getRoundSequence(),i=s.indexOf(state.currentHole);if(i>0){state.currentHole=s[i-1];renderScorecard();}};
+window.nextHole=function(){const s=getRoundSequence(),i=s.indexOf(state.currentHole);if(i<s.length-1){state.currentHole=s[i+1];renderScorecard();}};
 
 // ── Stroke Scorecard ──
 window.renderScoreTabIdentity = function() {
@@ -3365,7 +3497,7 @@ window.clearAllState = function clearAllState(){
     // Reset course lookup state
     courseNameTemp = '';
     courseParTemp = Array(18).fill(4);
-    surveyAnswers = { groupMatchEnabled:false, reshuffleOn16:true, sandysEnabled:false, sandyBet:2, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, wolfModesEnabled:true, wolfStyle:'before', bigWolfMult:4, lilWolfMult:2, bigWolfAllowed:true, lilWolfAllowed:true };
+    surveyAnswers = { groupMatchEnabled:false, reshuffleOn16:true, sandysEnabled:false, sandyBet:2, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, wolfModesEnabled:true, wolfStyle:'before', bigWolfMult:4, lilWolfMult:2, bigWolfAllowed:true, lilWolfAllowed:true, startingHole:1, roundHoles:18 };
     surveyStep = 0;
     const searchEl = document.getElementById('course-search-input'); if(searchEl) searchEl.value = '';
     const lookupResult = document.getElementById('course-lookup-result'); if(lookupResult) lookupResult.innerHTML = '';
