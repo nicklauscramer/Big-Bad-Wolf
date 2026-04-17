@@ -10,6 +10,14 @@
 <link rel="apple-touch-icon" href="app-icon-1024.png">
 <meta name="theme-color" content="#2d5a27">
 <title>Wolf Money</title>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-N77LW2NL1V"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-N77LW2NL1V');
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -1152,6 +1160,7 @@ window.surveyBack = function() {
 };
 
 window.finishSurvey = function() {
+  gtag('event','survey_completed',{holes:surveyAnswers.roundHoles||18,starting_hole:surveyAnswers.startingHole||1,greenies:surveyAnswers.greenies,sandies:surveyAnswers.sandysEnabled});
   state.rules = {
     reshuffleOn16: surveyAnswers.reshuffleOn16,
     reshuffleHole: surveyAnswers.reshuffleHole || 16,
@@ -1722,6 +1731,7 @@ window.confirmIdentity = function(name, code, modal) {
     document.getElementById('viewer-name-display').textContent = name + ' — ' + code;
     document.getElementById('my-course-display').textContent = state.courseName || '';
     showToast('Joined as ' + name + ' 🎉');
+    gtag('event','player_joined',{round_code:code});
   } else {
     document.getElementById('viewer-banner').style.display='block';
     document.getElementById('viewer-name-display').textContent='Viewer — '+code;
@@ -1853,6 +1863,7 @@ window.startRound = async function() {
 window.launchRound = function() {
   showPage('scorecard');
   showToast('Round started! 🏌️');
+  gtag('event','round_started',{players:state.players.length,wager:state.wager,holes:state.roundHoles||18});
 };
 
 function showIdentityPickerModal(players, callback) {
@@ -2510,6 +2521,7 @@ window.saveHole=function(){
   state.holes[hole].birdies=(state.holes[hole].birdies||[]).filter(p=>p!=='__pending');
   state.holes[hole].eagles=(state.holes[hole].eagles||[]).filter(p=>p!=='__pending');
   saveState();renderDots();showToast(`Hole ${hole} saved! ✓`);
+  gtag('event','hole_saved',{hole_number:hole,result:state.holes[hole].winner});
   const _advS=getRoundSequence(),_advI=_advS.indexOf(hole);
   if(_advI<_advS.length-1)setTimeout(()=>{state.currentHole=_advS[_advI+1];renderScorecard();},600);
   else renderScorecard();
@@ -2529,6 +2541,7 @@ window.finishRound = function() {
   saveState();
   renderDots();
   showToast('Round complete! 🏁');
+  gtag('event','round_finished',{players:state.players.length,holes_played:Object.keys(state.holes).length,wager:state.wager});
   // Check for incomplete holes
   // Check all holes in the round sequence except the last (just saved)
   const startH2 = state.startingHole || 1;
