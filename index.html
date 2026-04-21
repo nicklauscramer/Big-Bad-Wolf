@@ -499,13 +499,6 @@
         <div id="payments-standings"></div>
       </div>
     </div>
-    <div id="feedback-prompt" class="card" style="text-align:center;padding:24px 20px;margin-bottom:14px;">
-      <div style="font-size:28px;margin-bottom:8px;">🐺</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">HOW WAS YOUR ROUND?</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:18px;">Takes 60 seconds. Helps make Wolf Money better.</div>
-      <button onclick="showFeedbackForm()" class="btn btn-primary" style="margin-bottom:10px;">📝 Leave Feedback</button>
-      <button onclick="document.getElementById('feedback-prompt').style.display='none'" class="btn btn-secondary" style="font-size:13px;">Skip</button>
-    </div>
     <button class="btn btn-danger" onclick="resetRound()">🔄 New Round</button>
   </div>
 
@@ -523,12 +516,12 @@
       <div class="score-table" id="sandy-board-table"></div>
     </div>
     <div class="hole-history" id="hole-history"><div class="history-header">Hole Log</div><div class="empty-state"><p style="padding:16px;font-size:12px;">No holes saved yet.</p></div></div>
-    <div id="feedback-prompt" class="card" style="text-align:center;padding:24px 20px;margin-bottom:14px;">
+    <div id="feedback-prompt-payments" class="card" style="text-align:center;padding:24px 20px;margin-bottom:14px;">
       <div style="font-size:28px;margin-bottom:8px;">🐺</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">HOW WAS YOUR ROUND?</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:18px;">Takes 60 seconds. Helps make Wolf Money better.</div>
       <button onclick="showFeedbackForm()" class="btn btn-primary" style="margin-bottom:10px;">📝 Leave Feedback</button>
-      <button onclick="document.getElementById('feedback-prompt').style.display='none'" class="btn btn-secondary" style="font-size:13px;">Skip</button>
+      <button onclick="document.getElementById('feedback-prompt-payments').style.display='none'" class="btn btn-secondary" style="font-size:13px;">Skip</button>
     </div>
     <button class="btn btn-danger" onclick="resetRound()">🔄 New Round</button>
   </div>
@@ -3061,6 +3054,9 @@ function computeSettlement() {
 
 function renderPayments() {
   if (!state.players.length) return;
+  // Reset feedback prompt so it shows each time payments renders
+  const fp = document.getElementById('feedback-prompt-payments');
+  if (fp) fp.style.display = 'block';
   const holesPlayed = Object.keys(state.holes).filter(h => state.holes[h].winner).length;
   const empty = document.getElementById('payments-empty');
   const content = document.getElementById('payments-content');
@@ -3457,7 +3453,7 @@ window.clearRoundHistory = function() {
 };
 
 window.showFeedbackForm = function() {
-  document.getElementById('feedback-prompt').style.display = 'none';
+  document.getElementById('feedback-prompt-payments') && (document.getElementById('feedback-prompt-payments').style.display='none');
   const modal = document.createElement('div');
   modal.id = 'feedback-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;overflow-y:auto;padding:20px;display:flex;align-items:flex-start;justify-content:center;';
@@ -3570,26 +3566,9 @@ window.submitFeedback = async function() {
   const stars = ['★','★★','★★★','★★★★','★★★★★'][d.rating-1] || '—';
   const btn = document.querySelector('#feedback-modal .btn-primary');
   btn.textContent = 'Sending…'; btn.disabled = true;
-  try {
-    const templateParams = {
-      rating: String(d.rating || '—'),
-      rating_stars: stars,
-      accurate: d.accurate || '—',
-      use_again: d.use_again || '—',
-      nps: String(d.nps || '—'),
-      features: d.features.length ? d.features.join(', ') : 'None selected',
-      rules_gap: document.getElementById('fb-rules').value.trim() || 'None',
-      improvement: document.getElementById('fb-improve').value.trim() || 'None',
-      round_code: state.roundCode || '—',
-      players: (state.players||[]).join(', ') || '—',
-      course: state.courseName || '—',
-      date: new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),
-      from_name: (state.players||['Wolf Money User'])[0],
-    };
-    console.log('Sending feedback to EmailJS...', templateParams);
-    const result = await emailjs.send('service_dqst6dh', 'template_bft7vh7', templateParams);
-    console.log('EmailJS result:', result);
-    // Show thank you screen
+
+  // Always show thank you screen immediately — don't wait for email
+  const showThankYou = () => {
     const modal = document.getElementById('feedback-modal');
     if (modal) {
       modal.innerHTML = `
@@ -3600,14 +3579,45 @@ window.submitFeedback = async function() {
           <div style="font-size:15px;font-style:italic;color:var(--green);font-weight:600;margin-bottom:28px;">Skål - Nick Cramer</div>
           <button onclick="document.getElementById('feedback-modal').remove()" class="btn btn-primary">Close</button>
         </div>`;
-      // Auto-close after 4 seconds
       setTimeout(() => { const m=document.getElementById('feedback-modal'); if(m) m.remove(); }, 4000);
     }
-    gtag('event','feedback_submitted',{rating:d.rating,nps:d.nps,use_again:d.use_again});
+  };
+
+  // Show thank you right away
+  showThankYou();
+  gtag('event','feedback_submitted',{rating:d.rating,nps:d.nps,use_again:d.use_again});
+
+  // Send email + save to Firebase as backup
+  const feedbackData = {
+    rating: d.rating || 0,
+    rating_stars: stars,
+    accurate: d.accurate || '—',
+    use_again: d.use_again || '—',
+    nps: d.nps || 0,
+    features: d.features.length ? d.features.join(', ') : 'None',
+    rules_gap: document.getElementById('fb-rules') ? document.getElementById('fb-rules').value.trim() || 'None' : 'None',
+    improvement: document.getElementById('fb-improve') ? document.getElementById('fb-improve').value.trim() || 'None' : 'None',
+    round_code: state.roundCode || '—',
+    players: (state.players||[]).join(', ') || '—',
+    course: state.courseName || '—',
+    date: new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),
+    from_name: (state.players||['Wolf Money User'])[0],
+    submittedAt: new Date().toISOString(),
+  };
+  // Save to Firebase regardless of email success
+  try {
+    const fbKey = 'feedback_' + (state.roundCode||'unknown') + '_' + Date.now();
+    await setDoc(doc(db, 'feedback', fbKey), feedbackData);
+    console.log('Feedback saved to Firebase OK');
   } catch(e) {
-    console.error('EmailJS error:', e);
-    btn.textContent = 'Send Feedback 🐺'; btn.disabled = false;
-    showToast('Failed to send — check connection and try again');
+    console.error('Firebase feedback save error:', e);
+  }
+  // Try EmailJS
+  try {
+    await emailjs.send('service_dqst6dh', 'template_bft7vh7', feedbackData, 'yUlI0FO3E3GTaw0Af');
+    console.log('Feedback email sent OK');
+  } catch(e) {
+    console.error('EmailJS error:', e.text || e.message || e);
   }
 };
 
