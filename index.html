@@ -499,6 +499,13 @@
         <div id="payments-standings"></div>
       </div>
     </div>
+    <div id="feedback-prompt-payments" class="card" style="text-align:center;padding:24px 20px;margin-bottom:14px;">
+      <div style="font-size:28px;margin-bottom:8px;">🐺</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">HOW WAS YOUR ROUND?</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:18px;">Takes 60 seconds. Helps make Wolf Money better.</div>
+      <button onclick="showFeedbackForm()" class="btn btn-primary" style="margin-bottom:10px;">📝 Leave Feedback</button>
+      <button onclick="document.getElementById('feedback-prompt-payments').style.display='none'" class="btn btn-secondary" style="font-size:13px;">Skip</button>
+    </div>
     <button class="btn btn-danger" onclick="resetRound()">🔄 New Round</button>
   </div>
 
@@ -516,13 +523,7 @@
       <div class="score-table" id="sandy-board-table"></div>
     </div>
     <div class="hole-history" id="hole-history"><div class="history-header">Hole Log</div><div class="empty-state"><p style="padding:16px;font-size:12px;">No holes saved yet.</p></div></div>
-    <div id="feedback-prompt-payments" class="card" style="text-align:center;padding:24px 20px;margin-bottom:14px;">
-      <div style="font-size:28px;margin-bottom:8px;">🐺</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">HOW WAS YOUR ROUND?</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:18px;">Takes 60 seconds. Helps make Wolf Money better.</div>
-      <button onclick="showFeedbackForm()" class="btn btn-primary" style="margin-bottom:10px;">📝 Leave Feedback</button>
-      <button onclick="document.getElementById('feedback-prompt-payments').style.display='none'" class="btn btn-secondary" style="font-size:13px;">Skip</button>
-    </div>
+
     <button class="btn btn-danger" onclick="resetRound()">🔄 New Round</button>
   </div>
 </div>
