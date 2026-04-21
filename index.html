@@ -3567,7 +3567,25 @@ window.submitFeedback = async function() {
   const d = window._fbData;
   const stars = ['★','★★','★★★','★★★★','★★★★★'][d.rating-1] || '—';
   const btn = document.querySelector('#feedback-modal .btn-primary');
-  btn.textContent = 'Sending…'; btn.disabled = true;
+  if (btn) { btn.textContent = 'Sending…'; btn.disabled = true; }
+
+  // Capture textarea values NOW, before showThankYou() wipes the modal DOM
+  const feedbackData = {
+    rating: d.rating || 0,
+    rating_stars: stars,
+    accurate: d.accurate || '—',
+    use_again: d.use_again || '—',
+    nps: d.nps || 0,
+    features: (d.features||[]).length ? d.features.join(', ') : 'None',
+    rules_gap: (document.getElementById('fb-rules') || {value:''}).value.trim() || 'None',
+    improvement: (document.getElementById('fb-improve') || {value:''}).value.trim() || 'None',
+    round_code: state.roundCode || '—',
+    players: (state.players||[]).join(', ') || '—',
+    course: state.courseName || '—',
+    date: new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),
+    from_name: (state.players||['Wolf Money User'])[0],
+    submittedAt: new Date().toISOString(),
+  };
 
   // Always show thank you screen immediately — don't wait for email
   const showThankYou = () => {
@@ -3585,27 +3603,9 @@ window.submitFeedback = async function() {
     }
   };
 
-  // Show thank you right away
   showThankYou();
   gtag('event','feedback_submitted',{rating:d.rating,nps:d.nps,use_again:d.use_again});
 
-  // Send email + save to Firebase as backup
-  const feedbackData = {
-    rating: d.rating || 0,
-    rating_stars: stars,
-    accurate: d.accurate || '—',
-    use_again: d.use_again || '—',
-    nps: d.nps || 0,
-    features: d.features.length ? d.features.join(', ') : 'None',
-    rules_gap: document.getElementById('fb-rules') ? document.getElementById('fb-rules').value.trim() || 'None' : 'None',
-    improvement: document.getElementById('fb-improve') ? document.getElementById('fb-improve').value.trim() || 'None' : 'None',
-    round_code: state.roundCode || '—',
-    players: (state.players||[]).join(', ') || '—',
-    course: state.courseName || '—',
-    date: new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),
-    from_name: (state.players||['Wolf Money User'])[0],
-    submittedAt: new Date().toISOString(),
-  };
   // Save to Firebase regardless of email success
   try {
     const fbKey = 'feedback_' + (state.roundCode||'unknown') + '_' + Date.now();
@@ -3617,7 +3617,7 @@ window.submitFeedback = async function() {
   // Try EmailJS
   try {
     const ejs = window._emailjs || emailjs;
-    await ejs.send('service_dqst6dh', 'template_bft7vh7', feedbackData, 'yUlI0FO3E3GTaw0Af');
+    await ejs.send('service_dqst6dh', 'template_bft7vh7', feedbackData);
     console.log('Feedback email sent OK');
   } catch(e) {
     console.error('EmailJS error:', e.text || e.message || e);
