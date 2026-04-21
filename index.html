@@ -3617,10 +3617,13 @@ window.submitFeedback = async function() {
   // Try EmailJS
   try {
     const ejs = window._emailjs || emailjs;
+    if (!ejs) throw new Error('EmailJS not loaded');
     await ejs.send('service_dqst6dh', 'template_bft7vh7', feedbackData);
     console.log('Feedback email sent OK');
   } catch(e) {
-    console.error('EmailJS error:', e.text || e.message || e);
+    const msg = e.text || e.message || JSON.stringify(e);
+    console.error('EmailJS error:', msg);
+    showToast('Email error: ' + msg);
   }
 };
 
