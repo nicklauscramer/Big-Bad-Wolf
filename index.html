@@ -3618,7 +3618,7 @@ window.submitFeedback = async function() {
   try {
     const ejs = window._emailjs || emailjs;
     if (!ejs) throw new Error('EmailJS not loaded');
-    await ejs.send('service_dqst6dh', 'template_bft7vh7', feedbackData);
+    await ejs.send('service_dqst6dh', 'template_8u79cpn', feedbackData);
     console.log('Feedback email sent OK');
   } catch(e) {
     const msg = e.text || e.message || JSON.stringify(e);
