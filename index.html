@@ -18,9 +18,7 @@
   gtag('js', new Date());
   gtag('config', 'G-N77LW2NL1V');
 </script>
-<!-- EmailJS -->
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-<script>window.addEventListener('load',()=>emailjs.init('yUlI0FO3E3GTaw0Af'));</script>
+
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -541,6 +539,9 @@
 <div class="toast" id="toast"></div>
 
 <script type="module">
+import emailjs from 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/+esm';
+emailjs.init('yUlI0FO3E3GTaw0Af');
+window._emailjs = emailjs;
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp, collection, query, where, getDocs }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -3615,7 +3616,8 @@ window.submitFeedback = async function() {
   }
   // Try EmailJS
   try {
-    await emailjs.send('service_dqst6dh', 'template_bft7vh7', feedbackData, 'yUlI0FO3E3GTaw0Af');
+    const ejs = window._emailjs || emailjs;
+    await ejs.send('service_dqst6dh', 'template_bft7vh7', feedbackData, 'yUlI0FO3E3GTaw0Af');
     console.log('Feedback email sent OK');
   } catch(e) {
     console.error('EmailJS error:', e.text || e.message || e);
