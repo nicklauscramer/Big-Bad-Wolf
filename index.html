@@ -20,7 +20,7 @@
 </script>
 <!-- EmailJS -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-<script>emailjs.init('yUlI0FO3E3GTaw0Af');</script>
+<script>window.addEventListener('load',()=>emailjs.init('yUlI0FO3E3GTaw0Af'));</script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -3571,33 +3571,43 @@ window.submitFeedback = async function() {
   const btn = document.querySelector('#feedback-modal .btn-primary');
   btn.textContent = 'Sending…'; btn.disabled = true;
   try {
-    await emailjs.send('service_dqst6dh', 'template_bft7vh7', {
-      rating: d.rating || '—',
+    const templateParams = {
+      rating: String(d.rating || '—'),
       rating_stars: stars,
       accurate: d.accurate || '—',
       use_again: d.use_again || '—',
-      nps: d.nps || '—',
+      nps: String(d.nps || '—'),
       features: d.features.length ? d.features.join(', ') : 'None selected',
-      rules_gap: document.getElementById('fb-rules').value || 'None',
-      improvement: document.getElementById('fb-improve').value || 'None',
+      rules_gap: document.getElementById('fb-rules').value.trim() || 'None',
+      improvement: document.getElementById('fb-improve').value.trim() || 'None',
       round_code: state.roundCode || '—',
       players: (state.players||[]).join(', ') || '—',
       course: state.courseName || '—',
       date: new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),
-    });
-    // Show thank you
-    document.getElementById('feedback-modal').innerHTML = `
-      <div style="background:white;border-radius:16px;padding:40px 28px;width:100%;max-width:420px;margin:auto;text-align:center;">
-        <div style="font-size:48px;margin-bottom:16px;">🐺</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--green);letter-spacing:2px;margin-bottom:10px;">THANK YOU!</div>
-        <div style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:24px;">Your feedback means a lot and helps make Wolf Money better for everyone.</div>
-        <div style="font-size:15px;font-style:italic;color:var(--green);font-weight:600;margin-bottom:24px;">Skål - Nick Cramer</div>
-        <button onclick="document.getElementById('feedback-modal').remove()" class="btn btn-primary">Close</button>
-      </div>`;
+      from_name: (state.players||['Wolf Money User'])[0],
+    };
+    console.log('Sending feedback to EmailJS...', templateParams);
+    const result = await emailjs.send('service_dqst6dh', 'template_bft7vh7', templateParams);
+    console.log('EmailJS result:', result);
+    // Show thank you screen
+    const modal = document.getElementById('feedback-modal');
+    if (modal) {
+      modal.innerHTML = `
+        <div style="background:white;border-radius:16px;padding:40px 28px;width:100%;max-width:420px;margin:auto;text-align:center;">
+          <div style="font-size:48px;margin-bottom:16px;">🐺</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--green);letter-spacing:2px;margin-bottom:10px;">THANK YOU!</div>
+          <div style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:24px;">Your feedback means a lot and helps make Wolf Money better for everyone.</div>
+          <div style="font-size:15px;font-style:italic;color:var(--green);font-weight:600;margin-bottom:28px;">Skål - Nick Cramer</div>
+          <button onclick="document.getElementById('feedback-modal').remove()" class="btn btn-primary">Close</button>
+        </div>`;
+      // Auto-close after 4 seconds
+      setTimeout(() => { const m=document.getElementById('feedback-modal'); if(m) m.remove(); }, 4000);
+    }
     gtag('event','feedback_submitted',{rating:d.rating,nps:d.nps,use_again:d.use_again});
   } catch(e) {
+    console.error('EmailJS error:', e);
     btn.textContent = 'Send Feedback 🐺'; btn.disabled = false;
-    showToast('Failed to send — check your connection');
+    showToast('Failed to send — check connection and try again');
   }
 };
 
