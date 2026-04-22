@@ -1698,11 +1698,36 @@ window.joinRound = async function() {
       if (gmSnap.exists()) isGroupMatch = true;
     } catch(e) { /* permissions or network — treat as not found */ }
     if (isGroupMatch) {
-      showToast('Group match found! Setting up your round…');
-      clearAllState();
-      surveyAnswers.groupMatchEnabled = true;
-      surveyAnswers.groupMatchCode = code;
-      showPage('survey');
+      // Show a clear explanation before dropping them into the survey
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400;display:flex;align-items:center;justify-content:center;padding:24px;';
+      overlay.innerHTML = `
+        <div style="background:white;border-radius:18px;padding:28px 24px;width:100%;max-width:360px;text-align:center;">
+          <div style="font-size:38px;margin-bottom:10px;">🏆</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green);letter-spacing:2px;margin-bottom:8px;">GROUP MATCH FOUND</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;">
+            Code <strong style="color:var(--text);letter-spacing:2px;">${code}</strong> links your group to a multi-group match.<br><br>
+            You'll set up your own Wolf Money round — your group's scores will sync automatically with the others in this match.
+          </div>
+          <div style="background:var(--green-pale);border-radius:10px;padding:12px;margin-bottom:20px;text-align:left;">
+            <div style="font-size:11px;font-weight:700;color:var(--green);letter-spacing:1px;margin-bottom:6px;">HOW IT WORKS</div>
+            <div style="font-size:12px;color:var(--text);line-height:1.7;">
+              1️⃣ Set up your round (players, course, rules)<br>
+              2️⃣ Group match code is pre-filled for you<br>
+              3️⃣ Start playing — scores sync live across groups
+            </div>
+          </div>
+          <button id="gm-join-btn" style="width:100%;padding:14px;border-radius:12px;border:none;background:var(--green);color:white;font-weight:700;font-size:16px;cursor:pointer;margin-bottom:10px;">Set Up My Round →</button>
+          <button onclick="this.closest('[style]').remove()" style="width:100%;padding:11px;border-radius:12px;border:1.5px solid #e0e0e0;background:white;font-weight:600;font-size:13px;cursor:pointer;color:var(--muted);">Cancel</button>
+        </div>`;
+      document.body.appendChild(overlay);
+      overlay.querySelector('#gm-join-btn').onclick = () => {
+        overlay.remove();
+        clearAllState();
+        surveyAnswers.groupMatchEnabled = true;
+        surveyAnswers.groupMatchCode = code;
+        showPage('survey');
+      };
       return;
     }
     showToast('Code not found — check and try again');
