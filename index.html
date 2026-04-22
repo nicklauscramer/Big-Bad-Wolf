@@ -946,6 +946,8 @@ window.generateGroupMatchCode = function() {
   document.getElementById('gm-code-input').value = code;
   surveyAnswers.groupMatchCode = code;
   showToast('Match code: ' + code);
+  // Register immediately so others can join before the admin finishes setup
+  setDoc(doc(db, 'group_matches', code), { createdAt: serverTimestamp() }).catch(() => {});
 };
 
 window.setBrowniesAnswer = function(val, el) {
