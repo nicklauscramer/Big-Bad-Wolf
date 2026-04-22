@@ -319,6 +319,9 @@
           </label>
           <span style="font-size:10px;color:var(--muted);">Wolf ×2</span>
         </div>
+        <div id="decline-hammer-row" style="display:none;margin-bottom:10px;">
+          <button id="btn-decline-hammer" onclick="setDeclinedHammer()" style="width:100%;padding:9px 12px;border-radius:10px;border:2px solid #e65100;background:white;font-size:12px;font-weight:700;cursor:pointer;color:#e65100;">🚫 Wolf Declined Hammer (Forfeit Hole)</button>
+        </div>
       </div>
       <div id="team-section">
         <div class="team-label">Wolf's Team</div>
@@ -558,7 +561,7 @@ let state = {
   greeniesEnabled:false, par3Holes:[], greenieWager:2,
   roundCode:null,
   // rule flags (from survey)
-  rules:{ reshuffleOn16:true, reshuffleHole:16, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true, wolfStyle:'before', bigWolfMult:4, lilWolfMult:2, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, greenieCarryoverEnabled:false, sandysEnabled:false, sandyBet:2 },
+  rules:{ reshuffleOn16:true, reshuffleHole:16, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true, wolfStyle:'before', bigWolfMult:4, lilWolfMult:2, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, carryoverMode:'none', carryoverMaxBank:3, greenieCarryoverEnabled:false, sandysEnabled:false, sandyBet:2, declineHammerForfeit:false },
   // course data
   courseName:'', coursePar:Array(18).fill(4), // par per hole 1-18
   // stroke scores: { playerName: { 1: strokes, 2: strokes, ... } }
@@ -629,7 +632,7 @@ const surveySteps = [
   }
 ];
 let surveyStep = 0;
-let surveyAnswers = { groupMatchEnabled:false, reshuffleOn16:true, sandysEnabled:false, sandyBet:2, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, wolfModesEnabled:true, wolfStyle:'before', bigWolfMult:4, lilWolfMult:2, bigWolfAllowed:true, lilWolfAllowed:true, startingHole:1, roundHoles:18 };
+let surveyAnswers = { groupMatchEnabled:false, reshuffleOn16:true, sandysEnabled:false, sandyBet:2, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, carryoverMode:'none', carryoverMaxBank:3, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, wolfModesEnabled:true, wolfStyle:'before', bigWolfMult:4, lilWolfMult:2, bigWolfAllowed:true, lilWolfAllowed:true, startingHole:1, roundHoles:18, declineHammerForfeit:false };
 let courseParTemp = Array(18).fill(4);
 let courseNameTemp = '';
 
@@ -689,6 +692,7 @@ function renderMultipliersStep(container) {
   function render() {
     const be = surveyAnswers.birdiesEagles !== false;
     const db = surveyAnswers.doubles !== false;
+    const dhf = surveyAnswers.declineHammerForfeit === true;
     div.innerHTML = `
       <div class="toggle-row" id="mul-birdie">
         <div>
@@ -711,9 +715,22 @@ function renderMultipliersStep(container) {
           <div class="toggle-track"></div>
           <div class="toggle-thumb"></div>
         </div>
-      </div>`;
+      </div>
+      ${db ? `
+      <div class="toggle-row" id="mul-decline-hammer" style="margin-left:16px;border-left:3px solid #e0e0e0;padding-left:12px;">
+        <div>
+          <div style="font-size:14px;font-weight:600;">🚫 Decline Hammer = Forfeit</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Wolf team declining the double automatically forfeits the hole at base value.</div>
+        </div>
+        <div class="toggle-switch">
+          <input type="checkbox" id="mul-dhf-chk" ${dhf?'checked':''} onclick="event.stopPropagation()">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </div>
+      </div>` : ''}`;
     div.querySelector('#mul-birdie').onclick=()=>{surveyAnswers.birdiesEagles=!surveyAnswers.birdiesEagles;render();};
     div.querySelector('#mul-double').onclick=()=>{surveyAnswers.doubles=!surveyAnswers.doubles;render();};
+    if (db) div.querySelector('#mul-decline-hammer').onclick = () => { surveyAnswers.declineHammerForfeit = !surveyAnswers.declineHammerForfeit; render(); };
   }
   render();
   container.appendChild(div);
@@ -722,34 +739,55 @@ function renderMultipliersStep(container) {
 function renderCarryoverStep(container) {
   const div = document.createElement('div');
   function render() {
-    const wc = surveyAnswers.carryoverEnabled === true;
+    const mode = surveyAnswers.carryoverMode || 'none';
+    const maxBank = surveyAnswers.carryoverMaxBank || 3;
     const gc = surveyAnswers.greenieCarryoverEnabled === true;
     div.innerHTML = `
-      <div class="toggle-row" id="car-wolf">
-        <div>
-          <div style="font-size:15px;font-weight:600;">🔄 Push Carryover</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Pushed holes stack until someone wins.</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text);">Wolf Push Carryover</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+        <div class="survey-option${mode==='none'?' selected':''}" id="co-none">
+          <div style="font-size:15px;font-weight:600;">🚫 No Carryovers</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Ties push — no money carries to the next hole.</div>
         </div>
-        <div class="toggle-switch">
-          <input type="checkbox" id="car-wolf-chk" ${wc?'checked':''} onclick="event.stopPropagation()">
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
+        <div class="survey-option${mode==='standard'?' selected':''}" id="co-standard">
+          <div style="font-size:15px;font-weight:600;">🔄 Standard</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">A push carries exactly 1× the base bet — stays flat no matter how many holes push in a row.</div>
+        </div>
+        <div class="survey-option${mode==='banked'?' selected':''}" id="co-banked">
+          <div style="font-size:15px;font-weight:600;">🏦 Banked Carryovers</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Each push banks another 1× base — pot grows each hole until someone wins or max is hit.</div>
         </div>
       </div>
-      <div class="toggle-row" id="car-greenie">
-        <div>
-          <div style="font-size:15px;font-weight:600;">🏆 Greenie Carryover</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Unclaimed greenies carry to the next par 3.</div>
+      ${mode === 'banked' ? `
+      <div style="background:#f9faf9;border-radius:12px;padding:14px;margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px;">Max holes to bank</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Max hole value = <strong><span id="co-max-preview">${maxBank + 1}</span>×</strong> base bet per player</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button onclick="if(surveyAnswers.carryoverMaxBank>1){surveyAnswers.carryoverMaxBank--;window._carryoverRender();}" style="width:36px;height:36px;border-radius:8px;border:1.5px solid #ddd;background:white;font-size:18px;font-weight:600;cursor:pointer;line-height:1;flex-shrink:0;">−</button>
+          <input type="number" id="max-bank-input" value="${maxBank}" min="1" max="17" step="1" style="width:60px;text-align:center;font-size:18px;font-weight:700;border:1.5px solid #ddd;border-radius:8px;padding:6px 0;" oninput="const v=parseInt(this.value);if(v>=1&&v<=17){surveyAnswers.carryoverMaxBank=v;document.querySelector('#co-max-preview').textContent=v+1;}">
+          <button onclick="if(surveyAnswers.carryoverMaxBank<17){surveyAnswers.carryoverMaxBank++;window._carryoverRender();}" style="width:36px;height:36px;border-radius:8px;border:1.5px solid #ddd;background:white;font-size:18px;font-weight:600;cursor:pointer;line-height:1;flex-shrink:0;">+</button>
+          <span style="font-size:12px;color:var(--muted);">holes max</span>
         </div>
-        <div class="toggle-switch">
-          <input type="checkbox" id="car-greenie-chk" ${gc?'checked':''} onclick="event.stopPropagation()">
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
+      </div>` : ''}
+      <div style="border-top:1px solid #f0f0f0;padding-top:14px;">
+        <div class="toggle-row" id="car-greenie">
+          <div>
+            <div style="font-size:15px;font-weight:600;">🏆 Greenie Carryover</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">Unclaimed greenies carry to the next par 3.</div>
+          </div>
+          <div class="toggle-switch">
+            <input type="checkbox" id="car-greenie-chk" ${gc?'checked':''} onclick="event.stopPropagation()">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </div>
         </div>
       </div>`;
-    div.querySelector('#car-wolf').onclick=()=>{surveyAnswers.carryoverEnabled=!surveyAnswers.carryoverEnabled;render();};
-    div.querySelector('#car-greenie').onclick=()=>{surveyAnswers.greenieCarryoverEnabled=!surveyAnswers.greenieCarryoverEnabled;render();};
+    div.querySelector('#co-none').onclick = () => { surveyAnswers.carryoverMode = 'none'; render(); };
+    div.querySelector('#co-standard').onclick = () => { surveyAnswers.carryoverMode = 'standard'; render(); };
+    div.querySelector('#co-banked').onclick = () => { surveyAnswers.carryoverMode = 'banked'; render(); };
+    div.querySelector('#car-greenie').onclick = () => { surveyAnswers.greenieCarryoverEnabled = !surveyAnswers.greenieCarryoverEnabled; render(); };
   }
+  window._carryoverRender = render;
   render();
   container.appendChild(div);
 }
@@ -1195,10 +1233,13 @@ window.finishSurvey = function() {
       const fromDom = dwInput ? parseFloat(dwInput.value) : NaN;
       return (!isNaN(fromDom) && fromDom > 0) ? fromDom : (surveyAnswers.dropWolfBet || 2);
     })(),
-    carryoverEnabled: surveyAnswers.carryoverEnabled === true,
+    carryoverMode: surveyAnswers.carryoverMode || 'none',
+    carryoverMaxBank: surveyAnswers.carryoverMaxBank || 3,
+    carryoverEnabled: (surveyAnswers.carryoverMode || 'none') !== 'none',
     greenieCarryoverEnabled: surveyAnswers.greenieCarryoverEnabled === true,
     sandysEnabled: surveyAnswers.sandysEnabled === true,
     sandyBet: surveyAnswers.sandyBet || 2,
+    declineHammerForfeit: surveyAnswers.declineHammerForfeit === true,
   };
   state.startingHole = surveyAnswers.startingHole || 1;
   state.roundHoles = surveyAnswers.roundHoles || 18;
@@ -2033,6 +2074,26 @@ window.toggleReDouble=function(){
   state.holes[hole].reDoubled=on;document.getElementById('redouble-label').textContent=on?'ON 🟢':'Off';
   updatePayoutNote();saveState();
 };
+window.setDeclinedHammer = function() {
+  const hole = scCurrentHole;
+  if (!state.holes[hole]) state.holes[hole] = {};
+  state.holes[hole].declinedHammer = true;
+  state.holes[hole].winner = 'team';
+  state.holes[hole].doubled = false;
+  state.holes[hole].reDoubled = false;
+  document.getElementById('double-check').checked = false;
+  document.getElementById('double-label').textContent = 'Off';
+  document.getElementById('redouble-check').checked = false;
+  document.getElementById('redouble-check').disabled = true;
+  document.getElementById('redouble-label').textContent = 'Off';
+  document.getElementById('btn-wolf-wins').className = 'winner-btn';
+  document.getElementById('btn-team-wins').className = 'winner-btn team-wins';
+  document.getElementById('btn-push').className = 'winner-btn';
+  document.getElementById('btn-decline-hammer').style.background = '#fff3e0';
+  document.getElementById('btn-decline-hammer').textContent = '🚫 Wolf Declined Hammer — Team Wins';
+  updatePayoutNote();
+  saveHole();
+};
 
 window.updatePayoutNote=function(){
   const hData=state.holes[state.currentHole]||{};
@@ -2393,6 +2454,16 @@ function renderScorecard(){
 
   // Double section
   document.getElementById('double-section').style.display=state.rules.doubles?'block':'none';
+  const dhr = document.getElementById('decline-hammer-row');
+  if (dhr) dhr.style.display = (state.rules.declineHammerForfeit && state.rules.doubles) ? 'block' : 'none';
+  const bhd = document.getElementById('btn-decline-hammer');
+  if (bhd && hData.declinedHammer) {
+    bhd.style.background = '#fff3e0';
+    bhd.textContent = '🚫 Wolf Declined Hammer — Team Wins';
+  } else if (bhd) {
+    bhd.style.background = 'white';
+    bhd.textContent = '🚫 Wolf Declined Hammer (Forfeit Hole)';
+  }
   const dbl=hData.doubled||false,rdb=hData.reDoubled||false;
   document.getElementById('double-check').checked=dbl;document.getElementById('double-label').textContent=dbl?'ON 🔴':'Off';
   document.getElementById('redouble-check').checked=rdb;document.getElementById('redouble-check').disabled=!dbl;document.getElementById('redouble-label').textContent=rdb?'ON 🟢':'Off';
@@ -2779,22 +2850,26 @@ function renderGroupSummary(){
 
 // ── Carryover helpers ──
 function computeWolfCarryovers() {
-  // Returns { holeNum: carryAmount } for each hole that has a carry into it
-  // No carryovers on pressure holes (reshuffle hole and beyond)
   const carries = {};
-  if (!state.rules.carryoverEnabled) return carries;
+  const mode = state.rules.carryoverMode || (state.rules.carryoverEnabled ? 'standard' : 'none');
+  if (mode === 'none') return carries;
   const reshuffleHole = ((state.rules.reshuffleOn16 !== false) && state.rules.reshuffleHole) || 99;
+  const maxBank = state.rules.carryoverMaxBank || 3;
+  const base = state.wager;
   let pending = 0;
   for (let h = 1; h <= 18; h++) {
-    // Stop carryovers entirely once pressure holes begin
     if (h >= reshuffleHole) { pending = 0; break; }
     const hole = state.holes[h];
     if (pending > 0) carries[h] = pending;
-    if (!hole || !hole.winner) break; // hole not played yet
+    if (!hole || !hole.winner) break;
     if (hole.winner === 'push') {
-      pending += (hole.money || state.wager); // base wager only
+      if (mode === 'standard') {
+        pending = base; // always exactly 1× base, never compounds
+      } else if (mode === 'banked') {
+        pending = Math.min(pending + base, maxBank * base); // stack up to max
+      }
     } else {
-      pending = 0; // someone won, carryover consumed
+      pending = 0;
     }
   }
   return carries;
@@ -3665,7 +3740,7 @@ window.clearAllState = function clearAllState(){
       ghostEnabled:false, ghostName:'Ghost',
       greeniesEnabled:false, par3Holes:[], greenieWager:2,
       roundCode:null,
-      rules:{ reshuffleOn16:true, reshuffleHole:16, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true, wolfStyle:'before', bigWolfMult:4, lilWolfMult:2, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, greenieCarryoverEnabled:false, sandysEnabled:false, sandyBet:2 },
+      rules:{ reshuffleOn16:true, reshuffleHole:16, birdiesEagles:true, doubles:true, greenies:false, bigWolfAllowed:true, lilWolfAllowed:true, wolfStyle:'before', bigWolfMult:4, lilWolfMult:2, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, carryoverMode:'none', carryoverMaxBank:3, greenieCarryoverEnabled:false, sandysEnabled:false, sandyBet:2, declineHammerForfeit:false },
       courseName:'', coursePar:Array(18).fill(4),
       strokes:{}
     };
@@ -3677,7 +3752,7 @@ window.clearAllState = function clearAllState(){
     // Reset course lookup state
     courseNameTemp = '';
     courseParTemp = Array(18).fill(4);
-    surveyAnswers = { groupMatchEnabled:false, reshuffleOn16:true, sandysEnabled:false, sandyBet:2, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, wolfModesEnabled:true, wolfStyle:'before', bigWolfMult:4, lilWolfMult:2, bigWolfAllowed:true, lilWolfAllowed:true, startingHole:1, roundHoles:18 };
+    surveyAnswers = { groupMatchEnabled:false, reshuffleOn16:true, sandysEnabled:false, sandyBet:2, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, carryoverMode:'none', carryoverMaxBank:3, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, wolfModesEnabled:true, wolfStyle:'before', bigWolfMult:4, lilWolfMult:2, bigWolfAllowed:true, lilWolfAllowed:true, startingHole:1, roundHoles:18, declineHammerForfeit:false };
     surveyStep = 0;
     const searchEl = document.getElementById('course-search-input'); if(searchEl) searchEl.value = '';
     const lookupResult = document.getElementById('course-lookup-result'); if(lookupResult) lookupResult.innerHTML = '';
