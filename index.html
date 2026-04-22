@@ -947,7 +947,9 @@ window.generateGroupMatchCode = function() {
   surveyAnswers.groupMatchCode = code;
   showToast('Match code: ' + code);
   // Register immediately so others can join before the admin finishes setup
-  setDoc(doc(db, 'group_matches', code), { createdAt: serverTimestamp() }).catch(() => {});
+  setDoc(doc(db, 'group_matches', code), { createdAt: serverTimestamp() })
+    .then(() => showToast('Code ready — share it now!'))
+    .catch(err => showToast('⚠️ Could not register code: ' + err.code));
 };
 
 window.setBrowniesAnswer = function(val, el) {
