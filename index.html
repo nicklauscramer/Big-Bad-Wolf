@@ -745,17 +745,17 @@ function renderCarryoverStep(container) {
     div.innerHTML = `
       <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text);">Wolf Push Carryover</div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
-        <div class="survey-option${mode==='none'?' selected':''}" id="co-none">
-          <div style="font-size:15px;font-weight:600;">🚫 No Carryovers</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Ties push — no money carries to the next hole.</div>
+        <div class="rule-option${mode==='none'?' selected':''}" id="co-none">
+          <div><div style="font-size:15px;font-weight:600;">🚫 No Carryovers</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Ties push — no money carries to the next hole.</div></div>
+          <div class="rule-check">${mode==='none'?'✓':''}</div>
         </div>
-        <div class="survey-option${mode==='standard'?' selected':''}" id="co-standard">
-          <div style="font-size:15px;font-weight:600;">🔄 Standard</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px;">A push carries exactly 1× the base bet — stays flat no matter how many holes push in a row.</div>
+        <div class="rule-option${mode==='standard'?' selected':''}" id="co-standard">
+          <div><div style="font-size:15px;font-weight:600;">🔄 Standard</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Ties carry 1× base — always flat. (Push at $2 = $2 carry, every time)</div></div>
+          <div class="rule-check">${mode==='standard'?'✓':''}</div>
         </div>
-        <div class="survey-option${mode==='banked'?' selected':''}" id="co-banked">
-          <div style="font-size:15px;font-weight:600;">🏦 Banked Carryovers</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Each push banks another 1× base — pot grows each hole until someone wins or max is hit.</div>
+        <div class="rule-option${mode==='banked'?' selected':''}" id="co-banked">
+          <div><div style="font-size:15px;font-weight:600;">🏦 Banked Carryovers</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Each push stacks the pot. Set a max — at $2/hole, 3 banks = $8 max hole value.</div></div>
+          <div class="rule-check">${mode==='banked'?'✓':''}</div>
         </div>
       </div>
       ${mode === 'banked' ? `
