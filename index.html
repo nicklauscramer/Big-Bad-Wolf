@@ -761,11 +761,11 @@ function renderCarryoverStep(container) {
       ${mode === 'banked' ? `
       <div style="background:#f9faf9;border-radius:12px;padding:14px;margin-bottom:16px;">
         <div style="font-size:13px;font-weight:700;margin-bottom:4px;">Max holes to bank</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Max hole value = <strong><span id="co-max-preview">${maxBank + 1}</span>×</strong> base bet per player</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Max hole value = <strong><span id="co-max-preview">${maxBank + 1}</span>× base bet</strong> per player</div>
         <div style="display:flex;align-items:center;gap:10px;">
-          <button onclick="if(surveyAnswers.carryoverMaxBank>1){surveyAnswers.carryoverMaxBank--;window._carryoverRender();}" style="width:36px;height:36px;border-radius:8px;border:1.5px solid #ddd;background:white;font-size:18px;font-weight:600;cursor:pointer;line-height:1;flex-shrink:0;">−</button>
-          <input type="number" id="max-bank-input" value="${maxBank}" min="1" max="17" step="1" style="width:60px;text-align:center;font-size:18px;font-weight:700;border:1.5px solid #ddd;border-radius:8px;padding:6px 0;" oninput="const v=parseInt(this.value);if(v>=1&&v<=17){surveyAnswers.carryoverMaxBank=v;document.querySelector('#co-max-preview').textContent=v+1;}">
-          <button onclick="if(surveyAnswers.carryoverMaxBank<17){surveyAnswers.carryoverMaxBank++;window._carryoverRender();}" style="width:36px;height:36px;border-radius:8px;border:1.5px solid #ddd;background:white;font-size:18px;font-weight:600;cursor:pointer;line-height:1;flex-shrink:0;">+</button>
+          <button onclick="window.stepMaxBank(-1)" style="width:40px;height:40px;border-radius:8px;border:1.5px solid #ddd;background:white;font-size:22px;font-weight:600;cursor:pointer;line-height:1;flex-shrink:0;">−</button>
+          <input type="number" id="max-bank-input" value="${maxBank}" min="1" max="17" step="1" style="width:64px;text-align:center;font-size:18px;font-weight:700;border:1.5px solid #ddd;border-radius:8px;padding:8px 0;" oninput="window.stepMaxBank(0,parseInt(this.value))">
+          <button onclick="window.stepMaxBank(1)" style="width:40px;height:40px;border-radius:8px;border:1.5px solid #ddd;background:white;font-size:22px;font-weight:600;cursor:pointer;line-height:1;flex-shrink:0;">+</button>
           <span style="font-size:12px;color:var(--muted);">holes max</span>
         </div>
       </div>` : ''}
@@ -791,6 +791,18 @@ function renderCarryoverStep(container) {
   render();
   container.appendChild(div);
 }
+
+window.stepMaxBank = function(delta, directValue) {
+  const current = surveyAnswers.carryoverMaxBank || 3;
+  const next = directValue !== undefined
+    ? Math.max(1, Math.min(17, directValue || 1))
+    : Math.max(1, Math.min(17, current + delta));
+  surveyAnswers.carryoverMaxBank = next;
+  const input = document.getElementById('max-bank-input');
+  if (input) input.value = next;
+  const preview = document.getElementById('co-max-preview');
+  if (preview) preview.textContent = next + 1;
+};
 
 function renderCourseStep(container) {
   container.innerHTML = `
