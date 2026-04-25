@@ -2954,6 +2954,7 @@ function computeWolfTotals(){
     if(isSolo){wolfTeam=[wolfName];oppTeam=allP.filter(p=>p!==wolfName);}
     else{wolfTeam=[wolfName,...partners];oppTeam=allP.filter(p=>!wolfTeam.includes(p));}
     const rw=wolfTeam.filter(p=>players.includes(p)),ro=oppTeam.filter(p=>players.includes(p));
+    if(rw.length===0||ro.length===0)return; // skip malformed holes — prevents money creation/destruction
     if(isSolo){
       if(wolfWon){rw.forEach(p=>{totals[p]+=e*ro.length;});ro.forEach(p=>{totals[p]-=e;});}
       else{rw.forEach(p=>{totals[p]-=e*ro.length;});ro.forEach(p=>{totals[p]+=e;});}
