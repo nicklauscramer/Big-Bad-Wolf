@@ -183,10 +183,22 @@
       <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">WOLF MONEY</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:22px;">Live multiplayer · money · scores</div>
       <button class="btn btn-primary" onclick="startNewRound()" style="margin-bottom:10px;">🏌️ Start New Round</button>
-      <div style="font-size:12px;color:var(--muted);margin:12px 0;">— or join a round in progress —</div>
-      <div style="display:flex;gap:8px;">
-        <input type="text" id="join-code-input" placeholder="Enter 6-digit code" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-size:17px;font-weight:700;text-align:center;">
+      <div style="font-size:12px;color:var(--muted);margin:12px 0 8px;">— or join a round in progress —</div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:5px;">📋 PLAYER JOIN CODE</div>
+      <div style="display:flex;gap:8px;margin-bottom:4px;">
+        <input type="text" id="join-code-input" placeholder="Enter your group's code" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-size:17px;font-weight:700;text-align:center;">
         <button onclick="joinRound()" style="padding:11px 16px;border-radius:10px;border:none;background:var(--gold);color:white;font-weight:700;font-size:15px;cursor:pointer;white-space:nowrap;">Join →</button>
+      </div>
+      <div style="text-align:center;margin-top:10px;">
+        <button onclick="document.getElementById('gm-home-section').style.display=document.getElementById('gm-home-section').style.display==='none'?'block':'none'" style="font-size:12px;color:var(--green);background:none;border:none;cursor:pointer;font-weight:600;">🏆 Group admin? Join a group match ▾</button>
+      </div>
+      <div id="gm-home-section" style="display:none;margin-top:10px;background:var(--green-pale);border:1.5px solid var(--green);border-radius:12px;padding:14px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--green);margin-bottom:4px;">🏆 GROUP MATCH CODE</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Enter the code your tournament organizer shared with you (admins only — not for joining a single round)</div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="gm-home-code-input" placeholder="Enter match code" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-size:17px;font-weight:700;text-align:center;">
+          <button onclick="joinGroupMatchFromHome()" style="padding:11px 16px;border-radius:10px;border:none;background:var(--green);color:white;font-weight:700;font-size:15px;cursor:pointer;white-space:nowrap;">Join →</button>
+        </div>
       </div>
     </div>
     <div id="recent-rounds-card" class="card" style="display:none;padding:16px;">
@@ -216,11 +228,13 @@
   <div id="page-share" class="page">
     <div class="card" style="text-align:center;padding:28px 20px;">
       <div style="font-size:36px;margin-bottom:10px;">🐺</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">INVITE PLAYERS</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Share with your group before teeing off</div>
-      <div id="share-code-display" style="font-family:'Bebas Neue',sans-serif;font-size:54px;letter-spacing:10px;color:var(--green);background:var(--green-pale);border-radius:14px;padding:16px;margin-bottom:16px;"></div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green);letter-spacing:2px;margin-bottom:4px;">INVITE YOUR PLAYERS</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:20px;">Share this code with your group so they can follow live scoring</div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px;">📋 PLAYER JOIN CODE</div>
+      <div id="share-code-display" style="font-family:'Bebas Neue',sans-serif;font-size:54px;letter-spacing:10px;color:var(--green);background:var(--green-pale);border-radius:14px;padding:16px;margin-bottom:6px;"></div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:16px;">Your players enter this on the home screen to join</div>
       <button onclick="shareRoundLink()" style="width:100%;padding:13px;border-radius:12px;border:none;background:var(--gold);color:white;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:10px;">🔗 Share Invite Link</button>
-      <button onclick="navigator.clipboard.writeText(document.getElementById('share-code-display').textContent.trim()).then(()=>showToast('Code copied! 📋'))" style="width:100%;padding:13px;border-radius:12px;border:1.5px solid #e0e0e0;background:white;color:var(--muted);font-weight:600;font-size:14px;cursor:pointer;margin-bottom:20px;">📋 Copy Code Only</button>
+      <button onclick="navigator.clipboard.writeText(document.getElementById('share-code-display').textContent.trim()).then(()=>showToast('Player code copied! 📋'))" style="width:100%;padding:13px;border-radius:12px;border:1.5px solid #e0e0e0;background:white;color:var(--muted);font-weight:600;font-size:14px;cursor:pointer;margin-bottom:20px;">📋 Copy Player Code</button>
       <div style="border-top:1px solid #f0f0f0;padding-top:20px;">
         <button onclick="launchRound()" style="width:100%;padding:16px;border-radius:12px;border:none;background:var(--green);color:white;font-weight:700;font-size:17px;cursor:pointer;">🏌️ Let's Play</button>
       </div>
@@ -963,10 +977,11 @@ function renderGroupMatchConfig(container) {
   wrap.innerHTML = `
     <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Your group name</div>
     <input type="text" id="gm-group-name" placeholder="e.g. Group A, Team Nick" value="${surveyAnswers.groupName||''}" style="margin-bottom:14px;" oninput="surveyAnswers.groupName=this.value.trim()">
-    <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Group match code</div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Create a new match or enter an existing code to join other groups.</div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:4px;">🏆 Group match code</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Generate a new code if you're creating the match, or enter an existing code if another admin already created it.</div>
+    <div style="font-size:11px;font-weight:600;color:#e65100;background:#fff3e0;border-radius:8px;padding:7px 10px;margin-bottom:8px;">⚠️ This is for other group <strong>admins</strong> only — not for your players. Your players get a separate Player Join Code after you start.</div>
     <div style="display:flex;gap:8px;margin-bottom:14px;">
-      <input type="text" id="gm-code-input" placeholder="Enter match code" maxlength="6" style="text-transform:uppercase;letter-spacing:3px;font-weight:700;flex:1;" oninput="surveyAnswers.groupMatchCode=this.value.trim().toUpperCase()">
+      <input type="text" id="gm-code-input" placeholder="Enter or generate code" maxlength="6" style="text-transform:uppercase;letter-spacing:3px;font-weight:700;flex:1;" oninput="surveyAnswers.groupMatchCode=this.value.trim().toUpperCase()">
       <button onclick="generateGroupMatchCode()" style="padding:10px 14px;border-radius:10px;border:none;background:var(--green);color:white;font-weight:600;font-size:12px;cursor:pointer;white-space:nowrap;">New Code</button>
     </div>
     <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Bet amounts</div>
@@ -1716,14 +1731,21 @@ function showRoundCode(code) {
   const sc=document.getElementById('share-round-card');
   const sv=document.getElementById('share-code-value');
   if(sc&&sv){sv.textContent=code;sc.style.display='block';}
+  const gmBlock = (state.groupMatch && state.groupMatch.enabled && state.groupMatch.matchCode) ? `
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.25);">
+      <div style="font-size:9px;letter-spacing:2px;opacity:.8;margin-bottom:4px;">🏆 GROUP MATCH CODE</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:6px;color:var(--gold-light);">${state.groupMatch.matchCode}</div>
+      <div style="font-size:10px;opacity:.7;margin-top:2px;">Share with other group admins only</div>
+    </div>` : '';
   document.getElementById('round-code-display').innerHTML = `
     <div class="round-code-box">
-      <div style="font-size:10px;letter-spacing:2px;opacity:.8;margin-bottom:6px;"><span class="live-pulse"></span>ROUND LIVE</div>
+      <div style="font-size:9px;letter-spacing:2px;opacity:.8;margin-bottom:4px;"><span class="live-pulse"></span>📋 PLAYER JOIN CODE</div>
       <div class="round-code-value">${code}</div>
-      <div style="font-size:11px;opacity:.7;margin-top:6px;">Share so others can join live</div>
+      <div style="font-size:10px;opacity:.7;margin-top:4px;">Share with your players so they can follow live scoring</div>
       <div style="margin-top:10px;">
         <button onclick="shareRoundLink()" style="width:100%;padding:10px;border-radius:20px;border:none;background:var(--gold);color:white;font-weight:700;font-size:13px;cursor:pointer;">🔗 Share Invite Link</button>
       </div>
+      ${gmBlock}
     </div>`;
   const sb = document.getElementById('scoreboard-code-display');
   sb.style.display='block';
@@ -1789,6 +1811,46 @@ window.joinRound = async function() {
     }
     showToast('Code not found — check and try again');
   } catch(e) { showToast('Connection failed'); }
+};
+
+window.joinGroupMatchFromHome = async function() {
+  const input = document.getElementById('gm-home-code-input');
+  const code = (input ? input.value : '').trim().toUpperCase();
+  if (code.length !== 6) { showToast('Enter the 6-character group match code'); return; }
+  showToast('Looking up match…');
+  try {
+    const gmSnap = await getDoc(doc(db, 'group_matches', code));
+    if (!gmSnap.exists()) { showToast('Match code not found — check and try again'); return; }
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400;display:flex;align-items:center;justify-content:center;padding:24px;';
+    overlay.innerHTML = `
+      <div style="background:white;border-radius:18px;padding:28px 24px;width:100%;max-width:360px;text-align:center;">
+        <div style="font-size:38px;margin-bottom:10px;">🏆</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green);letter-spacing:2px;margin-bottom:8px;">GROUP MATCH FOUND</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;">
+          Code <strong style="color:var(--text);letter-spacing:2px;">${code}</strong> is a group match.<br><br>
+          You'll set up your own Wolf Money round — your group's scores will sync automatically with the others in this match.
+        </div>
+        <div style="background:var(--green-pale);border-radius:10px;padding:12px;margin-bottom:20px;text-align:left;">
+          <div style="font-size:11px;font-weight:700;color:var(--green);letter-spacing:1px;margin-bottom:6px;">HOW IT WORKS</div>
+          <div style="font-size:12px;color:var(--text);line-height:1.7;">
+            1️⃣ Set up your round (players, course, rules)<br>
+            2️⃣ Group match code is pre-filled for you<br>
+            3️⃣ Start playing — scores sync live across groups
+          </div>
+        </div>
+        <button id="gm-join-btn2" style="width:100%;padding:14px;border-radius:12px;border:none;background:var(--green);color:white;font-weight:700;font-size:16px;cursor:pointer;margin-bottom:10px;">Set Up My Round →</button>
+        <button onclick="this.closest('[style]').remove()" style="width:100%;padding:11px;border-radius:12px;border:1.5px solid #e0e0e0;background:white;font-weight:600;font-size:13px;cursor:pointer;color:var(--muted);">Cancel</button>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#gm-join-btn2').onclick = () => {
+      overlay.remove();
+      clearAllState();
+      surveyAnswers.groupMatchEnabled = true;
+      surveyAnswers.groupMatchCode = code;
+      showPage('survey');
+    };
+  } catch(e) { showToast('Connection failed — check your connection'); }
 };
 
 function showIdentityPicker(code) {
@@ -3284,7 +3346,7 @@ function renderGroupMatch() {
     notEnabled.style.display = 'block'; gmContent.style.display = 'none'; return;
   }
   notEnabled.style.display = 'none'; gmContent.style.display = 'block';
-  document.getElementById('gm-code-display').textContent = 'Code: ' + (gm.matchCode || '');
+  document.getElementById('gm-code-display').textContent = 'Match Code: ' + (gm.matchCode || '') + '  ·  Share with other group admins only';
 
   const groups = Object.values(state._gmGroups || {});
   if (!groups.length) {
