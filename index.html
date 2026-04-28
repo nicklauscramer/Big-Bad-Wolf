@@ -592,58 +592,13 @@ let scCurrentHole = 1;
 
 // ── Survey definition ──
 const surveySteps = [
-  {
-    id:'course', title:'⛳ Which course are you playing?',
-    render: renderCourseStep, validate: () => true
-  },
-  {
-    id:'wolfmodes', title:'Allow Solo Wolf Modes?',
-    sub:'Big Wolf is 4× the base bet. Lil Wolf is 2× the base bet. Drop wolf and style options below.',
-    options:[{v:true,label:'Yes — allow solo wolf',sub:'Big Wolf (4×) and/or Lil Wolf (2×)'},{v:false,label:'No — partner only',sub:'Wolf must always pick a partner'}],
-    key:'wolfModesEnabled'
-  },
-  {
-    id:'startinghole', title:'🚀 What hole are you starting on?',
-    sub:'Shotgun starts or back-nine rounds begin on a different hole.',
-    render: renderStartingHoleStep, validate: () => true
-  },
-  {
-    id:'roundlength', title:'⛳ How many holes are you playing?',
-    render: renderRoundLengthStep, validate: () => true
-  },
-  {
-    id:'reshuffle', title:'🔀 Reshuffle Wolf Order?',
-    sub:'Wolf order reshuffled based on standings starting at the selected hole.',
-    options:[{v:true,label:'Yes — reshuffle',sub:'Most behind becomes wolf'},{v:false,label:'No — keep original order',sub:'Wolf rotation stays fixed'}],
-    key:'reshuffleOn16'
-  },
-  {
-    id:'multipliers', title:'🎯 Multipliers?',
-    sub:'Select which betting multipliers are in play.',
-    render: renderMultipliersStep, validate: () => true
-  },
-  {
-    id:'greenies', title:'🏆 Play Greenies on Par 3s?',
-    options:[{v:true,label:'Yes',sub:'Closest to pin wins'},{v:false,label:'No',sub:'Skip greenies'}],
-    key:'greenies'
-  },
-  {
-    id:'sandys', title:'🏖️ Play Sandies?',
-    sub:'A sandie is when a player makes par or better from a bunker.',
-    options:[{v:true,label:'Yes — play sandies',sub:'Make par or better from a bunker to collect'},{v:false,label:'No Sandies',sub:'Skip sandies'}],
-    key:'sandysEnabled'
-  },
-  {
-    id:'carryover', title:'🔄 Carryovers?',
-    sub:'Carried amounts stack until someone wins.',
-    render: renderCarryoverStep, validate: () => true
-  },
-  {
-    id:'groupmatch', title:'🏆 Join a Group Match?',
+  { id:'format',     title:'⛳ Round Format',       render: renderRoundFormatStep,  validate: () => true },
+  { id:'wolfrules',  title:'🐺 Wolf Rules',          render: renderWolfRulesStep,    validate: () => true },
+  { id:'sidebets',   title:'💰 Side Bets',            render: renderSideBetsStep,     validate: () => true },
+  { id:'groupmatch', title:'🏆 Join a Group Match?',
     sub:'Track best ball, eggs, and group bets across multiple groups.',
     options:[{v:true,label:'Yes — join or create a group match',sub:'Link with other groups playing today'},{v:false,label:'No',sub:'Single group only'}],
-    key:'groupMatchEnabled'
-  }
+    key:'groupMatchEnabled' }
 ];
 let surveyStep = 0;
 let surveyAnswers = { groupMatchEnabled:false, reshuffleOn16:true, sandysEnabled:false, sandyBet:2, reshuffleHole:16, birdiesEagles:true, doubles:true, dropWolfAllowed:false, dropWolfBet:2, carryoverEnabled:false, carryoverMode:'none', carryoverMaxBank:3, greenieCarryoverEnabled:false, greenies:false, greenieWager:2, brownies:false, browniesWager:5, wolfModesEnabled:true, wolfStyle:'before', bigWolfMult:4, lilWolfMult:2, bigWolfAllowed:true, lilWolfAllowed:true, startingHole:1, roundHoles:18, declineHammerForfeit:false };
@@ -658,8 +613,6 @@ window.renderSurvey = function() {
   document.getElementById('survey-bar').style.width = pct + '%';
   document.getElementById('survey-back').style.display = surveyStep > 0 ? 'block' : 'none';
 
-  if (step.id === 'course') { steps.innerHTML = ''; renderCourseStep(steps); return; }
-
   let html = `<div style="font-size:16px;font-weight:700;margin-bottom:6px;">${step.title}</div>`;
   if (step.sub) html += `<div style="font-size:12px;color:var(--muted);margin-bottom:14px;">${step.sub}</div>`;
 
@@ -669,36 +622,219 @@ window.renderSurvey = function() {
     return;
   }
 
-  if (step.multi) {
-    step.options.forEach(opt => {
-      const sel = surveyAnswers[opt.v + 'Allowed'] !== false;
-      html += `<div class="rule-option ${sel?'selected':''}" onclick="toggleMultiSurvey('${opt.v}',this)">
-        <div><div class="rule-option-label">${opt.label}</div><div class="rule-option-sub">${opt.sub}</div></div>
-        <div class="rule-check">${sel?'✓':''}</div></div>`;
-    });
-  } else {
-    step.options.forEach(opt => {
-      const sel = surveyAnswers[step.key] === opt.v;
-      html += `<div class="rule-option ${sel?'selected':''}" onclick="setSurveyAnswer('${step.key}',${JSON.stringify(opt.v)},this)">
-        <div><div class="rule-option-label">${opt.label}</div><div class="rule-option-sub">${opt.sub}</div></div>
-        <div class="rule-check">${sel?'✓':''}</div></div>`;
-    });
-  }
+  // options-based step (groupmatch)
+  step.options.forEach(opt => {
+    const sel = surveyAnswers[step.key] === opt.v;
+    html += `<div class="rule-option ${sel?'selected':''}" onclick="setSurveyAnswer('${step.key}',${JSON.stringify(opt.v)},this)">
+      <div><div class="rule-option-label">${opt.label}</div><div class="rule-option-sub">${opt.sub}</div></div>
+      <div class="rule-check">${sel?'✓':''}</div></div>`;
+  });
   steps.innerHTML = html;
-
-  // If greenies selected yes, show greenie wager + par3 picker
-  if (step.id === 'greenies' && surveyAnswers.greenies) renderGreeniesConfig(steps);
-  // Reshuffle and Sandy: render synchronously AFTER innerHTML wipe, only if answer is Yes
-  if (step.id === 'reshuffle' && surveyAnswers.reshuffleOn16) renderReshuffleHolePicker(steps);
-  if (step.id === 'sandys' && surveyAnswers.sandysEnabled) renderSandyConfig(steps);
-  if (step.id === 'brownies' && surveyAnswers.brownies) renderBrowniesConfig(steps);
-  // Wolf style — drop wolf is rendered inside renderWolfStyleConfig, not separately
-  if (step.id === 'wolfmodes' && surveyAnswers.wolfModesEnabled !== false) {
-    setTimeout(() => { const s=document.getElementById('survey-steps'); if(s && !s.querySelector('#wolf-style-config')) renderWolfStyleConfig(s); }, 50);
-  }
-  // Group match config
   if (step.id === 'groupmatch' && surveyAnswers.groupMatchEnabled)
     setTimeout(() => renderGroupMatchConfig(document.getElementById('survey-steps')), 50);
+}
+
+function renderRoundFormatStep(container) {
+  // Presets panel
+  const presets = window.getPresets();
+  if (presets.length > 0) {
+    const presetsDiv = document.createElement('div');
+    presetsDiv.style.cssText = 'background:var(--green-pale);border:1.5px solid var(--green);border-radius:12px;padding:14px;margin-bottom:18px;';
+    presetsDiv.innerHTML = `
+      <div style="font-size:11px;font-weight:700;color:var(--green);letter-spacing:1px;margin-bottom:10px;">📋 SAVED SETUPS</div>
+      <div id="preset-list" style="display:flex;flex-direction:column;gap:8px;">
+        ${presets.map(p => `
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button onclick="loadRoundPreset('${p.name.replace(/'/g,"\\'")}');document.getElementById('preset-list').querySelectorAll('[data-loaded]').forEach(el=>el.removeAttribute('data-loaded'));this.closest('div').querySelector('span').textContent='✓ Loaded'" style="flex:1;text-align:left;padding:9px 12px;border-radius:9px;border:1.5px solid var(--green);background:white;font-size:13px;font-weight:600;cursor:pointer;color:var(--text);">${p.name}</button>
+            <span style="font-size:11px;color:var(--green);font-weight:600;min-width:56px;text-align:right;"></span>
+            <button onclick="if(confirm('Delete \\'${p.name.replace(/'/g,"\\'")}\\' preset?'))deleteRoundPreset('${p.name.replace(/'/g,"\\'")}');" style="padding:8px 10px;border-radius:8px;border:1.5px solid #e0e0e0;background:white;color:var(--muted);font-size:12px;cursor:pointer;">✕</button>
+          </div>`).join('')}
+      </div>`;
+    container.appendChild(presetsDiv);
+  }
+
+  // Section 1: Course (reuse existing renderCourseStep)
+  const courseSection = document.createElement('div');
+  renderCourseStep(courseSection);
+  container.appendChild(courseSection);
+
+  // Section 2: Round length
+  const lenSection = document.createElement('div');
+  lenSection.style.marginTop = '20px';
+  lenSection.innerHTML = '<div style="font-size:14px;font-weight:700;margin-bottom:10px;">How many holes?</div>';
+  container.appendChild(lenSection);
+  renderRoundLengthStep(lenSection);
+
+  // Section 3: Starting hole (collapsible — only show grid if not hole 1)
+  const shSection = document.createElement('div');
+  shSection.style.marginTop = '16px';
+  shSection.id = 'sh-section';
+  shSection.innerHTML = '<div style="font-size:14px;font-weight:700;margin-bottom:6px;">Starting hole</div><div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Shotgun start or back 9? Tap to change.</div>';
+  container.appendChild(shSection);
+  renderStartingHoleStep(shSection);
+}
+
+function renderWolfRulesStep(container) {
+  // ── Solo Wolf ──
+  const wolfSection = document.createElement('div');
+  const wolfEnabled = surveyAnswers.wolfModesEnabled !== false;
+  wolfSection.innerHTML = `
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px;">Solo Wolf Modes</div>
+    <div class="rule-option ${wolfEnabled?'selected':''}" id="wr-wolf-yes">
+      <div><div class="rule-option-label">Yes — allow solo wolf</div><div class="rule-option-sub">Big Wolf (×) and Lil Wolf (×) options</div></div>
+      <div class="rule-check">${wolfEnabled?'✓':''}</div>
+    </div>
+    <div class="rule-option ${!wolfEnabled?'selected':''}" id="wr-wolf-no">
+      <div><div class="rule-option-label">No — partner only</div><div class="rule-option-sub">Wolf must always pick a partner</div></div>
+      <div class="rule-check">${!wolfEnabled?'✓':''}</div>
+    </div>
+    <div id="wr-wolf-style" style="${wolfEnabled?'':'display:none;'}margin-top:4px;"></div>`;
+  container.appendChild(wolfSection);
+  if (wolfEnabled) renderWolfStyleConfig(wolfSection.querySelector('#wr-wolf-style'));
+
+  wolfSection.querySelector('#wr-wolf-yes').onclick = () => {
+    surveyAnswers.wolfModesEnabled = true;
+    wolfSection.querySelector('#wr-wolf-yes').className = 'rule-option selected';
+    wolfSection.querySelector('#wr-wolf-yes .rule-check').textContent = '✓';
+    wolfSection.querySelector('#wr-wolf-no').className = 'rule-option';
+    wolfSection.querySelector('#wr-wolf-no .rule-check').textContent = '';
+    const styleDiv = wolfSection.querySelector('#wr-wolf-style');
+    styleDiv.style.display = '';
+    styleDiv.innerHTML = '';
+    renderWolfStyleConfig(styleDiv);
+  };
+  wolfSection.querySelector('#wr-wolf-no').onclick = () => {
+    surveyAnswers.wolfModesEnabled = false;
+    wolfSection.querySelector('#wr-wolf-no').className = 'rule-option selected';
+    wolfSection.querySelector('#wr-wolf-no .rule-check').textContent = '✓';
+    wolfSection.querySelector('#wr-wolf-yes').className = 'rule-option';
+    wolfSection.querySelector('#wr-wolf-yes .rule-check').textContent = '';
+    wolfSection.querySelector('#wr-wolf-style').style.display = 'none';
+  };
+
+  // ── Reshuffle ──
+  const reshuffleSection = document.createElement('div');
+  reshuffleSection.style.marginTop = '20px';
+  const rOn = surveyAnswers.reshuffleOn16 !== false;
+  reshuffleSection.innerHTML = `
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px;">Reshuffle Wolf Order?</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Wolf order reshuffled based on standings starting at the selected hole.</div>
+    <div class="rule-option ${rOn?'selected':''}" id="wr-reshuffle-yes">
+      <div><div class="rule-option-label">Yes — reshuffle</div><div class="rule-option-sub">Most behind becomes wolf</div></div>
+      <div class="rule-check">${rOn?'✓':''}</div>
+    </div>
+    <div class="rule-option ${!rOn?'selected':''}" id="wr-reshuffle-no">
+      <div><div class="rule-option-label">No — keep original order</div><div class="rule-option-sub">Wolf rotation stays fixed</div></div>
+      <div class="rule-check">${!rOn?'✓':''}</div>
+    </div>
+    <div id="wr-reshuffle-picker" style="${rOn?'':'display:none;'}"></div>`;
+  container.appendChild(reshuffleSection);
+  if (rOn) renderReshuffleHolePicker(reshuffleSection.querySelector('#wr-reshuffle-picker'));
+
+  reshuffleSection.querySelector('#wr-reshuffle-yes').onclick = () => {
+    surveyAnswers.reshuffleOn16 = true;
+    reshuffleSection.querySelector('#wr-reshuffle-yes').className = 'rule-option selected';
+    reshuffleSection.querySelector('#wr-reshuffle-yes .rule-check').textContent = '✓';
+    reshuffleSection.querySelector('#wr-reshuffle-no').className = 'rule-option';
+    reshuffleSection.querySelector('#wr-reshuffle-no .rule-check').textContent = '';
+    const picker = reshuffleSection.querySelector('#wr-reshuffle-picker');
+    picker.style.display = ''; picker.innerHTML = '';
+    renderReshuffleHolePicker(picker);
+  };
+  reshuffleSection.querySelector('#wr-reshuffle-no').onclick = () => {
+    surveyAnswers.reshuffleOn16 = false;
+    reshuffleSection.querySelector('#wr-reshuffle-no').className = 'rule-option selected';
+    reshuffleSection.querySelector('#wr-reshuffle-no .rule-check').textContent = '✓';
+    reshuffleSection.querySelector('#wr-reshuffle-yes').className = 'rule-option';
+    reshuffleSection.querySelector('#wr-reshuffle-yes .rule-check').textContent = '';
+    reshuffleSection.querySelector('#wr-reshuffle-picker').style.display = 'none';
+  };
+
+  // ── Multipliers ──
+  const multSection = document.createElement('div');
+  multSection.style.marginTop = '20px';
+  multSection.innerHTML = '<div style="font-size:14px;font-weight:700;margin-bottom:10px;">Multipliers</div>';
+  container.appendChild(multSection);
+  renderMultipliersStep(multSection);
+}
+
+function renderSideBetsStep(container) {
+  // ── Greenies ──
+  const greenieSection = document.createElement('div');
+  const gOn = surveyAnswers.greenies === true;
+  greenieSection.innerHTML = `
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px;">🏆 Greenies (Par 3s)</div>
+    <div class="rule-option ${gOn?'selected':''}" id="sb-green-yes">
+      <div><div class="rule-option-label">Yes — play greenies</div><div class="rule-option-sub">Closest to pin on par 3s wins</div></div>
+      <div class="rule-check">${gOn?'✓':''}</div>
+    </div>
+    <div class="rule-option ${!gOn?'selected':''}" id="sb-green-no">
+      <div><div class="rule-option-label">No greenies</div><div class="rule-option-sub">Skip this side bet</div></div>
+      <div class="rule-check">${!gOn?'✓':''}</div>
+    </div>
+    <div id="sb-green-config" style="${gOn?'':'display:none;'}"></div>`;
+  container.appendChild(greenieSection);
+  if (gOn) renderGreeniesConfig(greenieSection.querySelector('#sb-green-config'));
+
+  const toggleGreenies = (val) => {
+    surveyAnswers.greenies = val;
+    greenieSection.querySelector('#sb-green-yes').className = 'rule-option' + (val?' selected':'');
+    greenieSection.querySelector('#sb-green-yes .rule-check').textContent = val?'✓':'';
+    greenieSection.querySelector('#sb-green-no').className = 'rule-option' + (!val?' selected':'');
+    greenieSection.querySelector('#sb-green-no .rule-check').textContent = !val?'✓':'';
+    const cfg = greenieSection.querySelector('#sb-green-config');
+    cfg.style.display = val?'':'none';
+    if (val) { cfg.innerHTML=''; renderGreeniesConfig(cfg); }
+  };
+  greenieSection.querySelector('#sb-green-yes').onclick = () => toggleGreenies(true);
+  greenieSection.querySelector('#sb-green-no').onclick = () => toggleGreenies(false);
+
+  // ── Sandies ──
+  const sandySection = document.createElement('div');
+  sandySection.style.marginTop = '20px';
+  const sOn = surveyAnswers.sandysEnabled === true;
+  sandySection.innerHTML = `
+    <div style="font-size:14px;font-weight:700;margin-bottom:6px;">🏖️ Sandies</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Par or better from a bunker.</div>
+    <div class="rule-option ${sOn?'selected':''}" id="sb-sandy-yes">
+      <div><div class="rule-option-label">Yes — play sandies</div><div class="rule-option-sub">Make par or better from a bunker to collect</div></div>
+      <div class="rule-check">${sOn?'✓':''}</div>
+    </div>
+    <div class="rule-option ${!sOn?'selected':''}" id="sb-sandy-no">
+      <div><div class="rule-option-label">No sandies</div><div class="rule-option-sub">Skip this side bet</div></div>
+      <div class="rule-check">${!sOn?'✓':''}</div>
+    </div>
+    <div id="sb-sandy-config" style="${sOn?'':'display:none;'}"></div>`;
+  container.appendChild(sandySection);
+  if (sOn) renderSandyConfig(sandySection.querySelector('#sb-sandy-config'));
+
+  const toggleSandies = (val) => {
+    surveyAnswers.sandysEnabled = val;
+    sandySection.querySelector('#sb-sandy-yes').className = 'rule-option' + (val?' selected':'');
+    sandySection.querySelector('#sb-sandy-yes .rule-check').textContent = val?'✓':'';
+    sandySection.querySelector('#sb-sandy-no').className = 'rule-option' + (!val?' selected':'');
+    sandySection.querySelector('#sb-sandy-no .rule-check').textContent = !val?'✓':'';
+    const cfg = sandySection.querySelector('#sb-sandy-config');
+    cfg.style.display = val?'':'none';
+    if (val) { cfg.innerHTML=''; renderSandyConfig(cfg); }
+  };
+  sandySection.querySelector('#sb-sandy-yes').onclick = () => toggleSandies(true);
+  sandySection.querySelector('#sb-sandy-no').onclick = () => toggleSandies(false);
+
+  // ── Carryovers ──
+  const carrySection = document.createElement('div');
+  carrySection.style.marginTop = '20px';
+  carrySection.innerHTML = '<div style="font-size:14px;font-weight:700;margin-bottom:6px;">🔄 Carryovers</div><div style="font-size:12px;color:var(--muted);margin-bottom:10px;">What happens when a hole pushes?</div>';
+  container.appendChild(carrySection);
+  renderCarryoverStep(carrySection);
+
+  // Save preset button
+  const saveDiv = document.createElement('div');
+  saveDiv.style.marginTop = '24px';
+  saveDiv.style.paddingTop = '16px';
+  saveDiv.style.borderTop = '1px solid #f0f0f0';
+  saveDiv.innerHTML = `<button onclick="saveRoundPreset()" style="width:100%;padding:12px;border-radius:12px;border:1.5px dashed var(--green);background:white;color:var(--green);font-weight:600;font-size:14px;cursor:pointer;">💾 Save this setup for next time</button>`;
+  container.appendChild(saveDiv);
 }
 
 function renderMultipliersStep(container) {
@@ -3894,6 +4030,48 @@ async function init(){
 document.getElementById('player-inputs').addEventListener('input',()=>{renderWolfOrder();updateGhostCard();});
 document.getElementById('ghost-check').addEventListener('change',toggleGhostCheck);
 init();
+
+window.getPresets = function() {
+  try { return JSON.parse(localStorage.getItem('wolf-presets') || '[]'); } catch(e) { return []; }
+};
+
+window.saveRoundPreset = function() {
+  const name = prompt('Name this setup (e.g. "Friday Money Game"):');
+  if (!name || !name.trim()) return;
+  const preset = { name: name.trim() };
+  const PRESET_FIELDS = ['wolfModesEnabled','wolfStyle','bigWolfMult','lilWolfMult','dropWolfAllowed','dropWolfBet','reshuffleOn16','reshuffleHole','birdiesEagles','doubles','declineHammerForfeit','greenies','greenieWager','brownies','browniesWager','brownieMode','greenieCarryoverEnabled','sandysEnabled','sandyBet','carryoverMode','carryoverMaxBank'];
+  PRESET_FIELDS.forEach(k => { if (surveyAnswers[k] !== undefined) preset[k] = surveyAnswers[k]; });
+  try {
+    const existing = JSON.parse(localStorage.getItem('wolf-presets') || '[]');
+    // Replace if same name exists, otherwise append
+    const idx = existing.findIndex(p => p.name === preset.name);
+    if (idx >= 0) existing[idx] = preset; else existing.push(preset);
+    localStorage.setItem('wolf-presets', JSON.stringify(existing));
+    showToast('Setup saved: ' + preset.name);
+  } catch(e) { showToast('Could not save preset'); }
+};
+
+window.loadRoundPreset = function(name) {
+  try {
+    const presets = JSON.parse(localStorage.getItem('wolf-presets') || '[]');
+    const preset = presets.find(p => p.name === name);
+    if (!preset) { showToast('Preset not found'); return; }
+    const PRESET_FIELDS = ['wolfModesEnabled','wolfStyle','bigWolfMult','lilWolfMult','dropWolfAllowed','dropWolfBet','reshuffleOn16','reshuffleHole','birdiesEagles','doubles','declineHammerForfeit','greenies','greenieWager','brownies','browniesWager','brownieMode','greenieCarryoverEnabled','sandysEnabled','sandyBet','carryoverMode','carryoverMaxBank'];
+    PRESET_FIELDS.forEach(k => { if (preset[k] !== undefined) surveyAnswers[k] = preset[k]; });
+    showToast('Loaded: ' + preset.name);
+    renderSurvey(); // re-render current step with loaded values
+  } catch(e) { showToast('Could not load preset'); }
+};
+
+window.deleteRoundPreset = function(name) {
+  try {
+    const existing = JSON.parse(localStorage.getItem('wolf-presets') || '[]');
+    const filtered = existing.filter(p => p.name !== name);
+    localStorage.setItem('wolf-presets', JSON.stringify(filtered));
+    renderSurvey();
+    showToast('Deleted: ' + name);
+  } catch(e) {}
+};
 </script>
 </body>
 </html>
