@@ -764,11 +764,11 @@ function renderCarryoverStep(container) {
           <div class="rule-check">${mode==='none'?'✓':''}</div>
         </div>
         <div class="rule-option${mode==='standard'?' selected':''}" id="co-standard">
-          <div><div style="font-size:15px;font-weight:600;">🔄 Standard</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Ties carry 1× base — always flat. (Push at $2 = $2 carry, every time)</div></div>
+          <div><div style="font-size:15px;font-weight:600;">🔄 Standard</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Each push stacks with no cap. Push holes 1, 2 &amp; 3 at $2 → hole 4 is worth $8/player.</div></div>
           <div class="rule-check">${mode==='standard'?'✓':''}</div>
         </div>
         <div class="rule-option${mode==='banked'?' selected':''}" id="co-banked">
-          <div><div style="font-size:15px;font-weight:600;">🏦 Banked Carryovers</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Each push stacks the pot. Set a max — at $2/hole, 3 banks = $8 max hole value.</div></div>
+          <div><div style="font-size:15px;font-weight:600;">🏦 Banked — with a max</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Same as Standard but stops stacking at your max. At $2/hole, max 3 banks = $8 cap, no matter how many more holes push.</div></div>
           <div class="rule-check">${mode==='banked'?'✓':''}</div>
         </div>
       </div>
@@ -2938,7 +2938,7 @@ function computeWolfCarryovers() {
     if (!hole || !hole.winner) break;
     if (hole.winner === 'push') {
       if (mode === 'standard') {
-        pending = base; // always exactly 1× base, never compounds
+        pending += base; // each push stacks — 3 pushes at $2 = $6 carry, hole 4 worth $8
       } else if (mode === 'banked') {
         pending = Math.min(pending + base, maxBank * base); // stack up to max
       }
