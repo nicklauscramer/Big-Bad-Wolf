@@ -1201,30 +1201,31 @@ function renderRoundLengthStep(container) {
 
 function renderStartingHoleStep(container) {
   const div = document.createElement('div');
+  div.innerHTML = '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px;" id="starting-hole-grid"></div><div id="sh-order-display"></div>';
   function render() {
     const sh = surveyAnswers.startingHole || 1;
-    div.innerHTML = '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px;" id="starting-hole-grid"></div>';
     const grid = div.querySelector('#starting-hole-grid');
+    grid.innerHTML = '';
     for (let h = 1; h <= 18; h++) {
       const btn = document.createElement('button');
       btn.style.cssText = `aspect-ratio:1;border-radius:10px;border:2px solid ${h===sh?'var(--green)':'#e0e0e0'};background:${h===sh?'var(--green)':'white'};color:${h===sh?'white':'var(--text)'};font-weight:700;font-size:14px;cursor:pointer;`;
       btn.textContent = h;
       btn.onclick = () => {
         surveyAnswers.startingHole = h;
-        // Recalculate reshuffleHole based on starting hole and round length
         const rh = surveyAnswers.roundHoles || 18;
-        // Pressure starts at last 3 holes of round by default
-        // Last 3 holes = starting at position (rh-2) in the sequence
-        const pressurePos = rh - 2; // 3 pressure holes = positions 16,17,18 in 18-hole round
+        const pressurePos = rh - 2;
         surveyAnswers.reshuffleHole = ((h - 1 + pressurePos - 1) % 18) + 1;
         render();
       };
       grid.appendChild(btn);
     }
+    const orderDisplay = div.querySelector('#sh-order-display');
     if (sh !== 1) {
       const seq = [];
       for (let i = 0; i < (surveyAnswers.roundHoles||18); i++) seq.push(((sh-1+i)%18)+1);
-      div.innerHTML += `<div style="margin-top:8px;padding:10px;background:var(--green-pale);border-radius:10px;font-size:12px;color:var(--green);font-weight:600;">Round order: ${seq.join(' → ')}</div>`;
+      orderDisplay.innerHTML = `<div style="margin-top:8px;padding:10px;background:var(--green-pale);border-radius:10px;font-size:12px;color:var(--green);font-weight:600;">Round order: ${seq.join(' → ')}</div>`;
+    } else {
+      orderDisplay.innerHTML = '';
     }
   }
   render();
@@ -3980,6 +3981,11 @@ window.clearAllState = function clearAllState(){
     const sbCode = document.getElementById('scoreboard-code-display'); if(sbCode) sbCode.style.display='none';
     const vBanner = document.getElementById('viewer-banner'); if(vBanner) vBanner.style.display='none';
     setSyncStatus('');
+    // Clear payments and scoreboard so stale data doesn't show after new round
+    const paymentsEmpty = document.getElementById('payments-empty'); if(paymentsEmpty) paymentsEmpty.style.display='block';
+    const paymentsContent = document.getElementById('payments-content'); if(paymentsContent) { paymentsContent.style.display='none'; paymentsContent.innerHTML=''; }
+    const paymentsSubtitle = document.getElementById('payments-subtitle'); if(paymentsSubtitle) paymentsSubtitle.textContent='Complete all 18 holes to see who pays who.';
+    const scoreboardTable = document.getElementById('scoreboard-table'); if(scoreboardTable) scoreboardTable.innerHTML='<div class="empty-state"><div class="empty-icon">📊</div><p>No holes yet.</p></div>';
   } catch(err) {
     console.error('clearAllState error:', err);
     alert('Error clearing state: ' + err.message);
